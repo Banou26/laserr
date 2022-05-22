@@ -1,0 +1,15 @@
+{
+  "name": "laserr",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "author": "Banou26",
+  "scripts": {
+    "test": "node tests/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.35",
+    "jsdom": "^19.0.0"
+  },
+  "type": "module"
+}
