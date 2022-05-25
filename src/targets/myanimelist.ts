@@ -1,16 +1,30 @@
-import Category from '../category'
-import { fetch } from '@mfkn/fkn-lib'
-import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
-import { addTarget } from '.'
-import { fromUri } from '../utils'
-import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
-import { languageToTag } from '../languages'
-import iconUrl from './mal-favicon.png'
+// import Category from '../category'
+// // import { fetch } from '@mfkn/fkn-lib'
+// import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
+// import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
+import type Category from '../../../scannarr/src/types/category'
+import type DateData from '../../../scannarr/src/types/date'
+
+import { fromUri, languageToTag } from '../utils'
+
+export const origin = 'https://myanimelist.net'
+export const categories: Category[] = ['ANIME']
+export const name = 'MyAnimeList'
+export const scheme = 'mal'
 
 const fixOrigin = (url: string) => url.replace(document.location.origin, 'https://myanimelist.net')
 
+const getDocumentUrl = (doc: Document): string =>
+  (
+    doc.querySelector<HTMLLinkElement>('head > link[rel="canonical"]')?.href ||
+    doc.querySelector<HTMLLinkElement>('head > meta[property="og:url"]')?.getAttribute('content')
+  ) as string
+
+const getAnimePageId = (doc: Document) =>
+  Number(doc.querySelector('#myinfo_anime_id')?.getAttribute('value'))
+
 // export const getGenres: GetGenres<true> = () =>
-//   fetch('https://myanimelist.net/anime.php', { proxyCache: (1000 * 60 * 60 * 5).toString() })
+//   fetch('https://myanimelist.net/anime.php')
 //     .then(res => res.text())
 //     .then(text =>
 //       [
@@ -26,7 +40,7 @@ const fixOrigin = (url: string) => url.replace(document.location.origin, 'https:
 //               url: href,
 //               adult: !!i,
 //               name: textContent!.replace(/(.*) \(.*\)/, '$1')!,
-//               categories: [Category.ANIME]
+//               categories
 //             }))
 //             .filter(({ name }) => name)
 //         )
@@ -34,7 +48,7 @@ const fixOrigin = (url: string) => url.replace(document.location.origin, 'https:
 
 const getSeasonCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
   scheme: 'mal',
-  categories: [Category.ANIME],
+  categories,
   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
   url: elem.querySelector<HTMLAnchorElement>('.link-title')!.href,
   images: [{
@@ -59,7 +73,7 @@ const getSeasonCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
         adult: parentElement?.classList.contains('explicit'),
         url: fixOrigin(href),
         name: textContent?.trim()!,
-        categories: [Category.ANIME]
+        categories
       })),
   releaseDates: [{
     language: 'en',
@@ -73,7 +87,7 @@ const getSeasonCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
 })
 
 export const getAnimeSeason = () =>
-  fetch('https://myanimelist.net/anime/season', { proxyCache: (1000 * 60 * 60 * 5).toString() })
+  fetch('https://myanimelist.net/anime/season')
     .then(async res =>
       [
         ...new DOMParser()
@@ -85,7 +99,7 @@ export const getAnimeSeason = () =>
 
 const getSearchCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
   scheme: 'mal',
-  categories: [Category.ANIME],
+  categories,
   id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
   url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
   images: [{
@@ -112,7 +126,7 @@ const getSearchCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
 })
 
 export const searchAnime = ({ search }: { search: string }) =>
-  fetch(`https://myanimelist.net/anime.php?${new URLSearchParams(`q=${search}`).toString()}&cat=anime`, { proxyCache: (1000 * 60 * 60 * 5).toString() })
+  fetch(`https://myanimelist.net/anime.php?${new URLSearchParams(`q=${search}`).toString()}&cat=anime`)
     .then(async res =>
       [
         ...new DOMParser()
@@ -123,9 +137,9 @@ export const searchAnime = ({ search }: { search: string }) =>
         .map(getSearchCardInfo)
     )
 
-const getEpisodeCardInfo = (elem: HTMLElement): TitleHandle => ({
+const getTitleCardInfo = (elem: HTMLElement): TitleHandle => ({
   scheme: 'mal',
-  categories: [Category.ANIME],
+  categories,
   id: elem.querySelector<HTMLElement>('[data-anime-id]')!.dataset.animeId!,
   url: elem.querySelector<HTMLAnchorElement>('.video-info-title a:last-of-type')!.href,
   images: [{
@@ -146,7 +160,7 @@ const getEpisodeCardInfo = (elem: HTMLElement): TitleHandle => ({
     [...elem.querySelectorAll<HTMLAnchorElement>('.title a')]
       .map(elem => ({
         scheme: 'mal',
-        categories: [Category.ANIME],
+        categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
         releaseDates: [],
         season: 1,
@@ -205,7 +219,7 @@ const getSideInformations = (elem: Document): Informations =>
       .filter(([key]) => infoMap.some(([_key]) => key === _key))
   )
 
-const getTitleEpisodeInfo = (elem: Document): EpisodeHandle => {
+const getSeriesTitleInfo = (elem: Document): EpisodeHandle => {
   const informations = getSideInformations(elem)
   const url =
     elem.querySelector<HTMLLinkElement>('head > link[rel="canonical"]')!.href ||
@@ -233,10 +247,11 @@ const getTitleEpisodeInfo = (elem: Document): EpisodeHandle => {
 
   return ({
     scheme: 'mal',
-    categories: [
-      Category.ANIME,
-      ...informations.type.includes('TV') ? [Category.SHOW] : []
-    ],
+    categories,
+    // categories: [
+    //   Category.ANIME,
+    //   ...informations.type.includes('TV') ? [Category.SHOW] : []
+    // ],
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
     season: 1,
     number: Number(elem.querySelector<HTMLTableCellElement>('.fs18.lh11 .fw-n')?.textContent?.split('-')[0].slice(1)),
@@ -298,10 +313,11 @@ const getTitleEpisodesInfo = (elem: Document): EpisodeHandle[] => {
 
         return ({
           scheme: 'mal',
-          categories: [
-            Category.ANIME,
-            ...informations.type.includes('TV') ? [Category.SHOW] : []
-          ],
+          categories,
+          // categories: [
+          //   Category.ANIME,
+          //   ...informations.type.includes('TV') ? [Category.SHOW] : []
+          // ],
           id: `${url.split('/')[4]!}-${url.split('/')[7]!}`, // url.split('/')[7]!,
           season: 1,
           number: Number(elem.querySelector<HTMLTableCellElement>('.episode-number')?.textContent),
@@ -344,10 +360,9 @@ const getTitleEpisodesInfo = (elem: Document): EpisodeHandle[] => {
   return episodes
 }
 
-const getTitleInfo = async (elem: Document): Promise<TitleHandle> => {
-  const url =
-    elem.querySelector<HTMLLinkElement>('head > link[rel="canonical"]')!.href ||
-    elem.querySelector<HTMLLinkElement>('head > meta[property="og:url"]')!.getAttribute('content')!
+const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
+  console.log('elem', elem)
+  const url = getDocumentUrl(elem)
 
   const informations = getSideInformations(elem)
   const dateText = informations.aired
@@ -359,34 +374,27 @@ const getTitleInfo = async (elem: Document): Promise<TitleHandle> => {
         .at(0)!
     )
 
-  const endDate =
+  const date: DateData =
     dateText?.includes('to')
-      ? (
-        new Date(
+      ? {
+        language: 'ja',
+        start: startDate,
+        end: new Date(
           dateText
             .split('to')
             .at(1)!
         )
-      )
-      : undefined
-
-  const date: ReleaseDate = {
-    language: 'en',
-    ...endDate
-      ? {
-        start: startDate,
-        end: endDate
       }
       : {
+        language: 'ja',
         date: startDate
       }
-  }
 
   const episodes =
     informations.episodes === 'Unknown'
       ? []
       : await (
-        fetch(`${url}/episode`, { proxyCache: (1000 * 60 * 60 * 5).toString() })
+        fetch(`${url}/episode`)
           .then(async res =>
             getTitleEpisodesInfo(
               new DOMParser()
@@ -397,9 +405,10 @@ const getTitleInfo = async (elem: Document): Promise<TitleHandle> => {
 
   return {
     scheme: 'mal',
-    categories: [
-      Category.ANIME
-    ],
+    categories,
+    // categories: [
+    //   Category.ANIME
+    // ],
     id: url.split('/')[4],
     url: url,
     images: [{
@@ -468,29 +477,39 @@ const getTitleInfo = async (elem: Document): Promise<TitleHandle> => {
   }
 }
 
-export const getAnimeTitle = (id: string) =>
-  fetch(`https://myanimelist.net/anime/${id}`, { proxyCache: (1000 * 60 * 60 * 5).toString() })
+const getSeriesTitles = async (options: { url: string } | { id: string }) => {
+  const url =
+    'id' in options
+      ? getDocumentUrl(await getSeriesDocument(options.id))
+      : options.url
+
+  const res = await fetch(`${url}/episode`)
+
+  return getTitleEpisodesInfo(
+    new DOMParser()
+      .parseFromString(await res.text(), 'text/html')
+  )
+}
+
+export const getSeriesDocument = (id: string) =>
+  fetch(`https://myanimelist.net/anime/${id}`)
     .then(async res =>
-      getTitleInfo(
+      new DOMParser()
+        .parseFromString(await res.text(), 'text/html')
+    )
+
+export const getSeries = (id: string) =>
+  getSeriesDocument(id)
+    .then(getSeriesInfo)
+
+export const getTitle = (id: string, episode: number) =>
+  fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`)
+    .then(async res =>
+      getSeriesTitleInfo(
         new DOMParser()
           .parseFromString(await res.text(), 'text/html')
       )
     )
-
-export const getAnimeEpisode = (id: string, episode: number) =>
-  fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`, { proxyCache: (1000 * 60 * 60 * 5).toString() })
-    .then(async res =>
-      getTitleEpisodeInfo(
-        new DOMParser()
-          .parseFromString(await res.text(), 'text/html')
-      )
-    )
-
-// export const get: Get<true> = ({ uri, id, title, episode }) =>
-//   void console.log('get uri', uri) ||
-//   title ? getAnimeTitle(id ?? fromUri(uri).id)
-//   : episode ? Promise.resolve(undefined)
-//   : Promise.resolve(undefined)
 
 const getLatestEpisodes = () =>
   fetch('https://myanimelist.net/watch/episode')
@@ -500,51 +519,57 @@ const getLatestEpisodes = () =>
           .parseFromString(await res.text(), 'text/html')
           .querySelectorAll('.video-list-outer-vertical')
       ]
-        .map(getEpisodeCardInfo)
+        .map(getTitleCardInfo)
     )
 
 // export const getLatest: GetLatest<true> = ({ title, episode }) =>
 //   title ? getAnimeSeason()
 //   : episode ? getLatestEpisodes()
 //   : Promise.resolve([])
-globalThis.fetch(iconUrl)
-addTarget({
-  name: 'MyAnimeList',
-  scheme: 'mal',
-  categories: [Category.ANIME],
-  icon: iconUrl,
-  getTitle: {
-    scheme: 'mal',
-    categories: [Category.ANIME],
-    function: ({ uri, id }) =>
-      getAnimeTitle(id ?? fromUri(uri!).id)
-  },
-  getEpisode: {
-    scheme: 'mal',
-    categories: [Category.ANIME],
-    function: ({ uri }) =>
-      getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
-  },
-  searchTitle: {
-    scheme: 'mal',
-    categories: [Category.ANIME],
-    latest: true,
-    pagination: true,
-    genres: true,
-    score: true,
-    search: true,
-    function: ({ latest, search }) =>
-      latest ? getAnimeSeason()
-      : search ? searchAnime({ search })
-      : Promise.resolve([])
-  },
-  searchEpisode: {
-    scheme: 'mal',
-    categories: [Category.ANIME],
-    latest: true,
-    pagination: true,
-    genres: true,
-    score: true,
-    function: async () => [] ?? getLatestEpisodes()
-  }
-})
+// globalThis.fetch(iconUrl)
+// addTarget({
+//   name: 'MyAnimeList',
+//   scheme: 'mal',
+//   categories,
+//   // icon: iconUrl,
+//   getTitle: {
+//     scheme: 'mal',
+//     categories,
+//     function: ({ uri, id }) =>
+//       getAnimeTitle(id ?? fromUri(uri!).id)
+//   },
+//   getEpisode: {
+//     scheme: 'mal',
+//     categories,
+//     function: ({ uri }) =>
+//       getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
+//   },
+//   searchTitle: {
+//     scheme: 'mal',
+//     categories,
+//     latest: true,
+//     pagination: true,
+//     genres: true,
+//     score: true,
+//     search: true,
+//     function: ({ latest, search }) =>
+//       latest ? getAnimeSeason()
+//       : search ? searchAnime({ search })
+//       : Promise.resolve([])
+//   },
+//   searchEpisode: {
+//     scheme: 'mal',
+//     categories,
+//     latest: true,
+//     pagination: true,
+//     genres: true,
+//     score: true,
+//     function: async () => [] ?? getLatestEpisodes()
+//   }
+// })
+
+export const test = async () => {
+  const title = await getSeriesTitles({ id: (1).toString() })
+  console.log('title', JSON.stringify(title, undefined, 2))
+}
+

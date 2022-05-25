@@ -4,12 +4,24 @@
   "description": "",
   "main": "index.js",
   "author": "Banou26",
+  "type": "module",
   "scripts": {
-    "test": "node tests/index.ts"
+    "test": "epk",
+    "test-watch": "epk -w"
   },
   "devDependencies": {
     "@types/node": "^17.0.35",
-    "jsdom": "^19.0.0"
+    "concurrently": "^7.2.1",
+    "epk": "^0.16.0",
+    "esbuild": "^0.14.39",
+    "esbuild-plugin-alias": "^0.2.1",
+    "jsdom": "^19.0.0",
+    "node-fetch": "^3.2.4",
+    "nodemon": "^2.0.16"
   },
-  "type": "module"
+  "dependencies": {
+    "p-limit": "^4.0.0",
+    "rxjs": "^7.5.5",
+    "scannar": "file:../scannarr"
+  }
 }
