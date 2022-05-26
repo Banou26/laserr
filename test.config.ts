@@ -7,7 +7,8 @@ const config: EPKConfig = {
       platform: 'chromium',
       browserConfig: {
         args: ['--disable-web-security'],
-        headless: false
+        headless: false,
+        devtools: true
       },
       web: {
         match: ['./tests/**/*.ts']

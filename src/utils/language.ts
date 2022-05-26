@@ -9,3 +9,254 @@ export const languages: Language[] = JSON.parse(`[{"tag":"zu","name":"isiZulu","
 
 export const languageToTag = (lang: string) => languages.find(language => language.name === lang)?.tag
 export const tagToLanguage = (langTag: string) => languages.find(language => language.tag === langTag)?.name
+
+export enum LanguageTag {
+  /** isiZulu */
+  ZU = 'zu',// "isiZulu",
+  /** Chinese */
+  ZH = 'zh',// "Chinese",
+  /** Yoruba */
+  YO = 'yo',// "Yoruba",
+  /** isiXhosa */
+  XH = 'xh',// "isiXhosa",
+  /** Wolof */
+  WO = 'wo',// "Wolof",
+  /** Vietnamese */
+  VI = 'vi',// "Vietnamese",
+  /** Uzbek */
+  UZ = 'uz',// "Uzbek",
+  /** Urdu */
+  UR = 'ur',// "Urdu",
+  /** Ukrainian */
+  UK = 'uk',// "Ukrainian",
+  /** Uyghur */
+  UG = 'ug',// "Uyghur",
+  /** Tamazight */
+  TZM = 'tzm',// "Tamazight",
+  /** Tatar */
+  TT = 'tt',// "Tatar",
+  /** Turkish */
+  TR = 'tr',// "Turkish",
+  /** Setswana */
+  TN = 'tn',// "Setswana",
+  /** Turkmen */
+  TK = 'tk',// "Turkmen",
+  /** Thai */
+  TH = 'th',// "Thai",
+  /** Tajik */
+  TG = 'tg',// "Tajik",
+  /** Telugu */
+  TE = 'te',// "Telugu",
+  /** Tamil */
+  TA = 'ta',// "Tamil",
+  /** Syriac */
+  SYR = 'syr',// "Syriac",
+  /** Kiswahili */
+  SW = 'sw',// "Kiswahili",
+  /** Swedish */
+  SV = 'sv',// "Swedish",
+  /** Serbian */
+  SR = 'sr',// "Serbian",
+  /** Albanian */
+  SQ = 'sq',// "Albanian",
+  /** Sami */
+  SMS = 'sms',// "Sami",
+  /** Sami */
+  SMN = 'smn',// "Sami",
+  /** Sami */
+  SMJ = 'smj',// "Sami",
+  /** Sami */
+  SMA = 'sma',// "Sami",
+  /** Slovenian */
+  SL = 'sl',// "Slovenian",
+  /** Slovak */
+  SK = 'sk',// "Slovak",
+  /** Sinhala */
+  SI = 'si',// "Sinhala",
+  /** Sami */
+  SE = 'se',// "Sami",
+  /** Yakut */
+  SAH = 'sah',// "Yakut",
+  /** Sanskrit */
+  SA = 'sa',// "Sanskrit",
+  /** Kinyarwanda */
+  RW = 'rw',// "Kinyarwanda",
+  /** Russian */
+  RU = 'ru',// "Russian",
+  /** Romanian */
+  RO = 'ro',// "Romanian",
+  /** Romansh */
+  RM = 'rm',// "Romansh",
+  /** Quechua */
+  QUZ = 'quz',// "Quechua",
+  /** K */
+  QUT = 'qut',// "K'iche",
+  /** Portuguese */
+  PT = 'pt',// "Portuguese",
+  /** Pashto */
+  PS = 'ps',// "Pashto",
+  /** Dari */
+  PRS = 'prs',// "Dari",
+  /** Polish */
+  PL = 'pl',// "Polish",
+  /** Punjabi */
+  PA = 'pa',// "Punjabi",
+  /** Oriya */
+  OR = 'or',// "Oriya",
+  /** Occitan */
+  OC = 'oc',// "Occitan",
+  /** Sesotho sa Leboa */
+  NSO = 'nso',// "Sesotho sa Leboa",
+  /** Norwegian */
+  NO = 'no',// "Norwegian",
+  /** Norwegian, Nynorsk */
+  NN = 'nn',// "Norwegian, Nynorsk",
+  /** Dutch */
+  NL = 'nl',// "Dutch",
+  /** Nepali */
+  NE = 'ne',// "Nepali",
+  /** Norwegian, Bokmål */
+  NB = 'nb',// "Norwegian, Bokmål",
+  /** Maltese */
+  MT = 'mt',// "Maltese",
+  /** Malay */
+  MS = 'ms',// "Malay",
+  /** Marathi */
+  MR = 'mr',// "Marathi",
+  /** Mohawk */
+  MOH = 'moh',// "Mohawk",
+  /** Mongolian */
+  MN = 'mn',// "Mongolian",
+  /** Malayalam */
+  ML = 'ml',// "Malayalam",
+  /** Macedonian */
+  MK = 'mk',// "Macedonian",
+  /** Maori */
+  MI = 'mi',// "Maori",
+  /** Latvian */
+  LV = 'lv',// "Latvian",
+  /** Lithuanian */
+  LT = 'lt',// "Lithuanian",
+  /** Lao */
+  LO = 'lo',// "Lao",
+  /** Luxembourgish */
+  LB = 'lb',// "Luxembourgish",
+  /** Kyrgyz */
+  KY = 'ky',// "Kyrgyz",
+  /** Konkani */
+  KOK = 'kok',// "Konkani",
+  /** Korean */
+  KO = 'ko',// "Korean",
+  /** Kannada */
+  KN = 'kn',// "Kannada",
+  /** Khmer */
+  KM = 'km',// "Khmer",
+  /** Greenlandic */
+  KL = 'kl',// "Greenlandic",
+  /** Kazakh */
+  KK = 'kk',// "Kazakh",
+  /** Georgian */
+  KA = 'ka',// "Georgian",
+  /** Japanese */
+  JA = 'ja',// "Japanese",
+  /** Inuktitut */
+  IU = 'iu',// "Inuktitut",
+  /** Italian */
+  IT = 'it',// "Italian",
+  /** Icelandic */
+  IS = 'is',// "Icelandic",
+  /** Yi */
+  II = 'ii',// "Yi",
+  /** Igbo */
+  IG = 'ig',// "Igbo",
+  /** Indonesian */
+  ID = 'id',// "Indonesian",
+  /** Armenian */
+  HY = 'hy',// "Armenian",
+  /** Hungarian */
+  HU = 'hu',// "Hungarian",
+  /** Upper Sorbian */
+  HSB = 'hsb',// "Upper Sorbian",
+  /** Croatian */
+  HR = 'hr',// "Croatian",
+  /** Hindi */
+  HI = 'hi',// "Hindi",
+  /** Hebrew */
+  HE = 'he',// "Hebrew",
+  /** Hausa */
+  HA = 'ha',// "Hausa",
+  /** Gujarati */
+  GU = 'gu',// "Gujarati",
+  /** Alsatian */
+  GSW = 'gsw',// "Alsatian",
+  /** Galician */
+  GL = 'gl',// "Galician",
+  /** Scottish Gaelic */
+  GD = 'gd',// "Scottish Gaelic",
+  /** Irish */
+  GA = 'ga',// "Irish",
+  /** Frisian */
+  FY = 'fy',// "Frisian",
+  /** French */
+  FR = 'fr',// "French",
+  /** Faroese */
+  FO = 'fo',// "Faroese",
+  /** Filipino */
+  FIL = 'fil',// "Filipino",
+  /** Finnish */
+  FI = 'fi',// "Finnish",
+  /** Persian */
+  FA = 'fa',// "Persian",
+  /** Basque */
+  EU = 'eu',// "Basque",
+  /** Estonian */
+  ET = 'et',// "Estonian",
+  /** Spanish */
+  ES = 'es',// "Spanish",
+  /** English */
+  EN = 'en',// "English",
+  /** Greek */
+  EL = 'el',// "Greek",
+  /** Divehi */
+  DV = 'dv',// "Divehi",
+  /** Lower Sorbian */
+  DSB = 'dsb',// "Lower Sorbian",
+  /** German */
+  DE = 'de',// "German",
+  /** Danish */
+  DA = 'da',// "Danish",
+  /** Welsh */
+  CY = 'cy',// "Welsh",
+  /** Czech */
+  CS = 'cs',// "Czech",
+  /** Corsican */
+  CO = 'co',// "Corsican",
+  /** Catalan */
+  CA = 'ca',// "Catalan",
+  /** Bosnian */
+  BS = 'bs',// "Bosnian",
+  /** Breton */
+  BR = 'br',// "Breton",
+  /** Tibetan */
+  BO = 'bo',// "Tibetan",
+  /** Bengali */
+  BN = 'bn',// "Bengali",
+  /** Bulgarian */
+  BG = 'bg',// "Bulgarian",
+  /** Belarusian */
+  BE = 'be',// "Belarusian",
+  /** Bashkir */
+  BA = 'ba',// "Bashkir",
+  /** Azeri */
+  AZ = 'az',// "Azeri",
+  /** Assamese */
+  AS = 'as',// "Assamese",
+  /** Mapudungun */
+  ARN = 'arn',// "Mapudungun",
+  /** Arabic */
+  AR = 'ar',// "Arabic",
+  /** Amharic */
+  AM = 'am',// "Amharic",
+  /** Afrikaans */
+  AF = 'af'// "Afrikaans"
+}

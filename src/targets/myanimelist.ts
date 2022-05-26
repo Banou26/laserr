@@ -2,10 +2,14 @@
 // // import { fetch } from '@mfkn/fkn-lib'
 // import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
 // import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
+import { SeriesHandle } from 'scannar/src/types/series'
 import type Category from '../../../scannarr/src/types/category'
 import type DateData from '../../../scannarr/src/types/date'
+import type { FetchType } from '../../../scannarr/src/types/fetch'
+import ImageData from 'scannar/src/types/image'
+import type { TitleHandle } from '../../../scannarr/src/types/title'
 
-import { fromUri, languageToTag } from '../utils'
+import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
 
 export const origin = 'https://myanimelist.net'
 export const categories: Category[] = ['ANIME']
@@ -46,28 +50,28 @@ const getAnimePageId = (doc: Document) =>
 //         )
 //     )
 
-const getSeasonCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
+const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   scheme: 'mal',
   categories,
   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
   url: elem.querySelector<HTMLAnchorElement>('.link-title')!.href,
   images: [{
-    type: 'poster',
-    size: 'medium',
+    type: 'poster' as const,
+    size: 'medium' as const,
     url: elem.querySelector<HTMLImageElement>('img')!.src || elem.querySelector<HTMLImageElement>('img')!.dataset.src!
   }],
   names: [{
-    search: true,
-    language: 'ja-en',
+    score: 1,
+    language: LanguageTag.JA,
     name: elem.querySelector('.h2_anime_title')!.textContent!.trim()!
   }],
   synopses: [{
-    language: 'en',
+    language: LanguageTag.EN,
     synopsis: elem.querySelector('.preline')!.textContent!.trim()!
   }],
   genres:
     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
-      .map(({ textContent, href, parentElement }) => ({
+      .map(({ textContent, href, parentElement }) => populateUri({
         scheme: 'mal',
         id: href!.split('/').at(5)!,
         adult: parentElement?.classList.contains('explicit'),
@@ -75,15 +79,16 @@ const getSeasonCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
         name: textContent?.trim()!,
         categories
       })),
-  releaseDates: [{
-    language: 'en',
+  dates: [{
+    language: LanguageTag.EN,
     date: new Date(elem.querySelector('.prodsrc > .info > span:nth-child(1)')!.textContent!.trim())
   }],
   related: [],
-  episodes: [],
+  titles: [],
   recommended: [],
   tags: [],
-  handles: []
+  handles: [],
+  withDetails: false
 })
 
 export const getAnimeSeason = () =>
@@ -97,32 +102,33 @@ export const getAnimeSeason = () =>
         .map(getSeasonCardInfo)
     )
 
-const getSearchCardInfo = (elem: HTMLElement): Impl<TitleHandle> => ({
+const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   scheme: 'mal',
   categories,
   id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
   url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
   images: [{
-    type: 'poster',
-    size: 'medium',
+    type: 'poster' as const,
+    size: 'medium' as const,
     url: (elem.querySelector<HTMLImageElement>('.picSurround img')!.src || elem.querySelector<HTMLImageElement>('.picSurround img')!.dataset.src!).replace('r/50x70/', '')
   }],
   names: [{
-    search: true,
-    language: 'ja-en',
+    score: 1,
+    language: LanguageTag.JA,
     name: elem.querySelector('.title strong')!.textContent!.trim()!
   }],
   synopses: [{
-    language: 'en',
+    language: LanguageTag.EN,
     synopsis: elem.querySelector('.pt4')!.textContent!.trim()!
   }],
   genres: [],
-  releaseDates: [],
+  dates: [],
   related: [],
-  episodes: [],
+  titles: [],
   recommended: [],
   tags: [],
-  handles: []
+  handles: [],
+  withDetails: false
 })
 
 export const searchAnime = ({ search }: { search: string }) =>
@@ -137,32 +143,32 @@ export const searchAnime = ({ search }: { search: string }) =>
         .map(getSearchCardInfo)
     )
 
-const getTitleCardInfo = (elem: HTMLElement): TitleHandle => ({
+const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   scheme: 'mal',
   categories,
   id: elem.querySelector<HTMLElement>('[data-anime-id]')!.dataset.animeId!,
   url: elem.querySelector<HTMLAnchorElement>('.video-info-title a:last-of-type')!.href,
   images: [{
-    type: 'poster',
-    size: 'medium',
+    type: 'poster' as const,
+    size: 'medium' as const,
     url: elem.querySelector<HTMLImageElement>('img')!.src
   }],
   names: [{
-    search: true,
-    language: 'ja-en',
+    score: 1,
+    language: LanguageTag.JA,
     name: elem.querySelector('.mr4')!.textContent!.trim()
   }],
   synopses: [],
   genres: [],
-  releaseDates: [],
+  dates: [],
   related: [],
-  episodes:
+  titles:
     [...elem.querySelectorAll<HTMLAnchorElement>('.title a')]
-      .map(elem => ({
+      .map(elem => populateUri({
         scheme: 'mal',
         categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
-        releaseDates: [],
+        dates: [],
         season: 1,
         number: Number(elem.href.split('/')[7]),
         url: elem.href,
@@ -176,7 +182,8 @@ const getTitleCardInfo = (elem: HTMLElement): TitleHandle => ({
       })),
   recommended: [],
   tags: [],
-  handles: []
+  handles: [],
+  withDetails: false
 })
 
 enum MALInformation {
@@ -211,21 +218,21 @@ const getSideInformations = (elem: Document): Informations =>
   Object.fromEntries(
     [...elem.querySelectorAll('.js-sns-icon-container ~ h2 ~ h2 ~ .spaceit_pad:not(.js-sns-icon-container ~ h2 ~ h2 ~ h2 ~ .spaceit_pad)')]
       .map(elem => [
-        infoMap.find(([, val]) => val === elem.childNodes[1].textContent)?.[0]!,
-        elem.childNodes[2].textContent?.trim().length
-          ? elem.childNodes[2].textContent?.trim()!
-          : elem.childNodes[3].textContent?.trim()!
+        infoMap.find(([, val]) => val === elem.childNodes[1]?.textContent)?.[0]!,
+        elem.childNodes[2]?.textContent?.trim().length
+          ? elem.childNodes[2]?.textContent?.trim()!
+          : elem.childNodes[3]?.textContent?.trim()!
       ])
       .filter(([key]) => infoMap.some(([_key]) => key === _key))
   )
 
-const getSeriesTitleInfo = (elem: Document): EpisodeHandle => {
-  const informations = getSideInformations(elem)
+const getSeriesTitleInfo = (elem: Document): TitleHandle => {
+  // const informations = getSideInformations(elem)
   const url =
     elem.querySelector<HTMLLinkElement>('head > link[rel="canonical"]')!.href ||
     elem.querySelector<HTMLLinkElement>('head > meta[property="og:url"]')!.getAttribute('content')!
   const englishTitle = elem.querySelector<HTMLAnchorElement>('.fs18.lh11')?.childNodes[2]!.textContent
-  const [japaneseenTitle, japaneseTitle] =
+  const [japaneseEnglishTitle, japaneseTitle] =
     elem
       .querySelector<HTMLParagraphElement>('.fs18.lh11 ~ .fn-grey2')
       ?.textContent
@@ -245,64 +252,63 @@ const getSeriesTitleInfo = (elem: Document): EpisodeHandle => {
       .trim()
       .replaceAll('\n\n\n\n', '\n\n')!
 
-  return ({
+  return populateUri({
     scheme: 'mal',
     categories,
-    // categories: [
-    //   Category.ANIME,
-    //   ...informations.type.includes('TV') ? [Category.SHOW] : []
-    // ],
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
     season: 1,
-    number: Number(elem.querySelector<HTMLTableCellElement>('.fs18.lh11 .fw-n')?.textContent?.split('-')[0].slice(1)),
+    number: Number(elem.querySelector<HTMLTableCellElement>('.fs18.lh11 .fw-n')?.textContent?.split('-')[0]!.slice(1)),
     url,
     names: [
       {
-        language: 'en',
-        name: englishTitle!
+        language: LanguageTag.EN,
+        name: englishTitle!,
+        score: 0.8
       },
-      ...japaneseenTitle
+      ...japaneseEnglishTitle
         ? [{
-          search: true,
-          language: 'ja-en',
-          name: japaneseenTitle
+          language: LanguageTag.JA,
+          name: japaneseEnglishTitle,
+          score: 1
         }]
         : [],
       ...japaneseTitle
         ? [{
-          language: 'ja',
-          name: japaneseTitle
+          language: LanguageTag.JA,
+          name: japaneseTitle,
+          score: 0.8
         }]
         : []
     ],
     images: [],
-    releaseDates:
+    dates:
       dateElem &&
       !isNaN(Date.parse(dateElem.textContent!))
         ? [{
-          language: 'ja',
+          language: LanguageTag.JA,
           date: new Date(dateElem.textContent!)
         }]
         : [],
     synopses:
       elem.querySelector('.di-t.w100.mb8 ~ .pt8.pb8 .badresult')
         ? []
-        : [{ language: 'en', synopsis }],
+        : [{ language: LanguageTag.EN, synopsis }],
     handles: [],
     tags: [],
-    related: []
+    related: [],
+    withDetails: true
   })
 }
 
-const getTitleEpisodesInfo = (elem: Document): EpisodeHandle[] => {
-  const informations = getSideInformations(elem)
+const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
+  // const informations = getSideInformations(elem)
   
   const episodes =
     [...elem.querySelectorAll('.episode_list.ascend .episode-list-data')]
       .map(elem => {
         const url = elem.querySelector<HTMLAnchorElement>('.episode-title > a')!.href
         const englishTitle = elem.querySelector<HTMLAnchorElement>('.episode-title > a')!.textContent
-        const [japaneseenTitle, _japaneseTitle] =
+        const [japaneseEnglishTitle, _japaneseTitle] =
           elem
             .querySelector<HTMLSpanElement>('.episode-title > span')
             ?.textContent
@@ -314,54 +320,53 @@ const getTitleEpisodesInfo = (elem: Document): EpisodeHandle[] => {
         return ({
           scheme: 'mal',
           categories,
-          // categories: [
-          //   Category.ANIME,
-          //   ...informations.type.includes('TV') ? [Category.SHOW] : []
-          // ],
           id: `${url.split('/')[4]!}-${url.split('/')[7]!}`, // url.split('/')[7]!,
           season: 1,
           number: Number(elem.querySelector<HTMLTableCellElement>('.episode-number')?.textContent),
           url,
           names: [
             {
-              language: 'en',
-              name: englishTitle!
+              language: LanguageTag.EN,
+              name: englishTitle!,
+              score: 1
             },
-            ...japaneseenTitle
+            ...japaneseEnglishTitle
               ? [{
-                search: true,
-                language: 'ja-en',
-                name: japaneseenTitle
+                language: LanguageTag.JA,
+                name: japaneseEnglishTitle,
+                score: 0.8
               }]
               : [],
             ...japaneseTitle
               ? [{
-                language: 'ja',
-                name: japaneseTitle
+                language: LanguageTag.JA,
+                name: japaneseTitle,
+                score: 0.8
               }]
               : []
           ],
           images: [],
-          releaseDates:
+          dates:
             dateElem &&
             !isNaN(Date.parse(dateElem.textContent!))
               ? [{
-                language: 'ja',
+                language: LanguageTag.JA,
                 date: new Date(dateElem.textContent!)
               }]
               : [],
           synopses: [],
           handles: [],
           tags: [],
-          related: []
+          related: [],
+          withDetails: false
         })
       })
+      .map(populateUri)
 
   return episodes
 }
 
-const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
-  console.log('elem', elem)
+const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   const url = getDocumentUrl(elem)
 
   const informations = getSideInformations(elem)
@@ -377,7 +382,7 @@ const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
   const date: DateData =
     dateText?.includes('to')
       ? {
-        language: 'ja',
+        language: LanguageTag.JA,
         start: startDate,
         end: new Date(
           dateText
@@ -386,34 +391,31 @@ const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
         )
       }
       : {
-        language: 'ja',
+        language: LanguageTag.JA,
         date: startDate
       }
 
-  const episodes =
-    informations.episodes === 'Unknown'
-      ? []
-      : await (
-        fetch(`${url}/episode`)
-          .then(async res =>
-            getTitleEpisodesInfo(
-              new DOMParser()
-                .parseFromString(await res.text(), 'text/html')
-            )
-          )
-      )
+  // const titles =
+  //   informations.episodes === 'Unknown'
+  //     ? []
+  //     : await (
+  //       fetch(`${url}/episode`)
+  //         .then(async res =>
+  //           getSeriesTitlesInfo(
+  //             new DOMParser()
+  //               .parseFromString(await res.text(), 'text/html')
+  //           )
+  //         )
+  //     )
 
-  return {
+  return populateUri({
     scheme: 'mal',
     categories,
-    // categories: [
-    //   Category.ANIME
-    // ],
-    id: url.split('/')[4],
+    id: url.split('/')[4]!,
     url: url,
     images: [{
-      type: 'poster',
-      size: 'medium',
+      type: 'poster' as const,
+      size: 'medium' as const,
       url: elem.querySelector<HTMLImageElement>('#content > table > tbody > tr > td.borderClass a img')!.dataset.src!
     }],
     names:
@@ -426,8 +428,8 @@ const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
         // .flatMap((elem, i) => {
         //   if (i === 0) {
         //     return ({
-        //       search: true,
-        //       language: 'ja-en',
+        //       score: 1,
+        //       language: LanguageTag.JA,
         //       name: elem?.textContent?.trim()!
         //     })
         //   }
@@ -440,7 +442,7 @@ const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
 
         //   return ({
         //     language:
-        //       elem?.childNodes[1].textContent?.slice(0, -1) === 'Synonyms' ? 'en' :
+        //       elem?.childNodes[1].textContent?.slice(0, -1) === 'Synonyms' ? LanguageTag.EN :
         //       languageToTag(elem?.childNodes[1].textContent?.slice(0, -1)!.split('-').at(0)!) || elem?.childNodes[1].textContent?.slice(0, -1)!,
         //     name: elem?.childNodes[2].textContent?.trim()!
         //   })
@@ -449,18 +451,19 @@ const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
           i
             ? {
               language:
-                elem?.childNodes[1].textContent?.slice(0, -1) === 'Synonyms' ? 'en' :
-                languageToTag(elem?.childNodes[1].textContent?.slice(0, -1)!.split('-').at(0)!) || elem?.childNodes[1].textContent?.slice(0, -1)!,
-              name: elem?.childNodes[2].textContent?.trim()!
+                elem?.childNodes[1]?.textContent?.slice(0, -1) === 'Synonyms' ? LanguageTag.EN :
+                languageToTag(elem?.childNodes[1]?.textContent?.slice(0, -1)!.split('-').at(0)!) || elem?.childNodes[1]?.textContent?.slice(0, -1)!,
+              name: elem?.childNodes[2]?.textContent?.trim()!,
+              score: 0.8
             }
             : {
-              search: true,
-              language: 'ja-en',
+              score: 1,
+              language: LanguageTag.JA,
               name: elem?.textContent?.trim()!
             }
         ),
     synopses: [{
-      language: 'en',
+      language: LanguageTag.EN,
       synopsis:
         elem
           .querySelector<HTMLParagraphElement>('[itemprop=description]')
@@ -468,42 +471,47 @@ const getSeriesInfo = async (elem: Document): Promise<TitleHandle> => {
           ?.replaceAll('\n\n\n\n', '\n\n')!
     }],
     genres: [],
-    releaseDates: [date],
+    dates: [date],
     related: [],
-    episodes,
+    titles: [],
     recommended: [],
     tags: [],
-    handles: []
-  }
+    handles: [],
+    withDetails: true
+  })
 }
 
-const getSeriesTitles = async (options: { url: string } | { id: string }) => {
+const getSeriesTitles = async (options: { url: string } | { id: string }, { fetch }: { fetch: FetchType }) => {
   const url =
     'id' in options
-      ? getDocumentUrl(await getSeriesDocument(options.id))
+      ? getDocumentUrl(await getSeriesDocument(options, { fetch }))
       : options.url
 
   const res = await fetch(`${url}/episode`)
 
-  return getTitleEpisodesInfo(
+  return getSeriesTitlesInfo(
     new DOMParser()
       .parseFromString(await res.text(), 'text/html')
   )
 }
 
-export const getSeriesDocument = (id: string) =>
-  fetch(`https://myanimelist.net/anime/${id}`)
+export const getSeriesDocument = (options: { url: string } | { id: string }, { fetch }: { fetch: FetchType }) =>
+  fetch(
+    'id' in options
+      ? `https://myanimelist.net/anime/${options.id}`
+      : options.url
+  )
     .then(async res =>
       new DOMParser()
         .parseFromString(await res.text(), 'text/html')
     )
 
-export const getSeries = (id: string) =>
-  getSeriesDocument(id)
+export const getSeries = (options: { url: string } | { id: string }, { fetch }: { fetch: FetchType }) =>
+  getSeriesDocument(options, { fetch })
     .then(getSeriesInfo)
 
-export const getTitle = (id: string, episode: number) =>
-  fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`)
+export const getSeriesTitle = (seriesId: string, titleId: number, { fetch }: { fetch: FetchType }) =>
+  fetch(`https://myanimelist.net/anime/${seriesId}/${seriesId}/episode/${titleId}`)
     .then(async res =>
       getSeriesTitleInfo(
         new DOMParser()
@@ -511,7 +519,7 @@ export const getTitle = (id: string, episode: number) =>
       )
     )
 
-const getLatestEpisodes = () =>
+const getLatestTitles = ({ fetch }: { fetch: FetchType }) =>
   fetch('https://myanimelist.net/watch/episode')
     .then(async res =>
       [
@@ -522,54 +530,170 @@ const getLatestEpisodes = () =>
         .map(getTitleCardInfo)
     )
 
-// export const getLatest: GetLatest<true> = ({ title, episode }) =>
-//   title ? getAnimeSeason()
-//   : episode ? getLatestEpisodes()
-//   : Promise.resolve([])
-// globalThis.fetch(iconUrl)
-// addTarget({
-//   name: 'MyAnimeList',
-//   scheme: 'mal',
-//   categories,
-//   // icon: iconUrl,
-//   getTitle: {
-//     scheme: 'mal',
-//     categories,
-//     function: ({ uri, id }) =>
-//       getAnimeTitle(id ?? fromUri(uri!).id)
-//   },
-//   getEpisode: {
-//     scheme: 'mal',
-//     categories,
-//     function: ({ uri }) =>
-//       getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
-//   },
-//   searchTitle: {
-//     scheme: 'mal',
-//     categories,
-//     latest: true,
-//     pagination: true,
-//     genres: true,
-//     score: true,
-//     search: true,
-//     function: ({ latest, search }) =>
-//       latest ? getAnimeSeason()
-//       : search ? searchAnime({ search })
-//       : Promise.resolve([])
-//   },
-//   searchEpisode: {
-//     scheme: 'mal',
-//     categories,
-//     latest: true,
-//     pagination: true,
-//     genres: true,
-//     score: true,
-//     function: async () => [] ?? getLatestEpisodes()
-//   }
-// })
-
-export const test = async () => {
-  const title = await getSeriesTitles({ id: (1).toString() })
-  console.log('title', JSON.stringify(title, undefined, 2))
+// todo: refactor this into an async iterator to better handle paginations
+export const testSeriesTitles = async (limitedFetch) => {
+  const { expect } = await import('epk')
+  const titles = await getSeriesTitles({ id: '1' }, { fetch: limitedFetch })
+  expect(titles).lengthOf(26)
+  const firstTitle = titles.at(0)
+  const firstTitleJSON = JSON.parse(JSON.stringify(firstTitle))
+  expect(firstTitleJSON).to.deep.equal({
+    scheme: 'mal',
+    categories: ['ANIME'],
+    id: '1-1',
+    season: 1,
+    number: 1,
+    url: 'https://myanimelist.net/anime/1/Cowboy_Bebop/episode/1',
+    names: [
+      {
+        language: 'en',
+        name: 'Asteroid Blues',
+        score: 1
+      },
+      {
+        language: 'ja',
+        name: 'Asteroid Blues',
+        score: 0.8
+      },
+      {
+        language: 'ja',
+        name: 'アステロイド・ブルース',
+        score: 0.8
+      }
+    ],
+    images: [],
+    dates: [
+      {
+        language: 'ja',
+        date: '1998-10-24T04:00:00.000Z'
+      }
+    ],
+    synopses: [],
+    handles: [],
+    tags: [],
+    related: [],
+    uri: 'mal:1-1',
+    withDetails: false
+  })
 }
 
+export const testSeriesTitle = async (limitedFetch) => {
+  const { expect } = await import('epk')
+  const title = await getSeriesTitle('1', 1, { fetch: limitedFetch })
+  console.log('title', title)
+  const titleJSON = JSON.parse(JSON.stringify(title))
+  console.log('titleJSON', titleJSON)
+  await new Promise(resolve => setTimeout(resolve, 10000000))
+  expect(titleJSON).to.deep.equal({
+    scheme: 'mal',
+    categories: ['ANIME'],
+    id: '1-1',
+    season: 1,
+    number: 1,
+    url: 'https://myanimelist.net/anime/1/Cowboy_Bebop/episode/1',
+    names: [{
+      language: 'en',
+      name: 'Asteroid Blues',
+      score: 0.8
+    }, {
+      language: 'ja',
+      name: 'Asteroid Blues',
+      score: 1
+    }, {
+      language: 'ja',
+      name: 'アステロイド・ブルース',
+      score: 0.8
+    }],
+    images: [],
+    dates: [],
+    synopses: [{
+      language: 'en',
+      synopsis: `Crime is timeless. By the year 2071, humanity has expanded across the galaxy, filling the surface of other planets with settlements like those on Earth. These new societies are plagued by murder, drug use, and theft, and intergalactic outlaws are hunted by a growing number of tough bounty hunters.
+
+      Spike Spiegel and Jet Black pursue criminals throughout space to make a humble living. Beneath his goofy and aloof demeanor, Spike is haunted by the weight of his violent past. Meanwhile, Jet manages his own troubled memories while taking care of Spike and the Bebop, their ship. The duo is joined by the beautiful con artist Faye Valentine, odd child Edward Wong Hau Pepelu Tivrusky IV, and Ein, a bioengineered Welsh Corgi.
+      
+      While developing bonds and working to catch a colorful cast of criminals, the Bebop crew's lives are disrupted by a menace from Spike's past. As a rival's maniacal plot continues to unravel, Spike must choose between life with his newfound family or revenge for his old wounds.
+      
+      [Written by MAL Rewrite]
+      `
+    }],
+    handles: [],
+    tags: [],
+    related: [],
+    withDetails: true,
+    uri: 'mal:1-1'
+  })
+}
+
+export const testSeries = async (limitedFetch) => {
+  const { expect } = await import('epk')
+  const series = await getSeries({ id: '1' }, { fetch: limitedFetch })
+  const seriesJSON = JSON.parse(JSON.stringify(series))
+  expect(seriesJSON).to.deep.equal({
+    scheme: 'mal',
+    categories: ['ANIME'],
+    id: '1',
+    url: 'https://myanimelist.net/anime/1/Cowboy_Bebop',
+    images: [{
+      type: 'poster',
+      size: 'medium',
+      url: 'https://cdn.myanimelist.net/images/anime/4/19644.jpg'
+    }],
+    names: [
+      {
+        score: 1,
+        language: 'ja',
+        name: 'Cowboy Bebop'
+      },
+      {
+        language: 'ja',
+        name: 'カウボーイビバップ',
+        score: 0.8
+      },
+      {
+        language: 'en',
+        name: 'Cowboy Bebop',
+        score: 0.8
+      }
+    ],
+    synopses: [{
+      language: 'en',
+      synopsis: `Crime is timeless. By the year 2071, humanity has expanded across the galaxy, filling the surface of other planets with settlements like those on Earth. These new societies are plagued by murder, drug use, and theft, and intergalactic outlaws are hunted by a growing number of tough bounty hunters.
+
+Spike Spiegel and Jet Black pursue criminals throughout space to make a humble living. Beneath his goofy and aloof demeanor, Spike is haunted by the weight of his violent past. Meanwhile, Jet manages his own troubled memories while taking care of Spike and the Bebop, their ship. The duo is joined by the beautiful con artist Faye Valentine, odd child Edward Wong Hau Pepelu Tivrusky IV, and Ein, a bioengineered Welsh Corgi.
+
+While developing bonds and working to catch a colorful cast of criminals, the Bebop crew's lives are disrupted by a menace from Spike's past. As a rival's maniacal plot continues to unravel, Spike must choose between life with his newfound family or revenge for his old wounds.
+
+[Written by MAL Rewrite]
+`
+    }],
+    genres: [],
+    dates: [{
+      language: 'ja',
+      start: '1998-04-03T05:00:00.000Z',
+      end: '1999-04-24T04:00:00.000Z'
+    }],
+    related: [],
+    titles: [],
+    recommended: [],
+    tags: [],
+    handles: [],
+    uri: 'mal:1',
+    withDetails: true
+  })
+}
+
+export const test = async () => {
+  const { default: pLimit } = await import('p-limit')
+
+  const limit = pLimit(2)
+  const limitedFetch = (input: RequestInfo, init?: RequestInit | undefined) =>
+    limit(() => fetch(input, init))
+
+  await Promise.all([
+    testSeriesTitles(limitedFetch),
+    testSeries(limitedFetch),
+    testSeriesTitle(limitedFetch)
+  ])
+  // await new Promise(resolve => setTimeout(resolve, 10000000))
+}
