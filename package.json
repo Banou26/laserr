@@ -2,12 +2,13 @@
   "name": "laserr",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "author": "Banou26",
   "type": "module",
   "scripts": {
     "test": "epk",
-    "test-watch": "epk -w"
+    "test-watch": "epk -w",
+    "dev": "node ./build.js -w"
   },
   "devDependencies": {
     "@types/chai": "^4.3.1",

@@ -2,12 +2,7 @@
 // // import { fetch } from '@mfkn/fkn-lib'
 // import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
 // import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
-import { SeriesHandle } from 'scannar/src/types/series'
-import type Category from '../../../scannarr/src/types/category'
-import type DateData from '../../../scannarr/src/types/date'
-import type { FetchType } from '../../../scannarr/src/types/fetch'
-import ImageData from 'scannar/src/types/image'
-import type { TitleHandle } from '../../../scannarr/src/types/title'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle } from '../../../scannarr/src/types'
 
 import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
 
@@ -531,7 +526,7 @@ const getLatestTitles = ({ fetch }: { fetch: FetchType }) =>
     )
 
 // todo: refactor this into an async iterator to better handle paginations
-export const testSeriesTitles = async (limitedFetch) => {
+const testSeriesTitles = async (limitedFetch) => {
   const { expect } = await import('epk')
   const titles = await getSeriesTitles({ id: '1' }, { fetch: limitedFetch })
   expect(titles).lengthOf(26)
@@ -577,13 +572,10 @@ export const testSeriesTitles = async (limitedFetch) => {
   })
 }
 
-export const testSeriesTitle = async (limitedFetch) => {
+const testSeriesTitle = async (limitedFetch) => {
   const { expect } = await import('epk')
   const title = await getSeriesTitle('1', 1, { fetch: limitedFetch })
-  console.log('title', title)
   const titleJSON = JSON.parse(JSON.stringify(title))
-  console.log('titleJSON', titleJSON)
-  await new Promise(resolve => setTimeout(resolve, 10000000))
   expect(titleJSON).to.deep.equal({
     scheme: 'mal',
     categories: ['ANIME'],
@@ -608,24 +600,19 @@ export const testSeriesTitle = async (limitedFetch) => {
     dates: [],
     synopses: [{
       language: 'en',
-      synopsis: `Crime is timeless. By the year 2071, humanity has expanded across the galaxy, filling the surface of other planets with settlements like those on Earth. These new societies are plagued by murder, drug use, and theft, and intergalactic outlaws are hunted by a growing number of tough bounty hunters.
+      synopsis: `In a flashback, Spike Spiegel is shown waiting near a church holding a bouquet of flowers, before leaving as the church bell rings. As he walks away, images of a gunfight he participated in are shown. In the present, Spike, currently a bounty hunter, and his partner Jet Black head to the Tijuana asteroid colony on their ship, the Bebop, to track down a bounty-head named Asimov Solensan. Asimov is wanted for killing members of his own crime syndicate and for stealing a cache of a dangerous combat drug known as Bloody-Eye. On the colony, Asimov and his girlfriend, Katerina, are ambushed at a bar by his former syndicate while attempting to sell a vial of Bloody-Eye, but Asimov manages to fight his way out by using the drug himself. Spike later encounters Katerina and reveals to her that he is a bounty hunter searching for Asimov; Spike is promptly assaulted by Asimov and is nearly killed before Katerina intervenes. In the confusion, Spike is able to steal Asimov's Bloody-Eye vial before the two leave. Spike later confronts Asimov at a staged drug deal with the stolen vial, but Asimov escapes with Katerina in a ship when the two are interrupted by an attack from Asimov's former syndicate. With Spike giving chase in his own ship, Asimov attempts to take another dose of Bloody-Eye, but a horrified Katerina shoots him before he can. As Spike approaches Asimov's ship, it is destroyed by attacking police cruisers, forcing Spike to pull away. The episode ends with Spike and Jet once again traveling through space on the Bebop.
 
-      Spike Spiegel and Jet Black pursue criminals throughout space to make a humble living. Beneath his goofy and aloof demeanor, Spike is haunted by the weight of his violent past. Meanwhile, Jet manages his own troubled memories while taking care of Spike and the Bebop, their ship. The duo is joined by the beautiful con artist Faye Valentine, odd child Edward Wong Hau Pepelu Tivrusky IV, and Ein, a bioengineered Welsh Corgi.
-      
-      While developing bonds and working to catch a colorful cast of criminals, the Bebop crew's lives are disrupted by a menace from Spike's past. As a rival's maniacal plot continues to unravel, Spike must choose between life with his newfound family or revenge for his old wounds.
-      
-      [Written by MAL Rewrite]
-      `
+(Source: Wikipedia)`
     }],
     handles: [],
     tags: [],
     related: [],
-    withDetails: true,
-    uri: 'mal:1-1'
+    uri: 'mal:1-1',
+    withDetails: true
   })
 }
 
-export const testSeries = async (limitedFetch) => {
+const testSeries = async (limitedFetch) => {
   const { expect } = await import('epk')
   const series = await getSeries({ id: '1' }, { fetch: limitedFetch })
   const seriesJSON = JSON.parse(JSON.stringify(series))
@@ -697,3 +684,49 @@ export const test = async () => {
   ])
   // await new Promise(resolve => setTimeout(resolve, 10000000))
 }
+
+// export const getLatest: GetLatest<true> = ({ title, episode }) =>
+//   title ? getAnimeSeason()
+//   : episode ? getLatestEpisodes()
+//   : Promise.resolve([])
+// globalThis.fetch(iconUrl)
+// addTarget({
+//   name: 'MyAnimeList',
+//   scheme: 'mal',
+//   categories,
+//   // icon: iconUrl,
+//   getTitle: {
+//     scheme: 'mal',
+//     categories,
+//     function: ({ uri, id }) =>
+//       getAnimeTitle(id ?? fromUri(uri!).id)
+//   },
+//   getEpisode: {
+//     scheme: 'mal',
+//     categories,
+//     function: ({ uri }) =>
+//       getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
+//   },
+//   searchTitle: {
+//     scheme: 'mal',
+//     categories,
+//     latest: true,
+//     pagination: true,
+//     genres: true,
+//     score: true,
+//     search: true,
+//     function: ({ latest, search }) =>
+//       latest ? getAnimeSeason()
+//       : search ? searchAnime({ search })
+//       : Promise.resolve([])
+//   },
+//   searchEpisode: {
+//     scheme: 'mal',
+//     categories,
+//     latest: true,
+//     pagination: true,
+//     genres: true,
+//     score: true,
+//     function: async () => [] ?? getLatestEpisodes()
+//   }
+// })

@@ -1,6 +1,3 @@
 export * from './filtering'
-// export * from './string-compare'
 export * from './uri'
-export * from './handle'
 export * from './language'
-// export * from './targets'
