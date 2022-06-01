@@ -323,13 +323,13 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
             {
               language: LanguageTag.EN,
               name: englishTitle!,
-              score: 1
+              score: 0.8
             },
             ...japaneseEnglishTitle
               ? [{
                 language: LanguageTag.JA,
                 name: japaneseEnglishTitle,
-                score: 0.8
+                score: 1
               }]
               : [],
             ...japaneseTitle
@@ -543,12 +543,12 @@ const testSeriesTitles = async (limitedFetch) => {
       {
         language: 'en',
         name: 'Asteroid Blues',
-        score: 1
+        score: 0.8
       },
       {
         language: 'ja',
         name: 'Asteroid Blues',
-        score: 0.8
+        score: 1
       },
       {
         language: 'ja',
