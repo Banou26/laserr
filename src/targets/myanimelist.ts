@@ -2,7 +2,8 @@
 // // import { fetch } from '@mfkn/fkn-lib'
 // import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
 // import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle } from '../../../scannarr/src/types'
+import { from, Observable } from 'rxjs'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries } from '../../../scannarr/src'
 
 import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
 
@@ -525,7 +526,12 @@ const getLatestTitles = ({ fetch }: { fetch: FetchType }) =>
         .map(getTitleCardInfo)
     )
 
-// todo: refactor this into an async iterator to better handle paginations
+export const searchSeries: SearchSeries = ({ ...rest }) =>
+  'latest' in rest
+    ? from(getAnimeSeason())
+    : from([])
+
+// todo: maybe refactor this into an async iterator to better handle paginations
 const testSeriesTitles = async (limitedFetch) => {
   const { expect } = await import('epk')
   const titles = await getSeriesTitles({ id: '1' }, { fetch: limitedFetch })
