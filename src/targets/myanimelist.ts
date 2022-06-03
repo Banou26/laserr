@@ -375,16 +375,20 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
         .at(0)!
     )
 
+  const isAiringDate = dateText?.includes('to')
+  const endDateString = dateText.split('to').at(1)
+
   const date: DateData =
-    dateText?.includes('to')
+    isAiringDate
       ? {
         language: LanguageTag.JA,
         start: startDate,
-        end: new Date(
-          dateText
-            .split('to')
-            .at(1)!
-        )
+        end:
+          endDateString
+            ? endDateString.includes('?')
+              ? undefined
+              : new Date(endDateString)
+            : undefined
       }
       : {
         language: LanguageTag.JA,
