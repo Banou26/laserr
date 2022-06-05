@@ -3,7 +3,7 @@
 // import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
 // import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
 import { from, Observable } from 'rxjs'
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries } from '../../../scannarr/src'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
 
 import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
 
@@ -165,7 +165,7 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
         categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
         dates: [],
-        season: 1,
+        unit: 1,
         number: Number(elem.href.split('/')[7]),
         url: elem.href,
         names: [],
@@ -174,7 +174,8 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
         related: [],
         tags: [],
         releaseDate: [],
-        handles: []
+        handles: [],
+        recommended: []
       })),
   recommended: [],
   tags: [],
@@ -252,7 +253,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
     scheme: 'mal',
     categories,
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
-    season: 1,
+    unit: 1,
     number: Number(elem.querySelector<HTMLTableCellElement>('.fs18.lh11 .fw-n')?.textContent?.split('-')[0]!.slice(1)),
     url,
     names: [
@@ -292,6 +293,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
     handles: [],
     tags: [],
     related: [],
+    recommended: [],
     withDetails: true
   })
 }
@@ -317,7 +319,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
           scheme: 'mal',
           categories,
           id: `${url.split('/')[4]!}-${url.split('/')[7]!}`, // url.split('/')[7]!,
-          season: 1,
+          unit: 1,
           number: Number(elem.querySelector<HTMLTableCellElement>('.episode-number')?.textContent),
           url,
           names: [
@@ -354,6 +356,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
           handles: [],
           tags: [],
           related: [],
+          recommended: [],
           withDetails: false
         })
       })
@@ -481,13 +484,13 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   })
 }
 
-const getSeriesTitles = async (options: { url: string } | { id: string }, { fetch }: { fetch: FetchType }) => {
+const getSeriesTitles = async (options: { url: string } | { id: string }, extraOptions: ExtraOptions) => {
   const url =
     'id' in options
-      ? getDocumentUrl(await getSeriesDocument(options, { fetch }))
+      ? getDocumentUrl(await getSeriesDocument(options, extraOptions))
       : options.url
 
-  const res = await fetch(`${url}/episode`)
+  const res = await extraOptions.fetch(`${url}/episode`)
 
   return getSeriesTitlesInfo(
     new DOMParser()
@@ -495,7 +498,7 @@ const getSeriesTitles = async (options: { url: string } | { id: string }, { fetc
   )
 }
 
-export const getSeriesDocument = (options: { url: string } | { id: string }, { fetch }: { fetch: FetchType }) =>
+export const getSeriesDocument = (options: { url: string } | { id: string }, { fetch }: ExtraOptions) =>
   fetch(
     'id' in options
       ? `https://myanimelist.net/anime/${options.id}`
@@ -506,11 +509,11 @@ export const getSeriesDocument = (options: { url: string } | { id: string }, { f
         .parseFromString(await res.text(), 'text/html')
     )
 
-export const getSeries = (options: { url: string } | { id: string }, { fetch }: { fetch: FetchType }) =>
+export const getSeries = (options: { url: string } | { id: string }, { fetch }: ExtraOptions) =>
   getSeriesDocument(options, { fetch })
     .then(getSeriesInfo)
 
-export const getSeriesTitle = (seriesId: string, titleId: number, { fetch }: { fetch: FetchType }) =>
+export const getSeriesTitle = (seriesId: string, titleId: number, { fetch }: ExtraOptions) =>
   fetch(`https://myanimelist.net/anime/${seriesId}/${seriesId}/episode/${titleId}`)
     .then(async res =>
       getSeriesTitleInfo(
@@ -519,7 +522,7 @@ export const getSeriesTitle = (seriesId: string, titleId: number, { fetch }: { f
       )
     )
 
-const getLatestTitles = ({ fetch }: { fetch: FetchType }) =>
+const getLatestTitles = ({ fetch }: ExtraOptions) =>
   fetch('https://myanimelist.net/watch/episode')
     .then(async res =>
       [
@@ -535,6 +538,11 @@ export const searchSeries: SearchSeries = ({ ...rest }) =>
     ? from(getAnimeSeason())
     : from([])
 
+export const searchTitles: SearchTitles = ({ ...rest }, extraOptions) =>
+  'series' in rest
+    ? from(getSeriesTitles({ id: rest.series!.id }, extraOptions))
+    : from([])
+
 // todo: maybe refactor this into an async iterator to better handle paginations
 const testSeriesTitles = async (limitedFetch) => {
   const { expect } = await import('epk')
@@ -546,7 +554,7 @@ const testSeriesTitles = async (limitedFetch) => {
     scheme: 'mal',
     categories: ['ANIME'],
     id: '1-1',
-    season: 1,
+    unit: 1,
     number: 1,
     url: 'https://myanimelist.net/anime/1/Cowboy_Bebop/episode/1',
     names: [
@@ -590,7 +598,7 @@ const testSeriesTitle = async (limitedFetch) => {
     scheme: 'mal',
     categories: ['ANIME'],
     id: '1-1',
-    season: 1,
+    unit: 1,
     number: 1,
     url: 'https://myanimelist.net/anime/1/Cowboy_Bebop/episode/1',
     names: [{
