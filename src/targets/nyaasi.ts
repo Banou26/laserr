@@ -1,12 +1,18 @@
-import { fetch } from '@mfkn/fkn-lib'
+import type { SearchTitlesOptions, TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
 
-import Category from '../category'
-import { Episode, EpisodeHandle, Impl, Name, SearchEpisode, Team, TeamEpisode } from '../types'
-import { addTarget } from '.'
-import { getBytesFromBiByteString } from '../utils/bytes'
+import { from, Observable } from 'rxjs'
 import { flow, pipe } from 'fp-ts/lib/function'
 import * as A from 'fp-ts/lib/Array'
 import { join } from 'fp-ts-std/Array'
+
+import { getBytesFromBiByteString } from '../utils/bytes'
+import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
+
+
+export const origin = 'https://nyaa.si'
+export const categories: Category[] = ['ANIME']
+export const name = 'Nyaa'
+export const scheme = 'nyaa'
 
 type Item = {
   category: NyaaCategory
@@ -199,7 +205,7 @@ const getTorrentAsEpisodeAndTeam = async (tag, url: string): Promise<[TeamEpisod
   ] as [TeamEpisode, Team]
 }
 
-export const getItemAsEpisode = async (elem: HTMLElement): Promise<Impl<EpisodeHandle>> => {
+export const getItemAsEpisode = async (elem: HTMLElement): Promise<TitleHandle> => {
   const row = getItem(elem)
   // console.log(row)
   const { name, group: groupTag, meta, batch, resolution, type } = getTitleFromTrustedTorrentName(row.name)
@@ -208,32 +214,46 @@ export const getItemAsEpisode = async (elem: HTMLElement): Promise<Impl<EpisodeH
   const existingTeam = groupTag ? getTeam(groupTag) : undefined
   const [teamEpisode, team] = existingTeam ? [undefined, await existingTeam] : await getTorrentAsEpisodeAndTeam(groupTag, row.link)
 
-  return {
+  return populateUri({
     id: row.link.split('/').at(4)!,
     scheme: 'nyaa',
-    categories: row.category === 'anime' ? [Category.ANIME] : [],
-    names: [{ language: row.english ? 'en' : '', name }],
-    season: 1,
+    categories: row.category === 'anime' ? ['ANIME' as const] : [],
+    names: [{ language: row.english ? 'en' : '', name, score: 0.6 }],
+    unit: 1,
     number,
+    dates: [],
     images: [],
     releaseDates: [],
     synopses: [],
     handles: [],
-    tags: [],
+    recommended: [],
+    tags: [{
+      type: 'batch' as const,
+      value: batch
+    }, {
+      type: 'protocol-type' as const,
+      value: 'torrent'
+    }, {
+      type: 'resolution' as const,
+      value: resolution
+    }, {
+      type: 'size' as const,
+      value: row.size
+    }],
     related: [],
     url: row.link,
-    type: 'torrent',
-    resolution,
-    size: row.size,
-    teamEpisode: {
-      url: undefined,
-      ...teamEpisode,
-      team: (await team)!
-    },
-    batch
+    // type: 'torrent',
+    // resolution,
+    // size: row.size,
+    // teamEpisode: {
+    //   url: undefined,
+    //   ...teamEpisode,
+    //   team: (await team)!
+    // },
+    // batch
     // type: getReleaseType(row.name),
     // meta
-  }
+  })
 }
 
 export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
@@ -261,19 +281,31 @@ export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
   // return cards
 }
 
-export const _searchEpisode = async ({ titles, season, number, ...rest }: { titles: Name[], season?: number, number?: number, batch?: boolean }): Promise<EpisodeHandle[]> => {
+export const _searchEpisode = async (options: SearchTitlesOptions, { fetch }: ExtraOptions): Promise<TitleHandle[]> => {
+  console.log('1')
+  if (!('series' in options)) return Promise.resolve([])
+  console.log('2')
+  if (!('search' in options)) return Promise.resolve([])
+  console.log('3')
+  const { series, search: _search } = options
+  if (typeof _search === 'string') return Promise.resolve([])
+  console.log('4')
+  const titles = series?.names.map(({ name }) => name)
+  const number = _search.number
+  console.log('4.5 titles', titles)
+  
   const trustedSources = true
 
   // todo: check if names containing parenthesis will cause problems with nyaa.si search engine
   const search =
     pipe(
       titles,
-      A.filter(({ search }) => Boolean(search)),
-      A.map(({ name }) => name),
+      // A.map(({ name }) => name),
       A.map((name) => `${name} ${number ? number.toString().padStart(2, '0') : ''}`),
       A.map((episodeName) => `(${episodeName})`),
       join('|')
     )
+  console.log('5 search', search)
 
   // const search = `${mostCommonSubnames ? mostCommonSubnames : title.names.find((name) => name.language === 'ja-en')?.name} ${number ? number.toString().padStart(2, '0') : ''}`
 
@@ -281,6 +313,7 @@ export const _searchEpisode = async ({ titles, season, number, ...rest }: { titl
   const doc =
     new DOMParser()
       .parseFromString(pageHtml, 'text/xml')
+  console.log('6 doc', doc)
   const episodes =
     await Promise.all(
       [...doc.querySelectorAll('item')]
@@ -294,11 +327,11 @@ export const _searchEpisode = async ({ titles, season, number, ...rest }: { titl
   // }
   
   // const findNewTeams =
-  //   (episodes: Impl<EpisodeHandle>[]) =>
+  //   (episodes: Impl<TitleHandle>[]) =>
   //     (teams: Team[]) =>
   //       pipe(
   //         episodes,
-  //         A.filter<Impl<EpisodeHandle> & { teamEpisode: TeamEpisode }>((ep: Impl<EpisodeHandle>) => !!ep.teamEpisode.team),
+  //         A.filter<Impl<TitleHandle> & { teamEpisode: TeamEpisode }>((ep: Impl<TitleHandle>) => !!ep.teamEpisode.team),
   //         A.filter((ep) => !A.elem(Team.EqByTag)(ep.teamEpisode.team)(teams)),
   //         A.map(ep => ep.teamEpisode.team),
   //         A.uniq(Team.EqByTag)
@@ -307,10 +340,20 @@ export const _searchEpisode = async ({ titles, season, number, ...rest }: { titl
   // const newTeams = findNewTeams(episodes)(await Promise.all(teams.values()))
   // console.log('newTeams', newTeams)
 
+  console.log('7 results', episodes)
   return episodes
 }
 
-export const categories = [Category.ANIME]
+// export const categories = ['ANIME']
+
+export const searchTitles: SearchTitles = (options, extraOptions) => {
+  return from(_searchEpisode(options, extraOptions))
+  // console.log('nyaa searchTitles')
+  // if ('series' in options) {
+  //   return from(_searchEpisode(options, extraOptions))
+  // }
+  // return from([])
+}
 
 // export const getAnimeEpisode = (id: string, episode: number) =>
 //   fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })
@@ -324,23 +367,23 @@ export const categories = [Category.ANIME]
 
 // export const getEpisode: GetEpisode<true> = {
 //   scheme: 'nyaa',
-//   categories: [Category.ANIME],
+//   categories: ['ANIME'],
 //   function: (args) => console.log('getEpisode nyaa args', args)
 //     // getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
 // }
 
-addTarget({
-  name: 'Nyaa.si',
-  scheme: 'nyaa',
-  categories: [Category.ANIME],
-  searchEpisode: {
-    scheme: 'nyaa',
-    categories: [Category.ANIME],
-    latest: true,
-    pagination: true,
-    genres: true,
-    score: true,
-    function: (args) => _searchEpisode(args)
-  },
-  icon: 'https://nyaa.si/static/favicon.png'
-})
+// addTarget({
+//   name: 'Nyaa.si',
+//   scheme: 'nyaa',
+//   categories: ['ANIME'],
+//   searchEpisode: {
+//     scheme: 'nyaa',
+//     categories: ['ANIME'],
+//     latest: true,
+//     pagination: true,
+//     genres: true,
+//     score: true,
+//     function: (args) => _searchEpisode(args)
+//   },
+//   icon: 'https://nyaa.si/static/favicon.png'
+// })

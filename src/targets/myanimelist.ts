@@ -47,7 +47,7 @@ const getAnimePageId = (doc: Document) =>
 //     )
 
 const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
-  scheme: 'mal',
+  scheme,
   categories,
   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
   url: elem.querySelector<HTMLAnchorElement>('.link-title')!.href,
@@ -68,7 +68,7 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   genres:
     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
       .map(({ textContent, href, parentElement }) => populateUri({
-        scheme: 'mal',
+        scheme,
         id: href!.split('/').at(5)!,
         adult: parentElement?.classList.contains('explicit'),
         url: fixOrigin(href),
@@ -99,7 +99,7 @@ export const getAnimeSeason = () =>
     )
 
 const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
-  scheme: 'mal',
+  scheme,
   categories,
   id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
   url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
@@ -140,7 +140,7 @@ export const searchAnime = ({ search }: { search: string }) =>
     )
 
 const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
-  scheme: 'mal',
+  scheme,
   categories,
   id: elem.querySelector<HTMLElement>('[data-anime-id]')!.dataset.animeId!,
   url: elem.querySelector<HTMLAnchorElement>('.video-info-title a:last-of-type')!.href,
@@ -161,7 +161,7 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   titles:
     [...elem.querySelectorAll<HTMLAnchorElement>('.title a')]
       .map(elem => populateUri({
-        scheme: 'mal',
+        scheme,
         categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
         dates: [],
@@ -250,7 +250,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       .replaceAll('\n\n\n\n', '\n\n')!
 
   return populateUri({
-    scheme: 'mal',
+    scheme,
     categories,
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
     unit: 1,
@@ -316,7 +316,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
         const dateElem = elem.querySelector<HTMLTableCellElement>('.episode-aired')
 
         return ({
-          scheme: 'mal',
+          scheme,
           categories,
           id: `${url.split('/')[4]!}-${url.split('/')[7]!}`, // url.split('/')[7]!,
           unit: 1,
@@ -326,13 +326,15 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
             {
               language: LanguageTag.EN,
               name: englishTitle!,
-              score: 0.8
+                score: 1
+                // score: 0.8
             },
             ...japaneseEnglishTitle
               ? [{
                 language: LanguageTag.JA,
                 name: japaneseEnglishTitle,
-                score: 1
+                score: 0.8
+                // score: 1
               }]
               : [],
             ...japaneseTitle
@@ -412,7 +414,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   //     )
 
   return populateUri({
-    scheme: 'mal',
+    scheme,
     categories,
     id: url.split('/')[4]!,
     url: url,
@@ -538,10 +540,26 @@ export const searchSeries: SearchSeries = ({ ...rest }) =>
     ? from(getAnimeSeason())
     : from([])
 
-export const searchTitles: SearchTitles = ({ ...rest }, extraOptions) =>
-  'series' in rest
-    ? from(getSeriesTitles({ id: rest.series!.id }, extraOptions))
-    : from([])
+export const searchTitles: SearchTitles = (options, extraOptions) => {
+  if ('series' in options) {
+    const { series } = options
+    const id =
+      series
+        ?.uris
+        .map(fromUri)
+        .find(({ scheme }) => scheme === 'mal')
+        ?.id
+    if (!id) return from([])
+
+    if ('search' in options) {
+      const { search } = options
+      if (typeof search === 'string') return from([])
+      return from(Promise.all([getSeriesTitle(id, search.number, extraOptions)]))
+    }
+    return from(getSeriesTitles({ id }, extraOptions))
+  }
+  return from([])
+}
 
 // todo: maybe refactor this into an async iterator to better handle paginations
 const testSeriesTitles = async (limitedFetch) => {
@@ -551,7 +569,7 @@ const testSeriesTitles = async (limitedFetch) => {
   const firstTitle = titles.at(0)
   const firstTitleJSON = JSON.parse(JSON.stringify(firstTitle))
   expect(firstTitleJSON).to.deep.equal({
-    scheme: 'mal',
+    scheme,
     categories: ['ANIME'],
     id: '1-1',
     unit: 1,
@@ -561,12 +579,12 @@ const testSeriesTitles = async (limitedFetch) => {
       {
         language: 'en',
         name: 'Asteroid Blues',
-        score: 0.8
+        score: 1
       },
       {
         language: 'ja',
         name: 'Asteroid Blues',
-        score: 1
+        score: 0.8
       },
       {
         language: 'ja',
@@ -595,7 +613,7 @@ const testSeriesTitle = async (limitedFetch) => {
   const title = await getSeriesTitle('1', 1, { fetch: limitedFetch })
   const titleJSON = JSON.parse(JSON.stringify(title))
   expect(titleJSON).to.deep.equal({
-    scheme: 'mal',
+    scheme,
     categories: ['ANIME'],
     id: '1-1',
     unit: 1,
@@ -604,11 +622,11 @@ const testSeriesTitle = async (limitedFetch) => {
     names: [{
       language: 'en',
       name: 'Asteroid Blues',
-      score: 0.8
+      score: 1
     }, {
       language: 'ja',
       name: 'Asteroid Blues',
-      score: 1
+      score: 0.8
     }, {
       language: 'ja',
       name: 'アステロイド・ブルース',
@@ -635,7 +653,7 @@ const testSeries = async (limitedFetch) => {
   const series = await getSeries({ id: '1' }, { fetch: limitedFetch })
   const seriesJSON = JSON.parse(JSON.stringify(series))
   expect(seriesJSON).to.deep.equal({
-    scheme: 'mal',
+    scheme,
     categories: ['ANIME'],
     id: '1',
     url: 'https://myanimelist.net/anime/1/Cowboy_Bebop',
@@ -710,23 +728,23 @@ export const test = async () => {
 // globalThis.fetch(iconUrl)
 // addTarget({
 //   name: 'MyAnimeList',
-//   scheme: 'mal',
+//   scheme,
 //   categories,
 //   // icon: iconUrl,
 //   getTitle: {
-//     scheme: 'mal',
+//     scheme,
 //     categories,
 //     function: ({ uri, id }) =>
 //       getAnimeTitle(id ?? fromUri(uri!).id)
 //   },
 //   getEpisode: {
-//     scheme: 'mal',
+//     scheme,
 //     categories,
 //     function: ({ uri }) =>
 //       getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
 //   },
 //   searchTitle: {
-//     scheme: 'mal',
+//     scheme,
 //     categories,
 //     latest: true,
 //     pagination: true,
@@ -739,7 +757,7 @@ export const test = async () => {
 //       : Promise.resolve([])
 //   },
 //   searchEpisode: {
-//     scheme: 'mal',
+//     scheme,
 //     categories,
 //     latest: true,
 //     pagination: true,
