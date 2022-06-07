@@ -1,6 +1,6 @@
 import type { SearchTitlesOptions, TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
 
-import { from, Observable } from 'rxjs'
+import { from, merge, Observable, tap, map, first, mergeMap } from 'rxjs'
 import { flow, pipe } from 'fp-ts/lib/function'
 import * as A from 'fp-ts/lib/Array'
 import { join } from 'fp-ts-std/Array'
@@ -281,18 +281,13 @@ export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
   // return cards
 }
 
-export const _searchEpisode = async (options: SearchTitlesOptions, { fetch }: ExtraOptions): Promise<TitleHandle[]> => {
-  console.log('1')
+export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptions) => from((async () => {
   if (!('series' in options)) return Promise.resolve([])
-  console.log('2')
   if (!('search' in options)) return Promise.resolve([])
-  console.log('3')
   const { series, search: _search } = options
   if (typeof _search === 'string') return Promise.resolve([])
-  console.log('4')
   const titles = series?.names.map(({ name }) => name)
   const number = _search.number
-  console.log('4.5 titles', titles)
   
   const trustedSources = true
 
@@ -305,7 +300,6 @@ export const _searchEpisode = async (options: SearchTitlesOptions, { fetch }: Ex
       A.map((episodeName) => `(${episodeName})`),
       join('|')
     )
-  console.log('5 search', search)
 
   // const search = `${mostCommonSubnames ? mostCommonSubnames : title.names.find((name) => name.language === 'ja-en')?.name} ${number ? number.toString().padStart(2, '0') : ''}`
 
@@ -313,11 +307,13 @@ export const _searchEpisode = async (options: SearchTitlesOptions, { fetch }: Ex
   const doc =
     new DOMParser()
       .parseFromString(pageHtml, 'text/xml')
-  console.log('6 doc', doc)
   const episodes =
-    await Promise.all(
-      [...doc.querySelectorAll('item')]
+    merge(
+      ...[...doc.querySelectorAll('item')]
         .map(getItemAsEpisode)
+        .map(titleHandlePromise => from(titleHandlePromise))
+    ).pipe(
+      map(title => [title])
     )
 
   // const Team = {
@@ -340,20 +336,19 @@ export const _searchEpisode = async (options: SearchTitlesOptions, { fetch }: Ex
   // const newTeams = findNewTeams(episodes)(await Promise.all(teams.values()))
   // console.log('newTeams', newTeams)
 
-  console.log('7 results', episodes)
   return episodes
-}
+})()).pipe(mergeMap(observable => observable))
 
 // export const categories = ['ANIME']
 
-export const searchTitles: SearchTitles = (options, extraOptions) => {
-  return from(_searchEpisode(options, extraOptions))
-  // console.log('nyaa searchTitles')
-  // if ('series' in options) {
-  //   return from(_searchEpisode(options, extraOptions))
-  // }
-  // return from([])
-}
+// export const searchTitles: SearchTitles = (options, extraOptions) => {
+//   return from(_searchEpisode(options, extraOptions))
+//   // console.log('nyaa searchTitles')
+//   // if ('series' in options) {
+//   //   return from(_searchEpisode(options, extraOptions))
+//   // }
+//   // return from([])
+// }
 
 // export const getAnimeEpisode = (id: string, episode: number) =>
 //   fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })
