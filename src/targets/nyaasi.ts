@@ -1,6 +1,6 @@
 import type { SearchTitlesOptions, TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
 
-import { from, merge, Observable, tap, map, first, mergeMap } from 'rxjs'
+import { from, merge, Observable, tap, map, first, mergeMap, combineLatest, startWith, finalize, catchError } from 'rxjs'
 import { flow, pipe } from 'fp-ts/lib/function'
 import * as A from 'fp-ts/lib/Array'
 import { join } from 'fp-ts-std/Array'
@@ -124,6 +124,7 @@ type TitleMetadata = {
   name: string
   group?: string
   batch: boolean
+  meta?: string
   resolution?: Resolution
   type?: ReleaseType
 }
@@ -155,7 +156,18 @@ const getTitleFromTrustedTorrentName = (s: string): TitleMetadata => {
   }
 }
 
-const getTorrentAsEpisodeAndTeam = async (tag, url: string): Promise<[TeamEpisode, Team]> => {
+type TeamEpisode = {
+  url: string
+}
+
+type Team = {
+  tag: string
+  url: string
+  icon: string
+  name: string
+}
+
+const getTorrentAsEpisodeAndTeam = async (tag, url: string) => {
   const teamPromise = new Promise<[TeamEpisode['url'], Team]>(async resolve => {
     const pageHtml = await (await fetch(url, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })).text()
     const doc =
@@ -197,24 +209,26 @@ const getTorrentAsEpisodeAndTeam = async (tag, url: string): Promise<[TeamEpisod
   })
   addTeam(tag, teamPromise.then(res => res[1]))
   const [informationUrl, team] = await teamPromise
-  return [
-    {
+  return {
+    teamEpisode: {
       url: informationUrl
     },
     team
-  ] as [TeamEpisode, Team]
+  }
 }
 
-export const getItemAsEpisode = async (elem: HTMLElement): Promise<TitleHandle> => {
+export const getItemAsEpisode = (elem: HTMLElement): Observable<TitleHandle> => {
   const row = getItem(elem)
   // console.log(row)
   const { name, group: groupTag, meta, batch, resolution, type } = getTitleFromTrustedTorrentName(row.name)
   const number = Number(/((0\d)|(\d{2,}))/.exec(name)?.[1] ?? 1)
 
   const existingTeam = groupTag ? getTeam(groupTag) : undefined
-  const [teamEpisode, team] = existingTeam ? [undefined, await existingTeam] : await getTorrentAsEpisodeAndTeam(groupTag, row.link)
 
-  return populateUri({
+  const teamInfo = getTorrentAsEpisodeAndTeam(groupTag, row.link)
+  // const [teamEpisode, team] = existingTeam ? [undefined, await existingTeam] : await getTorrentAsEpisodeAndTeam(groupTag, row.link)
+
+  const makeTitle = ({ teamEpisode, team }: { teamEpisode: TeamEpisode | undefined, team: Team | undefined } = { teamEpisode: undefined, team: undefined }): TitleHandle => populateUri({
     id: row.link.split('/').at(4)!,
     scheme: 'nyaa',
     categories: row.category === 'anime' ? ['ANIME' as const] : [],
@@ -228,18 +242,31 @@ export const getItemAsEpisode = async (elem: HTMLElement): Promise<TitleHandle> 
     handles: [],
     recommended: [],
     tags: [{
-      type: 'batch' as const,
-      value: batch
-    }, {
-      type: 'protocol-type' as const,
-      value: 'torrent'
-    }, {
-      type: 'resolution' as const,
-      value: resolution
-    }, {
-      type: 'size' as const,
-      value: row.size
-    }],
+        type: 'batch' as const,
+        value: batch
+      }, {
+        type: 'protocol-type' as const,
+        value: 'torrent'
+      }, {
+        type: 'resolution' as const,
+        value: resolution
+      }, {
+        type: 'size' as const,
+        value: row.size
+      }, {
+        type: 'meta' as const,
+        value: meta
+      },
+      ...team ? [
+        {
+          type: 'team-episode' as const,
+          value: teamEpisode
+        }, {
+          type: 'team' as const,
+          value: team
+        },
+      ] : []
+    ],
     related: [],
     url: row.link,
     // type: 'torrent',
@@ -254,6 +281,12 @@ export const getItemAsEpisode = async (elem: HTMLElement): Promise<TitleHandle> 
     // type: getReleaseType(row.name),
     // meta
   })
+
+  return from(teamInfo).pipe(
+    map(teamInfo => makeTitle(teamInfo)),
+    startWith(makeTitle()),
+    catchError((err, item) => void console.log('ERR', err) || item)
+  )
 }
 
 export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
@@ -282,11 +315,12 @@ export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
 }
 
 export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptions) => from((async () => {
-  if (!('series' in options)) return Promise.resolve([])
-  if (!('search' in options)) return Promise.resolve([])
+  console.log('start nyaa searchTitles')
+  if (!('series' in options)) return from(Promise.resolve([]))
+  if (!('search' in options)) return from(Promise.resolve([]))
   const { series, search: _search } = options
-  if (typeof _search === 'string') return Promise.resolve([])
-  const titles = series?.names.map(({ name }) => name)
+  if (typeof _search === 'string') return from(Promise.resolve([]))
+  const names = series?.names
   const number = _search.number
   
   const trustedSources = true
@@ -294,8 +328,8 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
   // todo: check if names containing parenthesis will cause problems with nyaa.si search engine
   const search =
     pipe(
-      titles,
-      // A.map(({ name }) => name),
+      names,
+      A.map(({ name }) => name),
       A.map((name) => `${name} ${number ? number.toString().padStart(2, '0') : ''}`),
       A.map((episodeName) => `(${episodeName})`),
       join('|')
@@ -308,12 +342,9 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
     new DOMParser()
       .parseFromString(pageHtml, 'text/xml')
   const episodes =
-    merge(
-      ...[...doc.querySelectorAll('item')]
+    combineLatest(
+      [...doc.querySelectorAll('item')]
         .map(getItemAsEpisode)
-        .map(titleHandlePromise => from(titleHandlePromise))
-    ).pipe(
-      map(title => [title])
     )
 
   // const Team = {
@@ -335,7 +366,6 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
 
   // const newTeams = findNewTeams(episodes)(await Promise.all(teams.values()))
   // console.log('newTeams', newTeams)
-
   return episodes
 })()).pipe(mergeMap(observable => observable))
 
