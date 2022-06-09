@@ -4,6 +4,7 @@ import { from, merge, Observable, tap, map, first, mergeMap, combineLatest, star
 import { flow, pipe } from 'fp-ts/lib/function'
 import * as A from 'fp-ts/lib/Array'
 import { join } from 'fp-ts-std/Array'
+import pThrottle from 'p-throttle'
 
 import { getBytesFromBiByteString } from '../utils/bytes'
 import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
@@ -13,6 +14,11 @@ export const origin = 'https://nyaa.si'
 export const categories: Category[] = ['ANIME']
 export const name = 'Nyaa'
 export const scheme = 'nyaa'
+
+const throttle = pThrottle({
+	limit: 1,
+	interval: 1_000
+})
 
 type Item = {
   category: NyaaCategory
@@ -167,7 +173,8 @@ type Team = {
   name: string
 }
 
-const getTorrentAsEpisodeAndTeam = async (tag, url: string) => {
+// todo: refactor this by making it tied to an episode, right now the informationUrl is global to the tag
+const getTorrentAsEpisodeAndTeam = async (tag: string, url: string, { fetch }: ExtraOptions) => {
   const teamPromise = new Promise<[TeamEpisode['url'], Team]>(async resolve => {
     const pageHtml = await (await fetch(url, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })).text()
     const doc =
@@ -212,23 +219,32 @@ const getTorrentAsEpisodeAndTeam = async (tag, url: string) => {
   return {
     teamEpisode: {
       url: informationUrl
-    },
+    } as TeamEpisode,
     team
   }
 }
 
-export const getItemAsEpisode = (elem: HTMLElement): Observable<TitleHandle> => {
+export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Observable<TitleHandle> => {
   const row = getItem(elem)
-  // console.log(row)
   const { name, group: groupTag, meta, batch, resolution, type } = getTitleFromTrustedTorrentName(row.name)
   const number = Number(/((0\d)|(\d{2,}))/.exec(name)?.[1] ?? 1)
 
-  const existingTeam = groupTag ? getTeam(groupTag) : undefined
+  const existingTeam =
+    groupTag
+      ? getTeam(groupTag)
+      : undefined
 
-  const teamInfo = getTorrentAsEpisodeAndTeam(groupTag, row.link)
+  const teamInfo =
+    existingTeam
+      ? existingTeam.then((team) => ({ team }))
+      : (
+        groupTag
+          ? getTorrentAsEpisodeAndTeam(groupTag, row.link, { fetch })
+          : Promise.resolve(undefined)
+      )
   // const [teamEpisode, team] = existingTeam ? [undefined, await existingTeam] : await getTorrentAsEpisodeAndTeam(groupTag, row.link)
 
-  const makeTitle = ({ teamEpisode, team }: { teamEpisode: TeamEpisode | undefined, team: Team | undefined } = { teamEpisode: undefined, team: undefined }): TitleHandle => populateUri({
+  const makeTitle = ({ teamEpisode, team }: { teamEpisode?: TeamEpisode, team?: Team } = {}): TitleHandle => populateUri({
     id: row.link.split('/').at(4)!,
     scheme: 'nyaa',
     categories: row.category === 'anime' ? ['ANIME' as const] : [],
@@ -257,13 +273,16 @@ export const getItemAsEpisode = (elem: HTMLElement): Observable<TitleHandle> => 
         type: 'meta' as const,
         value: meta
       },
-      ...team ? [
+      ...team ?? groupTag ? [
+        {
+          type: 'team' as const,
+          value: team ?? { tag: groupTag }
+        }
+      ] : [],
+      ...teamEpisode ? [
         {
           type: 'team-episode' as const,
           value: teamEpisode
-        }, {
-          type: 'team' as const,
-          value: team
         },
       ] : []
     ],
@@ -314,7 +333,7 @@ export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
   // return cards
 }
 
-export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptions) => from((async () => {
+export const _searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptions) => from((async () => {
   console.log('start nyaa searchTitles')
   if (!('series' in options)) return from(Promise.resolve([]))
   if (!('search' in options)) return from(Promise.resolve([]))
@@ -344,7 +363,7 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
   const episodes =
     combineLatest(
       [...doc.querySelectorAll('item')]
-        .map(getItemAsEpisode)
+        .map(elem => getItemAsEpisode(elem, { fetch }))
     )
 
   // const Team = {
@@ -368,6 +387,11 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
   // console.log('newTeams', newTeams)
   return episodes
 })()).pipe(mergeMap(observable => observable))
+
+export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptions) => {
+  const throttledFetch: ExtraOptions['fetch'] = throttle((...args) => fetch(...args))
+  return _searchTitles(options, { fetch: throttledFetch })
+}
 
 // export const categories = ['ANIME']
 
