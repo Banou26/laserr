@@ -3,14 +3,23 @@
 // import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
 // import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
 import { from, Observable } from 'rxjs'
+import pThrottle from 'p-throttle'
+
+
 import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
 
-import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
+import { fromUri, populateUri } from '../../../scannarr/src/utils'
+import { languageToTag, LanguageTag } from '../utils'
 
 export const origin = 'https://myanimelist.net'
 export const categories: Category[] = ['ANIME']
 export const name = 'MyAnimeList'
 export const scheme = 'mal'
+
+const throttle = pThrottle({
+	limit: 4,
+	interval: 1_000
+})
 
 const fixOrigin = (url: string) => url.replace(document.location.origin, 'https://myanimelist.net')
 
@@ -87,7 +96,7 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   withDetails: false
 })
 
-export const getAnimeSeason = () =>
+export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
   fetch('https://myanimelist.net/anime/season')
     .then(async res =>
       [
@@ -486,23 +495,9 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   })
 }
 
-const getSeriesTitles = async (options: { url: string } | { id: string }, extraOptions: ExtraOptions) => {
-  const url =
-    'id' in options
-      ? getDocumentUrl(await getSeriesDocument(options, extraOptions))
-      : options.url
-
-  const res = await extraOptions.fetch(`${url}/episode`)
-
-  return getSeriesTitlesInfo(
-    new DOMParser()
-      .parseFromString(await res.text(), 'text/html')
-  )
-}
-
 export const getSeriesDocument = (options: { url: string } | { id: string }, { fetch }: ExtraOptions) =>
   fetch(
-    'id' in options
+    'id' in options && options.id
       ? `https://myanimelist.net/anime/${options.id}`
       : options.url
   )
@@ -511,9 +506,27 @@ export const getSeriesDocument = (options: { url: string } | { id: string }, { f
         .parseFromString(await res.text(), 'text/html')
     )
 
-export const getSeries = (options: { url: string } | { id: string }, { fetch }: ExtraOptions) =>
-  getSeriesDocument(options, { fetch })
-    .then(getSeriesInfo)
+const getSeriesTitles = async (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
+  const url =
+    'id' in options && options.id
+      ? getDocumentUrl(await getSeriesDocument(options, { fetch, ...extraOptions }))
+      : options.url
+
+  const res = await fetch(`${url}/episode`)
+
+  return getSeriesTitlesInfo(
+    new DOMParser()
+      .parseFromString(await res.text(), 'text/html')
+  )
+}
+
+export const getSeries = (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
+  const throttledFetch: FetchType = throttle((...args) => fetch(...args))
+  return (
+    getSeriesDocument(options, { ...extraOptions, fetch: throttledFetch })
+      .then(getSeriesInfo)
+  )
+}
 
 export const getSeriesTitle = (seriesId: string, titleId: number, { fetch }: ExtraOptions) =>
   fetch(`https://myanimelist.net/anime/${seriesId}/${seriesId}/episode/${titleId}`)
@@ -535,28 +548,33 @@ const getLatestTitles = ({ fetch }: ExtraOptions) =>
         .map(getTitleCardInfo)
     )
 
-export const searchSeries: SearchSeries = ({ ...rest }) =>
-  'latest' in rest
-    ? from(getAnimeSeason())
-    : from([])
+export const searchSeries: SearchSeries = ({ ...rest }, { fetch, ...extraOptions }) => {
+  const throttledFetch: FetchType = throttle((...args) => fetch(...args))
+  return (
+    'latest' in rest && rest.latest
+      ? from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
+      : from([])
+  )
+}
 
-export const searchTitles: SearchTitles = (options, extraOptions) => {
-  if ('series' in options) {
-    const { series } = options
+export const searchTitles: SearchTitles = (options, { fetch, ...extraOptions }) => {
+  const throttledFetch: FetchType = throttle((...args) => fetch(...args))
+  if ('series' in options && options.series) {
     const id =
-      series
-        ?.uris
+      options
+        .series
+        .uris
         .map(fromUri)
         .find(({ scheme }) => scheme === 'mal')
         ?.id
     if (!id) return from([])
 
-    if ('search' in options) {
+    if ('search' in options && options.search) {
       const { search } = options
       if (typeof search === 'string') return from([])
-      return from(Promise.all([getSeriesTitle(id, search.number, extraOptions)]))
+      return from(Promise.all([getSeriesTitle(id, search.number, { ...extraOptions, fetch: throttledFetch })]))
     }
-    return from(getSeriesTitles({ id }, extraOptions))
+    return from(getSeriesTitles({ id }, { ...extraOptions, fetch: throttledFetch }))
   }
   return from([])
 }
@@ -707,16 +725,12 @@ While developing bonds and working to catch a colorful cast of criminals, the Be
 }
 
 export const test = async () => {
-  const { default: pLimit } = await import('p-limit')
-
-  const limit = pLimit(2)
-  const limitedFetch = (input: RequestInfo, init?: RequestInit | undefined) =>
-    limit(() => fetch(input, init))
+  const throttledFetch: FetchType = throttle((...args) => fetch(...args))
 
   await Promise.all([
-    testSeriesTitles(limitedFetch),
-    testSeries(limitedFetch),
-    testSeriesTitle(limitedFetch)
+    testSeriesTitles(throttledFetch),
+    testSeries(throttledFetch),
+    testSeriesTitle(throttledFetch)
   ])
   // await new Promise(resolve => setTimeout(resolve, 10000000))
 }

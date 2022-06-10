@@ -1,13 +1,14 @@
-import type { SearchTitlesOptions, TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
+import type { SearchTitlesOptions, TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetTitle, GetTitleOptions } from '../../../scannarr/src'
+import type { AnitomyResult } from 'anitomyscript'
 
 import { from, merge, Observable, tap, map, first, mergeMap, combineLatest, startWith, finalize, catchError } from 'rxjs'
 import { flow, pipe } from 'fp-ts/lib/function'
 import * as A from 'fp-ts/lib/Array'
 import { join } from 'fp-ts-std/Array'
 import pThrottle from 'p-throttle'
-
+import anitomy from 'anitomyscript/dist/anitomyscript.bundle'
 import { getBytesFromBiByteString } from '../utils/bytes'
-import { fromUri, languageToTag, LanguageTag, populateUri } from '../utils'
+import { fromUri, populateUri } from '../../../scannarr/src/utils'
 
 
 export const origin = 'https://nyaa.si'
@@ -16,7 +17,7 @@ export const name = 'Nyaa'
 export const scheme = 'nyaa'
 
 const throttle = pThrottle({
-	limit: 1,
+	limit: 2,
 	interval: 1_000
 })
 
@@ -35,6 +36,7 @@ type Item = {
 }
 
 const nyaaCategories = ['anime', 'audio', 'literature', 'live action', 'pictures', 'software'] as const
+const nyaaSubCategories = ['english-translated'] as const
 type NyaaCategory = typeof nyaaCategories[number]
 
 const teams: Map<string, Promise<Team>> = new Map()
@@ -45,6 +47,9 @@ const removeTeam = (tag) => teams.delete(tag)
 
 const getTeam = (tag: string) => teams.get(tag)
 
+const nyaaIdToPageUrl = (id: number | string) =>
+  `https://nyaa.si/view/${id}`
+
 const stringToNyaaCategory =
   (s: string): NyaaCategory =>
     s
@@ -52,6 +57,16 @@ const stringToNyaaCategory =
       .at(0)!
       .trim()
       .toLocaleLowerCase() as NyaaCategory
+
+const nyaaCategoryCodeToCategory = (code: string) =>
+    code[0] === '1' ? 'anime'
+  : code[2] === '2' ? 'english-translated'
+  : undefined
+
+const nyaaUrlToCategory = (url: string) =>
+  nyaaCategoryCodeToCategory(
+    new URL(url).searchParams.get('c')!
+  )
 
 const getItem = (elem: HTMLElement): Item => ({
   category:
@@ -176,7 +191,7 @@ type Team = {
 // todo: refactor this by making it tied to an episode, right now the informationUrl is global to the tag
 const getTorrentAsEpisodeAndTeam = async (tag: string, url: string, { fetch }: ExtraOptions) => {
   const teamPromise = new Promise<[TeamEpisode['url'], Team]>(async resolve => {
-    const pageHtml = await (await fetch(url, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })).text()
+    const pageHtml = await (await fetch(url)).text()
     const doc =
       new DOMParser()
         .parseFromString(pageHtml, 'text/html')
@@ -185,7 +200,7 @@ const getTorrentAsEpisodeAndTeam = async (tag: string, url: string, { fetch }: E
       await (
         informationUrl
           ? (
-            fetch(informationUrl, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })
+            fetch(informationUrl)
               .then(res => res.text())
               .then(informationPageHtml => {
                 const doc =
@@ -198,7 +213,7 @@ const getTorrentAsEpisodeAndTeam = async (tag: string, url: string, { fetch }: E
                 // todo: check if this causes any issues or if we cant just keep doing that (mostly in terms of image format support)
                 // return faviconUrl
                 return (
-                  fetch(faviconUrl, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })
+                  fetch(faviconUrl)
                     .then(res => res.blob())
                     .then(blob => URL.createObjectURL(blob))
                 )
@@ -217,9 +232,10 @@ const getTorrentAsEpisodeAndTeam = async (tag: string, url: string, { fetch }: E
   addTeam(tag, teamPromise.then(res => res[1]))
   const [informationUrl, team] = await teamPromise
   return {
-    teamEpisode: {
-      url: informationUrl
-    } as TeamEpisode,
+    teamEpisode: undefined,
+    // teamEpisode: {
+    //   url: informationUrl
+    // } as TeamEpisode,
     team
   }
 }
@@ -261,8 +277,11 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
         type: 'batch' as const,
         value: batch
       }, {
-        type: 'protocol-type' as const,
-        value: 'torrent'
+        type: 'source',
+        value: {
+          type: 'torrent-file',
+          url: `https://nyaa.si/download/${row.link.split('/').at(4)!}.torrent`
+        }
       }, {
         type: 'resolution' as const,
         value: resolution
@@ -308,16 +327,16 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
   )
 }
 
-export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
+export const getAnimeTorrents = async ({ search = '' }: { search: string }, { fetch, ...extraOptions }: ExtraOptions) => {
   const trustedSources = true
-  const pageHtml = await (await fetch(`https://nyaa.si/?page=rss&f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })).text()
+  const pageHtml = await (await fetch(`https://nyaa.si/?page=rss&f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
   const doc =
     new DOMParser()
       .parseFromString(pageHtml, 'text/xml')
   const cards =
     Promise.all(
       [...doc.querySelectorAll('item')]
-        .map(getItemAsEpisode)
+        .map(elem => getItemAsEpisode(elem, { ...extraOptions, fetch }))
     )
   const [, count] =
     doc
@@ -333,10 +352,9 @@ export const getAnimeTorrents = async ({ search = '' }: { search: string }) => {
   // return cards
 }
 
-export const _searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptions) => from((async () => {
-  console.log('start nyaa searchTitles')
-  if (!('series' in options)) return from(Promise.resolve([]))
-  if (!('search' in options)) return from(Promise.resolve([]))
+export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOptions }: ExtraOptions) => from((async () => {
+  if (!('series' in options && options.series)) return from(Promise.resolve([]))
+  if (!('search' in options && options.search)) return from(Promise.resolve([]))
   const { series, search: _search } = options
   if (typeof _search === 'string') return from(Promise.resolve([]))
   const names = series?.names
@@ -356,14 +374,14 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOpti
 
   // const search = `${mostCommonSubnames ? mostCommonSubnames : title.names.find((name) => name.language === 'ja-en')?.name} ${number ? number.toString().padStart(2, '0') : ''}`
 
-  const pageHtml = await (await fetch(`https://nyaa.si/?page=rss&f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })).text()
+  const pageHtml = await (await fetch(`https://nyaa.si/?page=rss&f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
   const doc =
     new DOMParser()
       .parseFromString(pageHtml, 'text/xml')
   const episodes =
     combineLatest(
       [...doc.querySelectorAll('item')]
-        .map(elem => getItemAsEpisode(elem, { fetch }))
+        .map(elem => getItemAsEpisode(elem, { ...extraOptions, fetch }))
     )
 
   // const Team = {
@@ -393,6 +411,155 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
   return _searchTitles(options, { fetch: throttledFetch })
 }
 
+export const getTitle: GetTitle = async (options: GetTitleOptions, { fetch }: ExtraOptions) => {
+  console.log('1')
+  if (!('uri' in options && options.uri)) return undefined
+  const { id } = fromUri(options.uri) ?? options
+  console.log('2', id)
+
+  const doc =
+    new DOMParser()
+      .parseFromString(await (await fetch(nyaaIdToPageUrl(id))).text(), 'text/html')
+  console.log('3', doc)
+  const iconPath = doc.querySelector<HTMLLinkElement>('link[rel*="icon"]')?.href
+  if (!iconPath) return undefined
+  console.log('4')
+  const faviconUrl = new URL(new URL(iconPath).pathname, new URL(nyaaIdToPageUrl(id)).origin).href
+  const titleElement = doc.querySelector<HTMLHeadingElement>('body > div > div:nth-child(1) > div.panel-heading > h3')
+  const categoryElement = doc.querySelector<HTMLAnchorElement>('body > div > div:nth-child(1) > div.panel-body > div:nth-child(1) > div:nth-child(2) > a:nth-child(1)')
+  const categoryLanguageElement = doc.querySelector<HTMLAnchorElement>('body > div > div:nth-child(1) > div.panel-body > div:nth-child(1) > div:nth-child(2) > a:nth-child(2)')
+  const fileSizeElement = doc.querySelector<HTMLDivElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(4) > div:nth-child(2)')
+  const submitterElement = doc.querySelector<HTMLAnchorElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(2) > div:nth-child(2) > a')
+  const informationElement = doc.querySelector<HTMLAnchorElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(3) > div:nth-child(2) > a')
+  if (!titleElement) throw new Error(`No title element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!categoryElement) throw new Error(`No category element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!categoryLanguageElement) throw new Error(`No category language element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!fileSizeElement) throw new Error(`No file size element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!submitterElement) throw new Error(`No submitter element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!informationElement) throw new Error(`No information element found on page ${nyaaIdToPageUrl(id)}`)
+  const category = nyaaUrlToCategory(categoryElement.href)
+  const categoryLanguage = nyaaUrlToCategory(categoryLanguageElement.href)
+  const fileSize = getBytesFromBiByteString(fileSizeElement.textContent!)
+  const teamName = submitterElement.textContent!
+  const informationUrl = informationElement.textContent!
+  console.log('5')
+
+  // const { name, number, batch, resolution,  } = getTitleFromTrustedTorrentName(titleElement.innerText)
+  const anitomyResult = await anitomy(titleElement.textContent!) as AnitomyResult
+  // todo: if this is a batch (number is a list of episode numbers), should probably have a system to switch from Title -> Series -> Title[]
+  const {
+    anime_title,
+    anime_season,
+    episode_number,
+    release_information,
+    video_resolution,
+    release_group
+  } = anitomyResult
+
+  // const informationPageFavicon =
+  //   informationUrl
+  //     ? (
+  //       fetch(informationUrl)
+  //         .then(res => res.text())
+  //         .then(informationPageHtml => {
+  //           const doc =
+  //             new DOMParser()
+  //               .parseFromString(informationPageHtml, 'text/html')
+  //           const iconPath = doc.querySelector<HTMLLinkElement>('link[rel*="icon"]')?.href
+  //           if (!iconPath) return undefined
+  //           const faviconUrl = new URL(new URL(iconPath).pathname, new URL(informationUrl).origin).href
+  //           if (!faviconUrl) return undefined
+  //           // todo: check if this causes any issues or if we cant just keep doing that (mostly in terms of image format support)
+  //           // return faviconUrl
+  //           return (
+  //             fetch(faviconUrl)
+  //               .then(res => res.blob())
+  //               .then(blob => URL.createObjectURL(blob))
+  //           )
+  //         })
+  //     )
+  //     : Promise.resolve(undefined)
+
+  const team: Team = {
+    tag: release_group!,
+    name: teamName,
+    url: informationUrl,
+    icon: ''
+  }
+
+  if (Array.isArray(episode_number)) throw new Error(`Nyaa ${nyaaIdToPageUrl(id)} is batch, non supported for now`)
+
+  const makeTitleHandle = (): TitleHandle => populateUri({
+    id,
+    scheme: 'nyaa',
+    categories: category === 'anime' ? ['ANIME' as const] : [],
+    names: [{
+      language:
+        categoryLanguage === 'english-translated'
+          ? 'en'
+          : '',
+      name: anime_title!,
+      score: 0.6
+    }],
+    unit: Number(anime_season),
+    number: Number(episode_number),
+    dates: [],
+    images: [],
+    releaseDates: [],
+    synopses: [],
+    handles: [],
+    recommended: [],
+    tags: [{
+        type: 'batch' as const,
+        value: release_information?.toLowerCase() === 'batch'
+      }, {
+        type: 'source',
+        value: {
+          type: 'torrent-file',
+          url: `https://nyaa.si/download/${row.link.split('/').at(4)!}.torrent`
+        }
+      }, {
+        type: 'resolution' as const,
+        value: video_resolution
+      }, {
+        type: 'size' as const,
+        value: fileSize
+      },
+      // {
+      //   type: 'meta' as const,
+      //   value: meta
+      // },
+      ...team ?? release_group ? [
+        {
+          type: 'team' as const,
+          value: team
+        }
+      ] : [],
+      // ...teamEpisode ? [
+      //   {
+      //     type: 'team-episode' as const,
+      //     value: teamEpisode
+      //   },
+      // ] : []
+    ],
+    related: [],
+    url: nyaaIdToPageUrl(id),
+    // type: 'torrent',
+    // resolution,
+    // size: row.size,
+    // teamEpisode: {
+    //   url: undefined,
+    //   ...teamEpisode,
+    //   team: (await team)!
+    // },
+    // batch
+    // type: getReleaseType(row.name),
+    // meta
+  })
+
+  return makeTitleHandle()
+}
+
 // export const categories = ['ANIME']
 
 // export const searchTitles: SearchTitles = (options, extraOptions) => {
@@ -405,7 +572,7 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
 // }
 
 // export const getAnimeEpisode = (id: string, episode: number) =>
-//   fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`, { proxyCache: (1000 * 60 * 60 * 5).toString(), proxyDelay: (250).toString() })
+//   fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`)
 //     .then(async res =>
 //       getTitleEpisodeInfo(
 //         new DOMParser()
