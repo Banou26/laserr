@@ -530,7 +530,7 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
         }
       ] : [],
       ... descriptionElement ? [ {
-        type: 'decription',
+        type: 'description',
         value: descriptionElement.innerHTML
       }] : [],
       ...commentElements.length ? [{
@@ -549,7 +549,7 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
                   name: userLinkElement?.textContent,
                   url:
                     userLinkElement?.href
-                      ? new URL(userLinkElement.href, 'https://nyaa.si/').toString()
+                      ? userLinkElement.href.replace(document.location.origin, 'https://myanimelist.net')
                       : undefined
                 },
                 date:
