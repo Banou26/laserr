@@ -411,20 +411,13 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
   return _searchTitles(options, { fetch: throttledFetch })
 }
 
-export const getTitle: GetTitle = async (options: GetTitleOptions, { fetch }: ExtraOptions) => {
-  console.log('1')
-  if (!('uri' in options && options.uri)) return undefined
+export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOptions) => from((async () => {
+  if (!('uri' in options && options.uri)) return from([])
   const { id } = fromUri(options.uri) ?? options
-  console.log('2', id)
 
   const doc =
     new DOMParser()
       .parseFromString(await (await fetch(nyaaIdToPageUrl(id))).text(), 'text/html')
-  console.log('3', doc)
-  const iconPath = doc.querySelector<HTMLLinkElement>('link[rel*="icon"]')?.href
-  if (!iconPath) return undefined
-  console.log('4')
-  const faviconUrl = new URL(new URL(iconPath).pathname, new URL(nyaaIdToPageUrl(id)).origin).href
   const titleElement = doc.querySelector<HTMLHeadingElement>('body > div > div:nth-child(1) > div.panel-heading > h3')
   const categoryElement = doc.querySelector<HTMLAnchorElement>('body > div > div:nth-child(1) > div.panel-body > div:nth-child(1) > div:nth-child(2) > a:nth-child(1)')
   const categoryLanguageElement = doc.querySelector<HTMLAnchorElement>('body > div > div:nth-child(1) > div.panel-body > div:nth-child(1) > div:nth-child(2) > a:nth-child(2)')
@@ -442,7 +435,6 @@ export const getTitle: GetTitle = async (options: GetTitleOptions, { fetch }: Ex
   const fileSize = getBytesFromBiByteString(fileSizeElement.textContent!)
   const teamName = submitterElement.textContent!
   const informationUrl = informationElement.textContent!
-  console.log('5')
 
   // const { name, number, batch, resolution,  } = getTitleFromTrustedTorrentName(titleElement.innerText)
   const anitomyResult = await anitomy(titleElement.textContent!) as AnitomyResult
@@ -501,7 +493,7 @@ export const getTitle: GetTitle = async (options: GetTitleOptions, { fetch }: Ex
       name: anime_title!,
       score: 0.6
     }],
-    unit: Number(anime_season),
+    unit: isNaN(Number(anime_season)) ? 1 : Number(anime_season),
     number: Number(episode_number),
     dates: [],
     images: [],
@@ -516,7 +508,7 @@ export const getTitle: GetTitle = async (options: GetTitleOptions, { fetch }: Ex
         type: 'source',
         value: {
           type: 'torrent-file',
-          url: `https://nyaa.si/download/${row.link.split('/').at(4)!}.torrent`
+          url: `https://nyaa.si/download/${id}.torrent`
         }
       }, {
         type: 'resolution' as const,
@@ -557,8 +549,12 @@ export const getTitle: GetTitle = async (options: GetTitleOptions, { fetch }: Ex
     // meta
   })
 
-  return makeTitleHandle()
-}
+  // return makeTitleHandle()
+  return from([]).pipe(
+    map(teamInfo => makeTitleHandle()),
+    startWith(makeTitleHandle()),
+  )
+})()).pipe(mergeMap(observable => observable))
 
 // export const categories = ['ANIME']
 

@@ -523,8 +523,10 @@ const getSeriesTitles = async (options: { url: string } | { id: string }, { fetc
 export const getSeries = (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
   const throttledFetch: FetchType = throttle((...args) => fetch(...args))
   return (
-    getSeriesDocument(options, { ...extraOptions, fetch: throttledFetch })
-      .then(getSeriesInfo)
+    from(
+      getSeriesDocument(options, { ...extraOptions, fetch: throttledFetch })
+        .then(getSeriesInfo)
+    )
   )
 }
 
