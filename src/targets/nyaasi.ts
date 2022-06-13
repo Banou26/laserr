@@ -424,6 +424,8 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
   const fileSizeElement = doc.querySelector<HTMLDivElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(4) > div:nth-child(2)')
   const submitterElement = doc.querySelector<HTMLAnchorElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(2) > div:nth-child(2) > a')
   const informationElement = doc.querySelector<HTMLAnchorElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(3) > div:nth-child(2) > a')
+  const descriptionElement = doc.querySelector<HTMLDivElement>('#torrent-description')
+  const commentElements = [...doc.querySelectorAll<HTMLDivElement>('#comments .comment-panel')]
   if (!titleElement) throw new Error(`No title element found on page ${nyaaIdToPageUrl(id)}`)
   if (!categoryElement) throw new Error(`No category element found on page ${nyaaIdToPageUrl(id)}`)
   if (!categoryLanguageElement) throw new Error(`No category language element found on page ${nyaaIdToPageUrl(id)}`)
@@ -527,6 +529,38 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
           value: team
         }
       ] : [],
+      ... descriptionElement ? [ {
+        type: 'decription',
+        value: descriptionElement.innerHTML
+      }] : [],
+      ...commentElements.length ? [{
+        type: 'comments' as const,
+        value: (
+          commentElements
+            .map(commentElement => {
+              const userLinkElement = commentElement.querySelector<HTMLAnchorElement>('div > div.col-md-2 > p > a')
+              const userImageElement = commentElement.querySelector<HTMLImageElement>('div > div.col-md-2 > img')
+              const postDateElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-details > a > small')
+              const commentMessageElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-body')
+
+              return {
+                user: {
+                  avatar: userImageElement?.src,
+                  name: userLinkElement?.textContent,
+                  url:
+                    userLinkElement?.href
+                      ? new URL(userLinkElement.href, 'https://nyaa.si/').toString()
+                      : undefined
+                },
+                date:
+                  postDateElement?.textContent
+                    ? new Date(postDateElement.textContent)
+                    : undefined,
+                message: commentMessageElement?.textContent
+              }
+            })
+        )
+      }] : []
       // ...teamEpisode ? [
       //   {
       //     type: 'team-episode' as const,
