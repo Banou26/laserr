@@ -72,60 +72,67 @@ const getItem = (elem: HTMLElement): Item => ({
   category:
     stringToNyaaCategory(
       elem
-        .querySelector('category')
+        .querySelector('td:nth-child(1)')
         ?.textContent!
     ),
   english:
     elem
-      .querySelector('category')
-      ?.textContent
+      .querySelector('td:nth-child(1) a')
+      ?.getAttribute('title')
       ?.trim()
       .includes('English-translated')!,
-  link:
-    elem
-      .querySelector('guid')
-      ?.textContent!,
+  link: 
+    new URL(
+      elem
+        .querySelector('td:nth-child(2)')
+        ?.querySelector('a')
+        ?.getAttribute('href')
+        ?.replace('#comments', '')!,
+      'https://nyaa.si'
+    ).href,
   name:
-    elem
-      .querySelector('title')
-      ?.textContent!,
+    (
+      elem.querySelector('td:nth-child(2)')?.querySelector('a:nth-child(2)')
+      ?? elem.querySelector('td:nth-child(2)')?.querySelector('a')
+    )?.getAttribute('title')!,
   torrentUrl:
     elem
-      .querySelector('link')
-      ?.textContent!,
-  // magnet:
-  //   elem
-  //     .querySelector('td:nth-child(3)')
-  //     ?.querySelector('a:nth-child(2)')
-  //     ?.getAttribute('href')!,
+      .querySelector('td:nth-child(3)')
+      ?.querySelector('a:nth-child(1)')
+      ?.getAttribute('href')!,
+  magnet:
+    elem
+      .querySelector('td:nth-child(3)')
+      ?.querySelector('a:nth-child(2)')
+      ?.getAttribute('href')!,
   size:
     getBytesFromBiByteString(
       elem
-        .querySelector('size')
+        .querySelector('td:nth-child(4)')
         ?.textContent!
     ),
   uploadDate:
     new Date(
       elem
-        .querySelector('pubDate')
+        .querySelector('td:nth-child(5)')
         ?.textContent!
     ),
   seeders:
     Number(
       elem
-        .querySelector('seeders')
+        .querySelector('td:nth-child(6)')
         ?.textContent!
     ),
   leechers:
     Number(
       elem
-        .querySelector('leechers')
+        .querySelector('td:nth-child(7)')
         ?.textContent!
     ),
   downloads:
     Number(
       elem
-        .querySelector('downloads')
+        .querySelector('td:nth-child(8)')
         ?.textContent!
     )
 })
@@ -280,7 +287,10 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
         type: 'source',
         value: {
           type: 'torrent-file',
-          url: `https://nyaa.si/download/${row.link.split('/').at(4)!}.torrent`
+          url: `https://nyaa.si/download/${row.link.split('/').at(4)!}.torrent`,
+          seeders: row.seeders,
+          leechers: row.leechers,
+          magnetUri: row.magnet
         }
       }, {
         type: 'resolution' as const,
@@ -329,13 +339,14 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
 
 export const getAnimeTorrents = async ({ search = '' }: { search: string }, { fetch, ...extraOptions }: ExtraOptions) => {
   const trustedSources = true
-  const pageHtml = await (await fetch(`https://nyaa.si/?page=rss&f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
+  const pageHtml = await (await fetch(`https://nyaa.si/?f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
   const doc =
     new DOMParser()
-      .parseFromString(pageHtml, 'text/xml')
+      .parseFromString(pageHtml, 'text/html')
   const cards =
     Promise.all(
-      [...doc.querySelectorAll('item')]
+      [...doc.querySelectorAll('tr')]
+        .slice(1)
         .map(elem => getItemAsEpisode(elem, { ...extraOptions, fetch }))
     )
   const [, count] =
@@ -374,13 +385,14 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
 
   // const search = `${mostCommonSubnames ? mostCommonSubnames : title.names.find((name) => name.language === 'ja-en')?.name} ${number ? number.toString().padStart(2, '0') : ''}`
 
-  const pageHtml = await (await fetch(`https://nyaa.si/?page=rss&f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
+  const pageHtml = await (await fetch(`https://nyaa.si/?f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
   const doc =
     new DOMParser()
-      .parseFromString(pageHtml, 'text/xml')
+      .parseFromString(pageHtml, 'text/html')
   const episodes =
     combineLatest(
-      [...doc.querySelectorAll('item')]
+      [...doc.querySelectorAll('tr')]
+        .slice(1)
         .map(elem => getItemAsEpisode(elem, { ...extraOptions, fetch }))
     )
 
@@ -426,17 +438,26 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
   const informationElement = doc.querySelector<HTMLAnchorElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(3) > div:nth-child(2) > a')
   const descriptionElement = doc.querySelector<HTMLDivElement>('#torrent-description')
   const commentElements = [...doc.querySelectorAll<HTMLDivElement>('#comments .comment-panel')]
+  const seedersElement = doc.querySelector<HTMLSpanElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(2) > div:nth-child(4) > span')
+  const leechersElement = doc.querySelector<HTMLSpanElement>('body > div > div.panel.panel-success > div.panel-body > div:nth-child(3) > div:nth-child(4) > span')
+  const magnetElement = doc.querySelector<HTMLAnchorElement>('body > div > div.panel.panel-success > div.panel-footer.clearfix > a.card-footer-item')
   if (!titleElement) throw new Error(`No title element found on page ${nyaaIdToPageUrl(id)}`)
   if (!categoryElement) throw new Error(`No category element found on page ${nyaaIdToPageUrl(id)}`)
   if (!categoryLanguageElement) throw new Error(`No category language element found on page ${nyaaIdToPageUrl(id)}`)
   if (!fileSizeElement) throw new Error(`No file size element found on page ${nyaaIdToPageUrl(id)}`)
   if (!submitterElement) throw new Error(`No submitter element found on page ${nyaaIdToPageUrl(id)}`)
   if (!informationElement) throw new Error(`No information element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!seedersElement) throw new Error(`No seeders element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!leechersElement) throw new Error(`No leechers element found on page ${nyaaIdToPageUrl(id)}`)
+  if (!magnetElement) throw new Error(`No magnet element found on page ${nyaaIdToPageUrl(id)}`)
   const category = nyaaUrlToCategory(categoryElement.href)
   const categoryLanguage = nyaaUrlToCategory(categoryLanguageElement.href)
   const fileSize = getBytesFromBiByteString(fileSizeElement.textContent!)
   const teamName = submitterElement.textContent!
   const informationUrl = informationElement.textContent!
+  const seeders = Number(seedersElement.textContent)
+  const leechers = Number(leechersElement.textContent)
+  const magnetUri = magnetElement.href
 
   // const { name, number, batch, resolution,  } = getTitleFromTrustedTorrentName(titleElement.innerText)
   const anitomyResult = await anitomy(titleElement.textContent!) as AnitomyResult
@@ -510,7 +531,10 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
         type: 'source',
         value: {
           type: 'torrent-file',
-          url: `https://nyaa.si/download/${id}.torrent`
+          url: `https://nyaa.si/download/${id}.torrent`,
+          seeders,
+          leechers,
+          magnetUri
         }
       }, {
         type: 'resolution' as const,
