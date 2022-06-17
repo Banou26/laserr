@@ -136,7 +136,7 @@ const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   withDetails: false
 })
 
-export const searchAnime = ({ search }: { search: string }) =>
+export const searchAnime = ({ search }: { search: string }, { fetch }: ExtraOptions) =>
   fetch(`https://myanimelist.net/anime.php?${new URLSearchParams(`q=${search}`).toString()}&cat=anime`)
     .then(async res =>
       [
@@ -553,9 +553,9 @@ const getLatestTitles = ({ fetch }: ExtraOptions) =>
 export const searchSeries: SearchSeries = ({ ...rest }, { fetch, ...extraOptions }) => {
   const throttledFetch: FetchType = throttle((...args) => fetch(...args))
   return (
-    'latest' in rest && rest.latest
-      ? from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
-      : from([])
+    'latest' in rest && rest.latest ? from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
+    : 'search' in rest && typeof rest.search === 'string' ? from(searchAnime({ search: rest.search }, { ...extraOptions, fetch: throttledFetch }))
+    : from([])
   )
 }
 
