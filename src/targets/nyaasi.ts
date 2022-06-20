@@ -573,7 +573,7 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
                   name: userLinkElement?.textContent,
                   url:
                     userLinkElement?.href
-                      ? userLinkElement.href.replace(document.location.origin, 'https://myanimelist.net')
+                      ? userLinkElement.href.replace(document.location.origin, 'https://nyaa.si')
                       : undefined
                 },
                 date:
@@ -626,7 +626,7 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
 // }
 
 // export const getAnimeEpisode = (id: string, episode: number) =>
-//   fetch(`https://myanimelist.net/anime/${id}/${id}/episode/${episode}`)
+//   fetch(`https://nyaa.si/anime/${id}/${id}/episode/${episode}`)
 //     .then(async res =>
 //       getTitleEpisodeInfo(
 //         new DOMParser()
