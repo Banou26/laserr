@@ -1,7 +1,15 @@
-import type { SearchSeries } from '../../../../scannarr/src'
-import { MediaSeason, MediaFormat } from './types'
+import type { Category, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { MediaSeason, MediaFormat, Media } from './types'
 
-import { from } from 'rxjs'
+import { from, combineLatest, startWith, map } from 'rxjs'
+
+import { populateUri } from '../../../../scannarr/src/utils/uri'
+import { LanguageTag } from '../../utils'
+
+export const origin = 'https://anilist.co'
+export const categories: Category[] = ['ANIME']
+export const name = 'Anilist'
+export const scheme = 'anilist'
 
 const searchQuery = `query (
 	$season: MediaSeason,
@@ -189,13 +197,100 @@ const getCurrentSeason = (offset = 0, date = new Date()): { season: MediaSeason,
   }
 }
 
+const fetchSeason = () => {
+
+}
+
+const mediaToSeriesHandle = (media: Media): SeriesHandle => populateUri({
+  scheme,
+  categories,
+  id: media.id.toString(),
+  url: media.siteUrl ?? undefined,
+  names:
+    Object
+    .entries(media.title ?? {})
+    .filter(([, name]) => name)
+    .map(([language, name]) => ({
+      name: name!,
+      language:
+        language === 'english' ? LanguageTag.EN
+        : language === 'romaji' ? LanguageTag.JA
+        // language === 'native'
+        : LanguageTag.JA,
+      score:
+        language === 'romaji' ? 1
+        : language === 'english' ? 0.8
+        // language === 'native'
+        : 0.6
+    })),
+  dates:
+    media.startDate?.year
+      ? [{
+        language: 'jp',
+        start: new Date(media.startDate?.year, media.startDate?.month, media.startDate?.day),
+        end:
+          media.endDate?.year
+            ? new Date(media.endDate?.year, media.endDate?.month, media.endDate?.day)
+            : undefined
+      }]
+      : [],
+  images: [
+    ...media.coverImage ? [{
+      type: 'poster' as const,
+      size:
+        media.coverImage.extraLarge ? 'large' as const
+        : media.coverImage.large ? 'medium' as const
+        // media.coverImage.medium
+        : 'small' as const,
+      url:
+        (media.coverImage.extraLarge
+        ?? media.coverImage.large
+        ?? media.coverImage.medium)!
+    }] : [],
+    ...media.bannerImage ? [{
+      type: 'image' as const,
+      size: 'large' as const,
+      url: media.bannerImage!
+    }] : [],
+  ],
+  synopses: media.description ? [{
+    language: 'en',
+    synopsis: media.description
+  }] : [],
+  related: [],
+  handles: [],
+  titles: [],
+  recommended: [],
+  tags: [],
+  genres: [],
+  withDetails: false
+})
+
+// todo: add support for multiple graphql response pages
+const getSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, page?: number }): Promise<SeriesHandle[]> =>
+  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, page })
+    .then(response => response.json())
+    .then(json => {
+      const medias: Media[] = json.data.Page.media
+      return medias.map(mediaToSeriesHandle)
+    })
+
 export const searchSeries: SearchSeries = ({ ...rest }) => {
   if ('latest' in rest && rest.latest) {
     const { season, year } = getCurrentSeason()
-    const { season: previousSeason, year: previousYear } = getCurrentSeason()
-    const result = fetchMediaSeason({ season, year })
-    const leftOvers = fetchMediaSeason({ season: previousSeason, year: previousYear, minEpisodes: 16 })
-    return from()
+    const { season: previousSeason, year: previousSeasonYear } = getCurrentSeason()
+    const result = getSeason({ season, year })
+    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear, minEpisodes: 16 })
+    return combineLatest([
+      from(result),
+      from(leftOvers)
+    ]).pipe(
+      startWith([]),
+      map(seriesHandles =>
+        seriesHandles
+          .flat()
+      )
+    )
   }
 
   return from([])
