@@ -152,8 +152,8 @@ const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }
   })
 
 // from https://anichart.net/js/app.b1e2a7ec.js
-const getSeason = (offset = 0, date = new Date()): { season: MediaSeason, year: number } => {
-  if (offset > 12 || offset < -12) throw new Error("Anilist getSeason does not support offset months greater than 12")
+const getCurrentSeason = (offset = 0, date = new Date()): { season: MediaSeason, year: number } => {
+  if (offset > 12 || offset < -12) throw new Error("Anilist getCurrentSeason does not support offset months greater than 12")
   let currentYear = date.getFullYear()
   let currentMonth = date.getMonth() + offset
 
@@ -191,8 +191,8 @@ const getSeason = (offset = 0, date = new Date()): { season: MediaSeason, year: 
 
 export const searchSeries: SearchSeries = ({ ...rest }) => {
   if ('latest' in rest && rest.latest) {
-    const { season, year } = getSeason()
-    const { season: previousSeason, year: previousYear } = getSeason()
+    const { season, year } = getCurrentSeason()
+    const { season: previousSeason, year: previousYear } = getCurrentSeason()
     const result = fetchMediaSeason({ season, year })
     const leftOvers = fetchMediaSeason({ season: previousSeason, year: previousYear, minEpisodes: 16 })
     return from()
