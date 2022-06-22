@@ -1,10 +1,13 @@
-import type { Category, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { Category, Handle, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
 import type { MediaSeason, MediaFormat, Media } from './types'
 
-import { from, combineLatest, startWith, map } from 'rxjs'
+import { from, combineLatest, startWith, map, tap } from 'rxjs'
 
 import { populateUri } from '../../../../scannarr/src/utils/uri'
 import { LanguageTag } from '../../utils'
+import * as A from 'fp-ts/lib/Array'
+import { pipe } from 'fp-ts/lib/function'
+import { Uri } from '../../../../scannarr/src/utils'
 
 export const origin = 'https://anilist.co'
 export const categories: Category[] = ['ANIME']
@@ -130,20 +133,21 @@ const seasonVariables = {season: "SUMMER", year: 2022, format: "TV", page: 1}
 const seasonVariables2 = {season: "SUMMER", year: 2022, excludeFormat: "TV", page: 1}
 const seasonVariables3 = {season: "SPRING", year: 2022, minEpisodes: 16, page: 1}
 
-fetch("https://graphql.anilist.co/", {
-  "headers": {
-    "content-type": "application/json"
-  },
-  "referrer": "https://anichart.net/",
-  "referrerPolicy": "strict-origin-when-cross-origin",
-  "body": "{\"query\":\"query (\\n\\t$season: MediaSeason,\\n\\t$year: Int,\\n\\t$format: MediaFormat,\\n\\t$excludeFormat: MediaFormat,\\n\\t$status: MediaStatus,\\n\\t$minEpisodes: Int,\\n\\t$page: Int,\\n){\\n\\tPage(page: $page) {\\n\\t\\tpageInfo {\\n\\t\\t\\thasNextPage\\n\\t\\t\\ttotal\\n\\t\\t}\\n\\t\\tmedia(\\n\\t\\t\\tseason: $season\\n\\t\\t\\tseasonYear: $year\\n\\t\\t\\tformat: $format,\\n\\t\\t\\tformat_not: $excludeFormat,\\n\\t\\t\\tstatus: $status,\\n\\t\\t\\tepisodes_greater: $minEpisodes,\\n\\t\\t\\tisAdult: false,\\n\\t\\t\\ttype: ANIME,\\n\\t\\t\\tsort: TITLE_ROMAJI,\\n\\t\\t) {\\n\\t\\t\\t\\nid\\nidMal\\ntitle {\\n\\tromaji\\n\\tnative\\n\\tenglish\\n}\\nstartDate {\\n\\tyear\\n\\tmonth\\n\\tday\\n}\\nendDate {\\n\\tyear\\n\\tmonth\\n\\tday\\n}\\nstatus\\nseason\\nformat\\ngenres\\nsynonyms\\nduration\\npopularity\\nepisodes\\nsource(version: 2)\\ncountryOfOrigin\\nhashtag\\naverageScore\\nsiteUrl\\ndescription\\nbannerImage\\nisAdult\\ncoverImage {\\n\\textraLarge\\n\\tcolor\\n}\\ntrailer {\\n\\tid\\n\\tsite\\n\\tthumbnail\\n}\\nexternalLinks {\\n\\tsite\\n\\turl\\n}\\nrankings {\\n\\trank\\n\\ttype\\n\\tseason\\n\\tallTime\\n}\\nstudios(isMain: true) {\\n\\tnodes {\\n\\t\\tid\\n\\t\\tname\\n\\t\\tsiteUrl\\n\\t}\\n}\\nrelations {\\n\\tedges {\\n\\t\\trelationType(version: 2)\\n\\t\\tnode {\\n\\t\\t\\tid\\n\\t\\t\\ttitle {\\n\\t\\t\\t\\tromaji\\n\\t\\t\\t\\tnative\\n\\t\\t\\t\\tenglish\\n\\t\\t\\t}\\n\\t\\t\\tsiteUrl\\n\\t\\t}\\n\\t}\\n}\\n\\nairingSchedule(\\n\\tnotYetAired: true\\n\\tperPage: 2\\n) {\\n\\tnodes {\\n\\t\\tepisode\\n\\t\\tairingAt\\n\\t}\\n}\\n\\n\\t\\t}\\n\\t}\\n}\",\"variables\":{\"season\":\"SUMMER\",\"year\":2022,\"excludeFormat\":\"TV\",\"page\":1}}",
-  "method": "POST",
-  "mode": "cors",
-  "credentials": "omit"
-});
+// fetch("https://graphql.anilist.co/", {
+//   "headers": {
+//     "content-type": "application/json"
+//   },
+//   "referrer": "https://anichart.net/",
+//   "referrerPolicy": "strict-origin-when-cross-origin",
+//   "body": "{\"query\":\"query (\\n\\t$season: MediaSeason,\\n\\t$year: Int,\\n\\t$format: MediaFormat,\\n\\t$excludeFormat: MediaFormat,\\n\\t$status: MediaStatus,\\n\\t$minEpisodes: Int,\\n\\t$page: Int,\\n){\\n\\tPage(page: $page) {\\n\\t\\tpageInfo {\\n\\t\\t\\thasNextPage\\n\\t\\t\\ttotal\\n\\t\\t}\\n\\t\\tmedia(\\n\\t\\t\\tseason: $season\\n\\t\\t\\tseasonYear: $year\\n\\t\\t\\tformat: $format,\\n\\t\\t\\tformat_not: $excludeFormat,\\n\\t\\t\\tstatus: $status,\\n\\t\\t\\tepisodes_greater: $minEpisodes,\\n\\t\\t\\tisAdult: false,\\n\\t\\t\\ttype: ANIME,\\n\\t\\t\\tsort: TITLE_ROMAJI,\\n\\t\\t) {\\n\\t\\t\\t\\nid\\nidMal\\ntitle {\\n\\tromaji\\n\\tnative\\n\\tenglish\\n}\\nstartDate {\\n\\tyear\\n\\tmonth\\n\\tday\\n}\\nendDate {\\n\\tyear\\n\\tmonth\\n\\tday\\n}\\nstatus\\nseason\\nformat\\ngenres\\nsynonyms\\nduration\\npopularity\\nepisodes\\nsource(version: 2)\\ncountryOfOrigin\\nhashtag\\naverageScore\\nsiteUrl\\ndescription\\nbannerImage\\nisAdult\\ncoverImage {\\n\\textraLarge\\n\\tcolor\\n}\\ntrailer {\\n\\tid\\n\\tsite\\n\\tthumbnail\\n}\\nexternalLinks {\\n\\tsite\\n\\turl\\n}\\nrankings {\\n\\trank\\n\\ttype\\n\\tseason\\n\\tallTime\\n}\\nstudios(isMain: true) {\\n\\tnodes {\\n\\t\\tid\\n\\t\\tname\\n\\t\\tsiteUrl\\n\\t}\\n}\\nrelations {\\n\\tedges {\\n\\t\\trelationType(version: 2)\\n\\t\\tnode {\\n\\t\\t\\tid\\n\\t\\t\\ttitle {\\n\\t\\t\\t\\tromaji\\n\\t\\t\\t\\tnative\\n\\t\\t\\t\\tenglish\\n\\t\\t\\t}\\n\\t\\t\\tsiteUrl\\n\\t\\t}\\n\\t}\\n}\\n\\nairingSchedule(\\n\\tnotYetAired: true\\n\\tperPage: 2\\n) {\\n\\tnodes {\\n\\t\\tepisode\\n\\t\\tairingAt\\n\\t}\\n}\\n\\n\\t\\t}\\n\\t}\\n}\",\"variables\":{\"season\":\"SUMMER\",\"year\":2022,\"excludeFormat\":\"TV\",\"page\":1}}",
+//   "method": "POST",
+//   "mode": "cors",
+//   "credentials": "omit"
+// });
 
 const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, page?: number }) =>
   fetch('https://graphql.anilist.co/', {
+    method: 'POST',
     "headers": {
       "content-type": "application/json"
     },
@@ -275,6 +279,12 @@ const getSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { sea
       return medias.map(mediaToSeriesHandle)
     })
 
+const Handle = {
+  EqByUri: {
+    equals: (handle: Handle, handle2: Handle) => handle.uri === handle2.uri
+  }
+}
+
 export const searchSeries: SearchSeries = ({ ...rest }) => {
   if ('latest' in rest && rest.latest) {
     const { season, year } = getCurrentSeason()
@@ -287,9 +297,12 @@ export const searchSeries: SearchSeries = ({ ...rest }) => {
     ]).pipe(
       startWith([]),
       map(seriesHandles =>
-        seriesHandles
-          .flat()
-      )
+          pipe(
+            seriesHandles.flat(),
+            A.uniq(Handle.EqByUri),
+          )
+      ),
+      tap(val => console.log('val', val))
     )
   }
 
