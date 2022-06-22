@@ -6,7 +6,7 @@ import { from, Observable } from 'rxjs'
 import pThrottle from 'p-throttle'
 
 
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions } from '../../../scannarr/src'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from '../../../scannarr/src'
 
 import { fromUri, populateUri } from '../../../scannarr/src/utils'
 import { languageToTag, LanguageTag } from '../utils'
@@ -520,7 +520,7 @@ const getSeriesTitles = async (options: { url: string } | { id: string }, { fetc
   )
 }
 
-export const getSeries = (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
+export const getSeries: GetSeries = (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
   const throttledFetch: FetchType = throttle((...args) => fetch(...args))
   return (
     from(
