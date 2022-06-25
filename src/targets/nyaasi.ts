@@ -10,7 +10,6 @@ import anitomy from 'anitomyscript/dist/anitomyscript.bundle'
 import { getBytesFromBiByteString } from '../utils/bytes'
 import { fromUri, populateUri } from '../../../scannarr/src/utils'
 
-
 export const origin = 'https://nyaa.si'
 export const categories: Category[] = ['ANIME']
 export const name = 'Nyaa'
@@ -274,16 +273,11 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
     names: [{ language: row.english ? 'en' : '', name, score: 0.6 }],
     unit: 1,
     number,
-    dates: [],
-    images: [],
-    releaseDates: [],
-    synopses: [],
-    handles: [],
-    recommended: [],
+    batch: batch,
+    resolution: resolution,
+    size: row.size,
+    team: team ?? { tag: groupTag },
     tags: [{
-        type: 'batch' as const,
-        value: batch
-      }, {
         type: 'source',
         value: {
           type: 'torrent-file',
@@ -293,27 +287,15 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
           magnetUri: row.magnet
         }
       }, {
-        type: 'resolution' as const,
-        value: resolution
-      }, {
-        type: 'size' as const,
-        value: row.size
-      }, {
         type: 'meta' as const,
         value: meta
       },
-      ...team ?? groupTag ? [
-        {
-          type: 'team' as const,
-          value: team ?? { tag: groupTag }
-        }
-      ] : [],
-      ...teamEpisode ? [
-        {
-          type: 'team-episode' as const,
-          value: teamEpisode
-        },
-      ] : []
+      // ...teamEpisode ? [
+      //   {
+      //     type: 'team-episode' as const,
+      //     value: teamEpisode
+      //   },
+      // ] : []
     ],
     related: [],
     url: row.link,
@@ -507,7 +489,32 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
   const makeTitleHandle = (): TitleHandle => populateUri({
     id,
     scheme: 'nyaa',
+    batch: release_information?.toLowerCase() === 'batch',
     categories: category === 'anime' ? ['ANIME' as const] : [],
+    comments:
+      commentElements
+        .map(commentElement => {
+          const userLinkElement = commentElement.querySelector<HTMLAnchorElement>('div > div.col-md-2 > p > a')
+          const userImageElement = commentElement.querySelector<HTMLImageElement>('div > div.col-md-2 > img')
+          const postDateElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-details > a > small')
+          const commentMessageElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-body')
+
+          return {
+            user: {
+              avatar: userImageElement?.src,
+              name: userLinkElement?.textContent!,
+              url:
+                userLinkElement?.href
+                  ? userLinkElement.href.replace(document.location.origin, 'https://nyaa.si')
+                  : undefined
+            },
+            date:
+              postDateElement?.textContent
+                ? new Date(postDateElement.textContent)
+                : undefined,
+            message: commentMessageElement?.textContent!
+          }
+        }),
     names: [{
       language:
         categoryLanguage === 'english-translated'
@@ -518,16 +525,10 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
     }],
     unit: isNaN(Number(anime_season)) ? 1 : Number(anime_season),
     number: Number(episode_number),
-    dates: [],
-    images: [],
-    releaseDates: [],
-    synopses: [],
-    handles: [],
-    recommended: [],
+    size: fileSize,
+    resolution: Number(video_resolution) as Resolution,
+    description: descriptionElement?.innerHTML ?? undefined,
     tags: [{
-        type: 'batch' as const,
-        value: release_information?.toLowerCase() === 'batch'
-      }, {
         type: 'source',
         value: {
           type: 'torrent-file',
@@ -536,124 +537,15 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
           leechers,
           magnetUri
         }
-      }, {
-        type: 'resolution' as const,
-        value: video_resolution
-      }, {
-        type: 'size' as const,
-        value: fileSize
-      },
-      // {
-      //   type: 'meta' as const,
-      //   value: meta
-      // },
-      ...team ?? release_group ? [
-        {
-          type: 'team' as const,
-          value: team
-        }
-      ] : [],
-      ... descriptionElement ? [ {
-        type: 'description',
-        value: descriptionElement.innerHTML
-      }] : [],
-      ...commentElements.length ? [{
-        type: 'comments' as const,
-        value: (
-          commentElements
-            .map(commentElement => {
-              const userLinkElement = commentElement.querySelector<HTMLAnchorElement>('div > div.col-md-2 > p > a')
-              const userImageElement = commentElement.querySelector<HTMLImageElement>('div > div.col-md-2 > img')
-              const postDateElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-details > a > small')
-              const commentMessageElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-body')
-
-              return {
-                user: {
-                  avatar: userImageElement?.src,
-                  name: userLinkElement?.textContent,
-                  url:
-                    userLinkElement?.href
-                      ? userLinkElement.href.replace(document.location.origin, 'https://nyaa.si')
-                      : undefined
-                },
-                date:
-                  postDateElement?.textContent
-                    ? new Date(postDateElement.textContent)
-                    : undefined,
-                message: commentMessageElement?.textContent
-              }
-            })
-        )
-      }] : []
-      // ...teamEpisode ? [
-      //   {
-      //     type: 'team-episode' as const,
-      //     value: teamEpisode
-      //   },
-      // ] : []
+      }
     ],
+    team: team ?? (release_group ? team : undefined),
     related: [],
-    url: nyaaIdToPageUrl(id),
-    // type: 'torrent',
-    // resolution,
-    // size: row.size,
-    // teamEpisode: {
-    //   url: undefined,
-    //   ...teamEpisode,
-    //   team: (await team)!
-    // },
-    // batch
-    // type: getReleaseType(row.name),
-    // meta
+    url: nyaaIdToPageUrl(id)
   })
 
-  // return makeTitleHandle()
   return from([]).pipe(
     map(teamInfo => makeTitleHandle()),
     startWith(makeTitleHandle()),
   )
 })()).pipe(mergeMap(observable => observable))
-
-// export const categories = ['ANIME']
-
-// export const searchTitles: SearchTitles = (options, extraOptions) => {
-//   return from(_searchEpisode(options, extraOptions))
-//   // console.log('nyaa searchTitles')
-//   // if ('series' in options) {
-//   //   return from(_searchEpisode(options, extraOptions))
-//   // }
-//   // return from([])
-// }
-
-// export const getAnimeEpisode = (id: string, episode: number) =>
-//   fetch(`https://nyaa.si/anime/${id}/${id}/episode/${episode}`)
-//     .then(async res =>
-//       getTitleEpisodeInfo(
-//         new DOMParser()
-//           .parseFromString(await res.text(), 'text/html')
-//       )
-//     )
-
-
-// export const getEpisode: GetEpisode<true> = {
-//   scheme: 'nyaa',
-//   categories: ['ANIME'],
-//   function: (args) => console.log('getEpisode nyaa args', args)
-//     // getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
-// }
-
-// addTarget({
-//   name: 'Nyaa.si',
-//   scheme: 'nyaa',
-//   categories: ['ANIME'],
-//   searchEpisode: {
-//     scheme: 'nyaa',
-//     categories: ['ANIME'],
-//     latest: true,
-//     pagination: true,
-//     genres: true,
-//     score: true,
-//     function: (args) => _searchEpisode(args)
-//   },
-//   icon: 'https://nyaa.si/static/favicon.png'
-// })
