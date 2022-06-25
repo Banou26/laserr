@@ -11,6 +11,7 @@ import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandl
 import { fromUri, populateUri } from '../../../scannarr/src/utils'
 import { languageToTag, LanguageTag } from '../utils'
 
+export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const origin = 'https://myanimelist.net'
 export const categories: Category[] = ['ANIME']
 export const name = 'MyAnimeList'
@@ -56,6 +57,10 @@ const getAnimePageId = (doc: Document) =>
 //     )
 
 const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+  averageScore:
+    elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
+      ? undefined
+      : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()),
   scheme,
   categories,
   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
@@ -70,19 +75,24 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
     language: LanguageTag.JA,
     name: elem.querySelector('.h2_anime_title')!.textContent!.trim()!
   }],
+  popularity:
+    (elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('M') ? 1_000_000
+      : elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('K') ? 1_000
+      : 1)
+    * Number(elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.trim().replace('K', '').replace('M', '')),
   synopses: [{
     language: LanguageTag.EN,
     synopsis: elem.querySelector('.preline')!.textContent!.trim()!
   }],
   genres:
     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
-      .map(({ textContent, href, parentElement }) => populateUri({
-        scheme,
-        id: href!.split('/').at(5)!,
+      .map(({ textContent, href, parentElement }) => ({
+        // scheme,
+        // id: href!.split('/').at(5)!,
         adult: parentElement?.classList.contains('explicit'),
-        url: fixOrigin(href),
+        // url: fixOrigin(href),
         name: textContent?.trim()!,
-        categories
+        // categories
       })),
   dates: [{
     language: LanguageTag.EN,
@@ -149,6 +159,10 @@ export const searchAnime = ({ search }: { search: string }, { fetch }: ExtraOpti
     )
 
 const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+  averageScore:
+    elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
+      ? undefined
+      : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()),
   scheme,
   categories,
   id: elem.querySelector<HTMLElement>('[data-anime-id]')!.dataset.animeId!,
@@ -163,6 +177,11 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
     language: LanguageTag.JA,
     name: elem.querySelector('.mr4')!.textContent!.trim()
   }],
+  popularity:
+    (elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('M') ? 1_000_000
+      : elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('K') ? 1_000
+      : 1)
+    * Number(elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.trim().replace('K', '').replace('M', '')),
   synopses: [],
   genres: [],
   dates: [],

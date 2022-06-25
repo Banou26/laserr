@@ -1,14 +1,17 @@
-import type { Category, Handle, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
-import type { MediaSeason, MediaFormat, Media } from './types'
+import { Category, EqByUri, Handle, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { MediaSeason, MediaFormat, Media, MediaExternalLink } from './types'
 
-import { from, combineLatest, startWith, map, tap } from 'rxjs'
+import { from, combineLatest, startWith, map, tap, filter } from 'rxjs'
 
 import { populateUri } from '../../../../scannarr/src/utils/uri'
 import { LanguageTag } from '../../utils'
 import * as A from 'fp-ts/lib/Array'
 import { pipe } from 'fp-ts/lib/function'
 import { Uri } from '../../../../scannarr/src/utils'
+import { string } from 'fp-ts'
+import { AiringSchedule } from './types'
 
+export const icon = 'https://anilist.co/img/icons/favicon-32x32.png'
 export const origin = 'https://anilist.co'
 export const categories: Category[] = ['ANIME']
 export const name = 'Anilist'
@@ -205,11 +208,26 @@ const fetchSeason = () => {
 
 }
 
-const mediaToSeriesHandle = (media: Media): SeriesHandle => populateUri({
+const mediaToSeriesHandle = (media: Media) => populateUri({
+  airingSchedule:
+    media.airingSchedule?.nodes
+      ? media.airingSchedule.nodes?.map((airingSchedule: AiringSchedule) => ({
+        date: new Date(airingSchedule.airingAt * 1000),
+        number: airingSchedule.episode
+      }))
+      : undefined,
   scheme,
   categories,
   id: media.id.toString(),
   url: media.siteUrl ?? undefined,
+  genres:
+    media.genres?.length
+      ? (
+        media.genres.map((genre: string) => ({
+          name: genre
+        }))
+      )
+      : undefined,
   names:
     Object
     .entries(media.title ?? {})
@@ -227,17 +245,32 @@ const mediaToSeriesHandle = (media: Media): SeriesHandle => populateUri({
         // language === 'native'
         : 0.6
     })),
+  externalLinks:
+    media.externalLinks
+      ? (
+        media.externalLinks.map((externalLink: MediaExternalLink) => ({
+          url: externalLink.url,
+          site: externalLink.site,
+          type: externalLink.type,
+          language: externalLink.language
+        }))
+      )
+      : undefined,
   dates:
     media.startDate?.year
       ? [{
         language: 'jp',
-        start: new Date(media.startDate?.year, media.startDate?.month, media.startDate?.day),
+        start: new Date(media.startDate?.year, media.endDate?.month!, media.endDate?.day ?? undefined),
         end:
           media.endDate?.year
-            ? new Date(media.endDate?.year, media.endDate?.month, media.endDate?.day)
+            ? new Date(media.endDate?.year, media.endDate?.month!, media.endDate?.day ?? undefined)
             : undefined
       }]
-      : [],
+      : undefined,
+  handles: media.idMal ? [populateUri({
+    id: media.idMal.toString(),
+    scheme: 'mal'
+  })] : undefined,
   images: [
     ...media.coverImage ? [{
       type: 'poster' as const,
@@ -257,18 +290,17 @@ const mediaToSeriesHandle = (media: Media): SeriesHandle => populateUri({
       url: media.bannerImage!
     }] : [],
   ],
-  synopses: media.description ? [{
-    language: 'en',
-    synopsis: media.description
-  }] : [],
-  related: [],
-  handles: [],
-  titles: [],
-  recommended: [],
-  tags: [],
-  genres: [],
+  popularity: media.popularity ?? undefined,
+  status: media.status ?? undefined,
+  synopses:
+    media.description
+      ? [{
+        language: 'en',
+        synopsis: media.description
+      }]
+      : undefined,
   withDetails: false
-})
+}) as SeriesHandle
 
 // todo: add support for multiple graphql response pages
 const getSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, page?: number }): Promise<SeriesHandle[]> =>
@@ -279,27 +311,27 @@ const getSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { sea
       return medias.map(mediaToSeriesHandle)
     })
 
-const Handle = {
-  EqByUri: {
-    equals: (handle: Handle, handle2: Handle) => handle.uri === handle2.uri
-  }
-}
-
 export const searchSeries: SearchSeries = ({ ...rest }) => {
   if ('latest' in rest && rest.latest) {
-    const { season, year } = getCurrentSeason()
+    const { season, year } = getCurrentSeason(1)
     const { season: previousSeason, year: previousSeasonYear } = getCurrentSeason()
     const result = getSeason({ season, year })
-    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear, minEpisodes: 16 })
+    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear })
     return combineLatest([
       from(result),
       from(leftOvers)
+        .pipe(
+          map(handles =>
+            handles
+              .filter(handle => handle.status === 'RELEASING')
+          )
+        )
     ]).pipe(
       startWith([]),
       map(seriesHandles =>
           pipe(
             seriesHandles.flat(),
-            A.uniq(Handle.EqByUri),
+            A.uniq(EqByUri),
           )
       ),
       tap(val => console.log('val', val))
