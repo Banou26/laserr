@@ -209,6 +209,10 @@ const fetchSeason = () => {
 }
 
 const mediaToSeriesHandle = (media: Media) => populateUri({
+  averageScore:
+    media.averageScore
+      ? media.averageScore / 100
+      : undefined,
   airingSchedule:
     media.airingSchedule?.nodes
       ? media.airingSchedule.nodes?.map((airingSchedule: AiringSchedule) => ({
@@ -223,7 +227,10 @@ const mediaToSeriesHandle = (media: Media) => populateUri({
   genres:
     media.genres?.length
       ? (
-        media.genres.map((genre: string) => ({
+        media.genres.map((genre: string) => populateUri({
+          scheme,
+          id: genre,
+          url: `https://anilist.co/search/anime?genres=${genre}`,
           name: genre
         }))
       )

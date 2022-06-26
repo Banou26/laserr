@@ -60,7 +60,7 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   averageScore:
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
       ? undefined
-      : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()),
+      : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()) / 10,
   scheme,
   categories,
   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
@@ -86,11 +86,11 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   }],
   genres:
     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
-      .map(({ textContent, href, parentElement }) => ({
-        // scheme,
-        // id: href!.split('/').at(5)!,
+      .map(({ textContent, href, parentElement }) => populateUri({
+        scheme,
+        id: href!.split('/').at(5)!,
         adult: parentElement?.classList.contains('explicit'),
-        // url: fixOrigin(href),
+        url: fixOrigin(href),
         name: textContent?.trim()!,
         // categories
       })),
@@ -136,12 +136,6 @@ const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
     language: LanguageTag.EN,
     synopsis: elem.querySelector('.pt4')!.textContent!.trim()!
   }],
-  genres: [],
-  dates: [],
-  related: [],
-  titles: [],
-  recommended: [],
-  tags: [],
   handles: [],
   withDetails: false
 })
@@ -373,7 +367,6 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
               }]
               : []
           ],
-          images: [],
           dates:
             dateElem &&
             !isNaN(Date.parse(dateElem.textContent!))
@@ -382,11 +375,6 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
                 date: new Date(dateElem.textContent!)
               }]
               : [],
-          synopses: [],
-          handles: [],
-          tags: [],
-          related: [],
-          recommended: [],
           withDetails: false
         })
       })
@@ -503,12 +491,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
           ?.textContent
           ?.replaceAll('\n\n\n\n', '\n\n')!
     }],
-    genres: [],
     dates: [date],
-    related: [],
-    titles: [],
-    recommended: [],
-    tags: [],
     handles: [],
     withDetails: true
   })
