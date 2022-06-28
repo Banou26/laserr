@@ -359,7 +359,11 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
   const search =
     pipe(
       names,
+      // Only search names with decent score
+      A.filter(name => name.score >= 0.8),
       A.map(({ name }) => name),
+      // Name is problably an abbreviation that will only resuslt in bad search results
+      A.filter(name => name.length > 3),
       A.map((name) => `${name} ${number ? number.toString().padStart(2, '0') : ''}`),
       A.map((episodeName) => `(${episodeName})`),
       join('|')
@@ -367,7 +371,8 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
 
   // const search = `${mostCommonSubnames ? mostCommonSubnames : title.names.find((name) => name.language === 'ja-en')?.name} ${number ? number.toString().padStart(2, '0') : ''}`
 
-  const pageHtml = await (await fetch(`https://nyaa.si/?f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}`)).text()
+  // todo: check if sorting by seeders cause issues
+  const pageHtml = await (await fetch(`https://nyaa.si/?f=${trustedSources ? 2 : 0}&c=1_2&q=${encodeURIComponent(search)}&s=seeders&o=desc`)).text()
   const doc =
     new DOMParser()
       .parseFromString(pageHtml, 'text/html')
