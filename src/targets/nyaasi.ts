@@ -1,8 +1,8 @@
-import type { SearchTitlesOptions, TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetTitle, GetTitleOptions } from '../../../scannarr/src'
+import type { SearchTitlesOptions, TitleHandle, Category, ExtraOptions, GetTitle, GetTitleOptions } from '../../../scannarr/src'
 import type { AnitomyResult } from 'anitomyscript'
 
-import { from, merge, Observable, tap, map, first, mergeMap, combineLatest, startWith, finalize, catchError } from 'rxjs'
-import { flow, pipe } from 'fp-ts/lib/function'
+import { from, Observable, map, mergeMap, combineLatest, startWith, catchError } from 'rxjs'
+import { pipe } from 'fp-ts/lib/function'
 import * as A from 'fp-ts/lib/Array'
 import { join } from 'fp-ts-std/Array'
 import pThrottle from 'p-throttle'

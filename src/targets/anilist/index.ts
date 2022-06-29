@@ -1,14 +1,13 @@
-import { Category, EqByUri, Handle, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { Category, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
 import type { MediaSeason, MediaFormat, Media, MediaExternalLink } from './types'
 
-import { from, combineLatest, startWith, map, tap, filter } from 'rxjs'
-
-import { populateUri } from '../../../../scannarr/src/utils/uri'
-import { LanguageTag } from '../../utils'
+import { from, combineLatest, startWith, map, tap } from 'rxjs'
 import * as A from 'fp-ts/lib/Array'
 import { pipe } from 'fp-ts/lib/function'
-import { Uri } from '../../../../scannarr/src/utils'
-import { string } from 'fp-ts'
+
+import { EqByUri } from '../../../../scannarr/src'
+import { populateUri } from '../../../../scannarr/src/utils/uri'
+import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
 
 export const icon = 'https://anilist.co/img/icons/favicon-32x32.png'
@@ -118,8 +117,7 @@ const searchQuery = `query (
       }
 
       airingSchedule(
-        notYetAired: true
-        perPage: 2
+        perPage: 25
       ) {
         nodes {
           episode
@@ -130,7 +128,8 @@ const searchQuery = `query (
 		}
 	}
 }`
-
+// notYetAired: true
+// perPage: 2
 
 const seasonVariables = {season: "SUMMER", year: 2022, format: "TV", page: 1}
 const seasonVariables2 = {season: "SUMMER", year: 2022, excludeFormat: "TV", page: 1}
@@ -339,7 +338,7 @@ export const searchSeries: SearchSeries = ({ ...rest }) => {
           pipe(
             seriesHandles.flat(),
             A.uniq(EqByUri),
-          )
+          ) as SeriesHandle[]
       ),
       tap(val => console.log('val', val))
     )
