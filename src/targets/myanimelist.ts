@@ -324,7 +324,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
   // const informations = getSideInformations(elem)
   
   const episodes =
-    [...elem.querySelectorAll('.episode_list.ascend .episode-list-data')]
+    [...elem.querySelectorAll('.episode_list[data-sort-order="ascend"] .episode-list-data')]
       .map(elem => {
         const url = elem.querySelector<HTMLAnchorElement>('.episode-title > a')!.href
         const englishTitle = elem.querySelector<HTMLAnchorElement>('.episode-title > a')!.textContent
@@ -336,8 +336,10 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
           ?? []
         const japaneseTitle = _japaneseTitle?.slice(1, -1)
         const dateElem = elem.querySelector<HTMLTableCellElement>('.episode-aired')
+        const scoreElem = elem.querySelector<HTMLSpanElement>('td.episode-poll.scored > div.average > span.value')
 
         return ({
+          averageScore: scoreElem ? (Number(scoreElem.textContent) / 5) : undefined,
           scheme,
           categories,
           id: `${url.split('/')[4]!}-${url.split('/')[7]!}`, // url.split('/')[7]!,
@@ -430,6 +432,10 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   //     )
 
   return populateUri({
+    averageScore:
+      elem.querySelector<HTMLDivElement>('.score .score-label')?.textContent?.trim() === 'N/A'
+      ? undefined
+      : Number(elem.querySelector<HTMLDivElement>('.score .score-label')!.textContent?.trim()) / 10,
     scheme,
     categories,
     id: url.split('/')[4]!,
