@@ -189,9 +189,9 @@ type TeamEpisode = {
 
 type Team = {
   tag: string
-  url: string
-  icon: string
-  name: string
+  url?: string
+  icon?: string
+  name?: string
 }
 
 // todo: refactor this by making it tied to an episode, right now the informationUrl is global to the tag
@@ -411,6 +411,7 @@ export const searchTitles = (options: SearchTitlesOptions, { fetch }: ExtraOptio
 }
 
 export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOptions) => from((async () => {
+  console.log('nyaa getTitle', options)
   if (!('uri' in options && options.uri)) return from([])
   const { id } = fromUri(options.uri) ?? options
 
@@ -432,16 +433,16 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
   if (!categoryElement) throw new Error(`No category element found on page ${nyaaIdToPageUrl(id)}`)
   if (!categoryLanguageElement) throw new Error(`No category language element found on page ${nyaaIdToPageUrl(id)}`)
   if (!fileSizeElement) throw new Error(`No file size element found on page ${nyaaIdToPageUrl(id)}`)
-  if (!submitterElement) throw new Error(`No submitter element found on page ${nyaaIdToPageUrl(id)}`)
-  if (!informationElement) throw new Error(`No information element found on page ${nyaaIdToPageUrl(id)}`)
+  // if (!submitterElement) throw new Error(`No submitter element found on page ${nyaaIdToPageUrl(id)}`)
+  // if (!informationElement) throw new Error(`No information element found on page ${nyaaIdToPageUrl(id)}`)
   if (!seedersElement) throw new Error(`No seeders element found on page ${nyaaIdToPageUrl(id)}`)
   if (!leechersElement) throw new Error(`No leechers element found on page ${nyaaIdToPageUrl(id)}`)
   if (!magnetElement) throw new Error(`No magnet element found on page ${nyaaIdToPageUrl(id)}`)
   const category = nyaaUrlToCategory(categoryElement.href)
   const categoryLanguage = nyaaUrlToCategory(categoryLanguageElement.href)
   const fileSize = getBytesFromBiByteString(fileSizeElement.textContent!)
-  const teamName = submitterElement.textContent!
-  const informationUrl = informationElement.textContent!
+  const teamName = submitterElement?.textContent ?? undefined
+  const informationUrl = informationElement?.textContent ?? undefined
   const seeders = Number(seedersElement.textContent)
   const leechers = Number(leechersElement.textContent)
   const magnetUri = magnetElement.href
@@ -552,5 +553,15 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
   return from([]).pipe(
     map(teamInfo => makeTitleHandle()),
     startWith(makeTitleHandle()),
+    catchError(err => {
+      console.error(err)
+      throw err
+    })
   )
-})()).pipe(mergeMap(observable => observable))
+})()).pipe(
+  mergeMap(observable => observable),
+  catchError(err => {
+    console.error(err)
+    throw err
+  })
+)
