@@ -1,5 +1,5 @@
 import type { Category, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
-import type { MediaSeason, MediaFormat, Media, MediaExternalLink } from './types'
+import { MediaSeason, MediaFormat, Media, MediaExternalLink, MediaStatus } from './types'
 
 import { from, combineLatest, startWith, map, tap } from 'rxjs'
 import * as A from 'fp-ts/lib/Array'
@@ -147,7 +147,7 @@ const seasonVariables3 = {season: "SPRING", year: 2022, minEpisodes: 16, page: 1
 //   "credentials": "omit"
 // });
 
-const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, page?: number }) =>
+const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, status, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number }) =>
   fetch('https://graphql.anilist.co/', {
     method: 'POST',
     "headers": {
@@ -156,6 +156,7 @@ const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }
     body: JSON.stringify({
       query: searchQuery,
       variables: {
+        status,
         season,
         year,
         excludeFormat,
@@ -165,8 +166,49 @@ const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }
     })
   })
 
-// from https://anichart.net/js/app.b1e2a7ec.js
-const getCurrentSeason = (offset = 0, date = new Date()): { season: MediaSeason, year: number } => {
+type SeasonObject = {
+  season: MediaSeason
+  year: number
+}
+
+// from https://anichart.net/js/app.b1e2a7ec.js:401
+// , c = function() {
+//   let t = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : 0
+//     , e = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : new Date;
+//   if ("function" !== typeof e.getMonth)
+//       throw new Error("Invalid Date Object");
+//   if (t > 12 || t < -12)
+//       throw new Error("getSeason does not support offset months greater than 12");
+//   let i = e.getFullYear()
+//     , a = e.getMonth() + t;
+//   a >= 12 ? (a %= 12,
+//   i += 1) : a < 0 && (a += 12,
+//   i -= 1);
+//   const r = [{
+//       season: "winter",
+//       range: [0, 2]
+//   }, {
+//       season: "spring",
+//       range: [3, 5]
+//   }, {
+//       season: "summer",
+//       range: [6, 8]
+//   }, {
+//       season: "fall",
+//       range: [9, 11]
+//   }]
+//     , n = r.find(t=>{
+//       let e = t.range;
+//       return a >= e[0] && a <= e[1]
+//   }
+//   )
+//     , s = n.season;
+//   return {
+//       season: s,
+//       year: i
+//   }
+// }
+const getCurrentSeason = (offset = 0, date = new Date()): SeasonObject => {
   if (offset > 12 || offset < -12) throw new Error("Anilist getCurrentSeason does not support offset months greater than 12")
   let currentYear = date.getFullYear()
   let currentMonth = date.getMonth() + offset
@@ -200,6 +242,38 @@ const getCurrentSeason = (offset = 0, date = new Date()): { season: MediaSeason,
   return {
     season: seasonName.toUpperCase() as MediaSeason,
     year: currentYear
+  }
+}
+
+// from https://anichart.net/0bfe19ab50401093b305.worker.js:969
+// function nt(t) {
+//   let e = t.season
+//     , n = t.year;
+//   const r = ["winter", "spring", "summer", "fall"];
+//   if ("winter" === e.toLowerCase())
+//       return {
+//           season: "fall",
+//           year: n - 1
+//       };
+//   const o = r[r.indexOf(e.toLowerCase()) - 1];
+//   return {
+//       season: o
+//   }
+// }
+const getPreviousSeason = (seasonObject: SeasonObject): SeasonObject => {
+  const seasonName = seasonObject.season.toLowerCase()
+  const year = seasonObject.year
+  const seasons = ['winter', 'spring', 'summer', 'fall']
+  if ('winter' === seasonName) {
+    return {
+      season: 'fall'.toUpperCase() as MediaSeason,
+      year: year - 1
+    }
+  }
+  const previousSeason = seasons[seasons.indexOf(seasonName) - 1]!
+  return {
+    season: previousSeason.toUpperCase() as MediaSeason,
+    year
   }
 }
 
@@ -309,27 +383,28 @@ const mediaToSeriesHandle = (media: Media) => populateUri({
 }) as SeriesHandle
 
 // todo: add support for multiple graphql response pages
-const getSeason = ({ season, year, excludeFormat, minEpisodes, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, page?: number }): Promise<SeriesHandle[]> =>
-  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, page })
+const getSeason = ({ season, year, excludeFormat, minEpisodes, status, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number }): Promise<SeriesHandle[]> =>
+  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, status, page })
     .then(response => response.json())
     .then(json => {
       const medias: Media[] = json.data.Page.media
       return medias.map(mediaToSeriesHandle)
     })
 
+// todo: improve the previousSeason query
 export const searchSeries: SearchSeries = ({ ...rest }) => {
   if ('latest' in rest && rest.latest) {
     const { season, year } = getCurrentSeason(1)
-    const { season: previousSeason, year: previousSeasonYear } = getCurrentSeason()
+    const { season: previousSeason, year: previousSeasonYear } = getPreviousSeason({ season, year })
     const result = getSeason({ season, year })
-    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear })
+    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear, status: MediaStatus.Releasing })
     return combineLatest([
       from(result),
       from(leftOvers)
         .pipe(
           map(handles =>
             handles
-              .filter(handle => handle.status === 'RELEASING')
+              // .filter(handle => handle.status === 'RELEASING')
           )
         )
     ]).pipe(
