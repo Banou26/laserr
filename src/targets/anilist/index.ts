@@ -208,7 +208,7 @@ type SeasonObject = {
 //       year: i
 //   }
 // }
-const getCurrentSeason = (offset = 0, date = new Date()): SeasonObject => {
+export const getCurrentSeason = (offset = 0, date = new Date()): SeasonObject => {
   if (offset > 12 || offset < -12) throw new Error("Anilist getCurrentSeason does not support offset months greater than 12")
   let currentYear = date.getFullYear()
   let currentMonth = date.getMonth() + offset
