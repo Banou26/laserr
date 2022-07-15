@@ -502,10 +502,15 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
         .map(commentElement => {
           const userLinkElement = commentElement.querySelector<HTMLAnchorElement>('div > div.col-md-2 > p > a')
           const userImageElement = commentElement.querySelector<HTMLImageElement>('div > div.col-md-2 > img')
+          const postLinkElement = commentElement.querySelector<HTMLAnchorElement>('div > div.col-md-10.comment > div.row.comment-details > a')
           const postDateElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-details > a > small')
           const commentMessageElement = commentElement.querySelector<HTMLDivElement>('div > div.col-md-10.comment > div.row.comment-body')
 
           return {
+            url:
+              postLinkElement?.href
+                ? `https://nyaa.si/view/${id}${postLinkElement?.getAttribute('href')}`
+                : undefined,
             user: {
               avatar: userImageElement?.src,
               name: userLinkElement?.textContent!,
