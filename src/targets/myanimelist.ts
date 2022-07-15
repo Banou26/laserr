@@ -271,6 +271,11 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       .trim()
       .replaceAll('\n\n\n\n', '\n\n')!
 
+  const episodeThumbnailUrl =
+    elem
+      .querySelector<HTMLImageElement>('#content > table > tbody > tr > td:nth-child(2) > div.js-scrollfix-bottom-rel > div:nth-child(3) > div:nth-child(1) > table > tbody > tr:nth-child(1) > td > div.contents-video-embed > div.video-embed.clearfix > a > img')
+      ?.getAttribute('data-src')
+
   return populateUri({
     scheme,
     categories,
@@ -299,7 +304,14 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
         }]
         : []
     ],
-    images: [],
+    images:
+      episodeThumbnailUrl
+        ? [{
+          type: 'image' as const,
+          size: 'small' as const,
+          url: episodeThumbnailUrl
+        }]
+        : undefined,
     dates:
       dateElem &&
       !isNaN(Date.parse(dateElem.textContent!))
