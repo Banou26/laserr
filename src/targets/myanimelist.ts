@@ -432,6 +432,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   //     )
 
   return populateUri({
+    // todo: infer airingSchedule from "Broadcast: Wednesdays at 23:00 (JST)" data on the side data
     averageScore:
       elem.querySelector<HTMLDivElement>('.score .score-label')?.textContent?.trim() === 'N/A'
       ? undefined
