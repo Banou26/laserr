@@ -523,7 +523,7 @@ export const getTitle: GetTitle = (options: GetTitleOptions, { fetch }: ExtraOpt
               postDateElement?.textContent
                 ? new Date(postDateElement.textContent)
                 : undefined,
-            message: commentMessageElement?.textContent!
+            message: commentMessageElement?.innerHTML!
           }
         }),
     names: [{
