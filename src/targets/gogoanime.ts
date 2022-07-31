@@ -1,7 +1,6 @@
 import type { Search, SearchResult } from '.'
 
 import Category from '../category'
-import { fetch } from '@mfkn/fkn-lib'
 import { makeUniqueArrayFilter } from '../utils'
 
 const getRowInfo = (elem: HTMLElement) => ({

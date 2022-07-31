@@ -1,4 +1,3 @@
-import { fetch } from '@mfkn/fkn-lib'
 
 import Category from '../category'
 
