@@ -8,7 +8,9 @@ import { join } from 'fp-ts-std/Array'
 import pThrottle from 'p-throttle'
 import anitomy from 'anitomyscript/dist/anitomyscript.bundle'
 import { getBytesFromBiByteString } from '../utils/bytes'
-import { fromUri, populateUri } from '../../../scannarr/src/utils'
+import { fromUri, populateUri, searchableTitles } from '../../../scannarr/src/utils'
+import toObservable from '../utils/async-observable'
+import { of } from 'fp-ts-std/Lazy'
 
 export const origin = 'https://nyaa.si'
 export const categories: Category[] = ['ANIME']
@@ -246,7 +248,7 @@ const getTorrentAsEpisodeAndTeam = async (tag: string, url: string, { fetch }: E
   }
 }
 
-export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Observable<TitleHandle> => {
+export const getItemAsTitle = toObservable(async (elem: HTMLElement, { fetch }: ExtraOptions): Promise<Observable<TitleHandle>> => {
   const row = getItem(elem)
   const { name, group: groupTag, meta, batch, resolution, type } = getTitleFromTrustedTorrentName(row.name)
   const number = Number(/((0\d)|(\d{2,}))/.exec(name)?.[1] ?? 1)
@@ -256,6 +258,8 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
       ? getTeam(groupTag)
       : undefined
 
+  const { anime_title } = await anitomy(name) as AnitomyResult
+      
   const teamInfo =
     existingTeam
       ? existingTeam.then((team) => ({ team }))
@@ -270,7 +274,7 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
     id: row.link.split('/').at(4)!,
     scheme: 'nyaa',
     categories: row.category === 'anime' ? ['ANIME' as const] : [],
-    names: [{ language: row.english ? 'en' : '', name, score: 0.6 }],
+    names: [{ language: row.english ? 'en' : '', name: anime_title ?? name, score: 0.6 }],
     unit: 1,
     number,
     batch: batch,
@@ -317,7 +321,7 @@ export const getItemAsEpisode = (elem: HTMLElement, { fetch }: ExtraOptions): Ob
     startWith(makeTitle()),
     catchError((err, item) => void console.log('ERR', err) || item)
   )
-}
+})
 
 export const getAnimeTorrents = async ({ search = '' }: { search: string }, { fetch, ...extraOptions }: ExtraOptions) => {
   const trustedSources = true
@@ -329,7 +333,7 @@ export const getAnimeTorrents = async ({ search = '' }: { search: string }, { fe
     Promise.all(
       [...doc.querySelectorAll('tr')]
         .slice(1)
-        .map(elem => getItemAsEpisode(elem, { ...extraOptions, fetch }))
+        .map(elem => getItemAsTitle(elem, { ...extraOptions, fetch }))
     )
   const [, count] =
     doc
@@ -355,6 +359,8 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
   
   const trustedSources = true
 
+  const searchNames = await searchableTitles(names.map(({ name }) => name))
+
   // todo: check if names containing parenthesis will cause problems with nyaa.si search engine
   const search =
     pipe(
@@ -362,6 +368,7 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
       // Only search names with decent score
       A.filter(name => name.score >= 0.8),
       A.map(({ name }) => name),
+      A.concat(searchNames),
       // Name is problably an abbreviation that will only resuslt in bad search results
       A.filter(name => name.length > 3),
       A.map((name) => `${name} ${number ? number.toString().padStart(2, '0') : ''}`),
@@ -380,7 +387,7 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
     combineLatest(
       [...doc.querySelectorAll('tr')]
         .slice(1)
-        .map(elem => getItemAsEpisode(elem, { ...extraOptions, fetch }))
+        .map(elem => getItemAsTitle(elem, { ...extraOptions, fetch }))
     )
 
   // const Team = {
