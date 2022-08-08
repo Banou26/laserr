@@ -258,8 +258,9 @@ export const getItemAsTitle = toObservable(async (elem: HTMLElement, { fetch }: 
       ? getTeam(groupTag)
       : undefined
 
+  // todo: rework anitomy so that it only loads the wasm once, rn it loads multiple times when called at the same time initially
   const { anime_title } = await anitomy(name) as AnitomyResult
-      
+
   const teamInfo =
     existingTeam
       ? existingTeam.then((team) => ({ team }))
