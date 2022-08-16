@@ -258,9 +258,7 @@ export const getItemAsTitle = toObservable(async (elem: HTMLElement, { fetch }: 
       ? getTeam(groupTag)
       : undefined
 
-  // todo: rework anitomy so that it only loads the wasm once, rn it loads multiple times when called at the same time initially
-  const { anime_title } = await anitomy(name) as AnitomyResult
-
+  // this must not be after any other awaits to prevent multiple same-team requests
   const teamInfo =
     existingTeam
       ? existingTeam.then((team) => ({ team }))
@@ -269,6 +267,9 @@ export const getItemAsTitle = toObservable(async (elem: HTMLElement, { fetch }: 
           ? getTorrentAsEpisodeAndTeam(groupTag, row.link, { fetch })
           : Promise.resolve(undefined)
       )
+
+  // todo: rework anitomy so that it only loads the wasm once, rn it loads multiple times when called at the same time initially
+  const { anime_title } = await anitomy(name) as AnitomyResult
   // const [teamEpisode, team] = existingTeam ? [undefined, await existingTeam] : await getTorrentAsEpisodeAndTeam(groupTag, row.link)
 
   const makeTitle = ({ teamEpisode, team }: { teamEpisode?: TeamEpisode, team?: Team } = {}): TitleHandle => populateUri({
