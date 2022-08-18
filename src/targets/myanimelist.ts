@@ -7,7 +7,7 @@ import pThrottle from 'p-throttle'
 
 import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from '../../../scannarr/src'
 
-import { fromUri, populateUri } from '../../../scannarr/src/utils'
+import { fromUri, fromUris, populateUri } from '../../../scannarr/src/utils'
 import { languageToTag, LanguageTag } from '../utils'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
@@ -517,7 +517,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
 
 export const getSeriesDocument = (options: { url: string } | { id: string }, { fetch }: ExtraOptions) =>
   fetch(
-    'id' in options && options.id
+    'id' in options
       ? `https://myanimelist.net/anime/${options.id}`
       : options.url
   )
@@ -528,7 +528,7 @@ export const getSeriesDocument = (options: { url: string } | { id: string }, { f
 
 const getSeriesTitles = async (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
   const url =
-    'id' in options && options.id
+    'id' in options
       ? getDocumentUrl(await getSeriesDocument(options, { fetch, ...extraOptions }))
       : options.url
 
@@ -540,11 +540,11 @@ const getSeriesTitles = async (options: { url: string } | { id: string }, { fetc
   )
 }
 
-export const getSeries: GetSeries = (options: { url: string } | { id: string }, { fetch, ...extraOptions }: ExtraOptions) => {
+export const getSeries: GetSeries = (options, { fetch, ...extraOptions }: ExtraOptions) => {
   const throttledFetch: FetchType = throttle((...args) => fetch(...args))
   return (
     from(
-      getSeriesDocument(options, { ...extraOptions, fetch: throttledFetch })
+      getSeriesDocument({ id: fromUris(options.uri, 'mal').id }, { ...extraOptions, fetch: throttledFetch })
         .then(getSeriesInfo)
     )
   )
