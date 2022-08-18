@@ -5,10 +5,10 @@ import { from, Observable } from 'rxjs'
 import pThrottle from 'p-throttle'
 
 
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from '../../../scannarr/src'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from '../../../../scannarr/src'
 
-import { fromUri, fromUris, populateUri } from '../../../scannarr/src/utils'
-import { languageToTag, LanguageTag } from '../utils'
+import { fromUri, fromUris, populateUri } from '../../../../scannarr/src/utils'
+import { languageToTag, LanguageTag } from '../../utils'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const origin = 'https://myanimelist.net'
