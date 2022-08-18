@@ -1,4 +1,4 @@
-import type { Category, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { Category, ExtraOptions, GetSeries, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
 import { MediaSeason, MediaFormat, Media, MediaExternalLink, MediaStatus } from './types'
 
 import { from, combineLatest, startWith, map, tap } from 'rxjs'
@@ -6,7 +6,7 @@ import * as A from 'fp-ts/lib/Array'
 import { pipe } from 'fp-ts/lib/function'
 
 import { EqByUri } from '../../../../scannarr/src'
-import { populateUri } from '../../../../scannarr/src/utils/uri'
+import { fromUri, fromUris, populateUri } from '../../../../scannarr/src/utils/uri'
 import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
 
@@ -16,32 +16,37 @@ export const categories: Category[] = ['ANIME']
 export const name = 'Anilist'
 export const scheme = 'anilist'
 
-const searchQuery = `query (
-	$season: MediaSeason,
-	$year: Int,
-	$format: MediaFormat,
-	$excludeFormat: MediaFormat,
-	$status: MediaStatus,
-	$minEpisodes: Int,
-	$page: Int,
-){
-	Page(page: $page) {
-		pageInfo {
-			hasNextPage
-			total
-		}
-		media(
-			season: $season
-			seasonYear: $year
-			format: $format,
-			format_not: $excludeFormat,
-			status: $status,
-			episodes_greater: $minEpisodes,
-			isAdult: false,
-			type: ANIME,
-			sort: TITLE_ROMAJI,
-		) {
-            
+const searchQuery = `
+
+query (
+  $season: MediaSeason
+  $year: Int
+  $format: MediaFormat
+  $excludeFormat: MediaFormat
+  $status: MediaStatus
+  $minEpisodes: Int
+  $page: Int
+  $idMal: Int
+  $id: Int
+) {
+  Page(page: $page) {
+    pageInfo {
+      hasNextPage
+      total
+    }
+    media(
+      season: $season
+      seasonYear: $year
+      format: $format
+      format_not: $excludeFormat
+      status: $status
+      episodes_greater: $minEpisodes
+      isAdult: false
+      type: ANIME
+      sort: TITLE_ROMAJI
+      idMal: $idMal
+      id: $id
+    ) {
       id
       idMal
       title {
@@ -116,18 +121,16 @@ const searchQuery = `query (
         }
       }
 
-      airingSchedule(
-        perPage: 25
-      ) {
+      airingSchedule(perPage: 25) {
         nodes {
           episode
           airingAt
         }
       }
-
-		}
-	}
-}`
+    }
+  }
+}
+`
 // notYetAired: true
 // perPage: 2
 
@@ -162,6 +165,21 @@ const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, status, pa
         excludeFormat,
         minEpisodes,
         page
+      }
+    })
+  })
+
+const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
+  fetch('https://graphql.anilist.co/', {
+    method: 'POST',
+    "headers": {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      query: searchQuery,
+      variables: {
+        id,
+        malId
       }
     })
   })
@@ -421,3 +439,27 @@ export const searchSeries: SearchSeries = ({ ...rest }) => {
 
   return from([])
 }
+
+const getIdFromUrl = (url: string): number => 1
+
+// export const getSeries: GetSeries = (options: { url: string } | { id: string }, extraOptions: ExtraOptions) =>
+//   fetchSeries({ id: 'url' in options ? getIdFromUrl(options.url) : Number(options.id) })
+//     .then(response => response.json())
+//     .then(json => {
+//       const medias: Media[] = json.data.Page.media
+//       return medias.map(mediaToSeriesHandle)
+//     })
+
+
+export const getSeries: GetSeries = (options) =>
+  void console.log('id', fromUris(options.uri, 'anilist').id) ||
+  from(
+    fetchSeries({ id: 'uri' in options ? fromUris(options.uri, 'anilist').id : options.id })
+      .then(response => response.json())
+      .then(json => {
+        const medias: Media[] = json.data.Page.media
+        const series = medias.map(mediaToSeriesHandle).at(0)
+        if (!series) throw new Error(`Anilist getSeries '${'uri' in options ? options.uri : options.id}' not found`)
+        return series
+      })
+  )
