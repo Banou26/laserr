@@ -44,5 +44,8 @@ export const makePlayerEmbedSearchParams = (media_id: string) =>
     auto_play: '0'
   })
 
-export const getPlayerEmbed = (id: string) =>
+export const getPlayerEmbedUrl = (id: string) =>
   `https://www.crunchyroll.com/affiliate_iframeplayer?${makePlayerEmbedSearchParams(id)}`
+
+export const getSearchCandidates = () =>
+  fetch('https://www.crunchyroll.com/ajax/?req=RpcApiSearch_GetSearchCandidates')
