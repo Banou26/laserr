@@ -17,7 +17,9 @@ export const generateSessionId = () =>
       .then(res => res.data.session_id)
 
 
-// implementation used reference from https://github.com/Tenpi/crunchyroll.ts/blob/master/entities/Anime.ts#L49
+// implementation used reference from
+// https://github.com/Tenpi/crunchyroll.ts/blob/master/entities/Anime.ts#L49
+// and https://github.com/alzamer2/Crunchyroll-XML-Decoder-py3/blob/master/_Deprecation/crunchy-xml-decoder/altfuncs.py#L178
 export const searchSeries = ({ search, sessionId }: { search: string, sessionId: string }) =>
   fetch(`https://api.crunchyroll.com/list_series.0.json`, {
     method: 'POST',
@@ -44,6 +46,13 @@ export const makePlayerEmbedSearchParams = (media_id: string) =>
     auto_play: '0'
   })
 
+// example valid urls:
+// https://www.crunchyroll.com/affiliate_iframeplayer?aff=af-44915-aeey&media_id=854993&video_format=0&video_quality=0&auto_play=0
+// https://www.crunchyroll.com/affiliate_iframeplayer?aff=af-44915-aeey&media_id=778731&video_format=0&video_quality=0&auto_play=0
+// https://www.crunchyroll.com/affiliate_iframeplayer?aff=af-44915-aeey&media_id=810793&video_format=0&video_quality=0&auto_play=0
+// todo: these video IDs could be taken directly from MAL embedded episodes, e.g: https://myanimelist.net/anime/51837/Saikin_Yatotta_Maid_ga_Ayashii/episode/2
+// todo: and we can know if an episode is premium only by checking for the crown icon on the episode list page, e.g: https://myanimelist.net/anime/51837/Saikin_Yatotta_Maid_ga_Ayashii/video
+// todo: some episode IDs for some reason doesn't result in a valid video player, try to check why
 export const getPlayerEmbedUrl = (id: string) =>
   `https://www.crunchyroll.com/affiliate_iframeplayer?${makePlayerEmbedSearchParams(id)}`
 
