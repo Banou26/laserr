@@ -572,11 +572,13 @@ const getLatestTitles = ({ fetch }: ExtraOptions) =>
 
 export const searchSeries: SearchSeries = ({ ...rest }, { fetch, ...extraOptions }) => {
   const throttledFetch: FetchType = throttle((...args) => fetch(...args))
-  return (
-    'latest' in rest && rest.latest ? from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
-    : 'search' in rest && typeof rest.search === 'string' ? from(searchAnime({ search: rest.search }, { ...extraOptions, fetch: throttledFetch }))
-    : from([])
-  )
+  if ('latest' in rest && rest.latest) {
+    return from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
+  }
+  if ('search' in rest && typeof rest.search === 'string') {
+    return from(searchAnime({ search: rest.search }, { ...extraOptions, fetch: throttledFetch }))
+  }
+  return from([])
 }
 
 export const searchTitles: SearchTitles = (options, { fetch, ...extraOptions }) => {
