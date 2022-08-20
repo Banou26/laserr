@@ -1,4 +1,23 @@
+import type { Category, ExtraOptions, FetchType, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
 
+import pThrottle from 'p-throttle'
+import { from } from 'rxjs'
+
+import { LanguageTag } from '../../utils'
+import { populateUri } from '../../../../scannarr/src/utils'
+
+const throttle = pThrottle({
+	limit: 4,
+	interval: 1_000
+})
+
+// https://www.crunchyroll.com/favicons/favicon-32x32.png
+export const icon = 'https://www.crunchyroll.com/favicons/apple-touch-icon.png'
+export const origin = 'https://www.crunchyroll.com/'
+export const categories: Category[] = ['ANIME']
+export const name = 'Crunchyroll'
+// export const scheme = 'crunchyroll'
+export const scheme = 'cr'
 
 // access_token and device_type taken from
 // https://github.com/streamlink/streamlink/blob/867b9b3b66aab57c0fcb3ab117a275f29a23b71a/src/streamlink/plugins/crunchyroll.py#L102-L103
@@ -20,20 +39,20 @@ export const generateSessionId = () =>
 // implementation used reference from
 // https://github.com/Tenpi/crunchyroll.ts/blob/master/entities/Anime.ts#L49
 // and https://github.com/alzamer2/Crunchyroll-XML-Decoder-py3/blob/master/_Deprecation/crunchy-xml-decoder/altfuncs.py#L178
-export const searchSeries = ({ search, sessionId }: { search: string, sessionId: string }) =>
-  fetch(`https://api.crunchyroll.com/list_series.0.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      session_id : sessionId,
-      media_type : 'anime',
-      filter: `prefix:${search}`
-      // fields: 'series.url,series.series_id',
-      // limit: '1500'
-    })
-  }).then(res => res.json())
+// export const searchSeries = ({ search, sessionId }: { search: string, sessionId: string }) =>
+//   fetch(`https://api.crunchyroll.com/list_series.0.json`, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/x-www-form-urlencoded',
+//     },
+//     body: new URLSearchParams({
+//       session_id : sessionId,
+//       media_type : 'anime',
+//       filter: `prefix:${search}`
+//       // fields: 'series.url,series.series_id',
+//       // limit: '1500'
+//     })
+//   }).then(res => res.json())
 
 export const makePlayerEmbedSearchParams = (media_id: string) =>
   new URLSearchParams({
@@ -46,6 +65,9 @@ export const makePlayerEmbedSearchParams = (media_id: string) =>
     auto_play: '0'
   })
 
+// iframe needs to have allow="encrypted-media" to be able to playback DRM content
+// e.g: <iframe src="https://www.crunchyroll.com/affiliate_iframeplayer?aff=af-44915-aeey&amp;media_id=854993&amp;video_format=0&amp;video_quality=0&amp;auto_play=0" allow="encrypted-media"></iframe>
+
 // example valid urls:
 // https://www.crunchyroll.com/affiliate_iframeplayer?aff=af-44915-aeey&media_id=854993&video_format=0&video_quality=0&auto_play=0
 // https://www.crunchyroll.com/affiliate_iframeplayer?aff=af-44915-aeey&media_id=778731&video_format=0&video_quality=0&auto_play=0
@@ -56,5 +78,87 @@ export const makePlayerEmbedSearchParams = (media_id: string) =>
 export const getPlayerEmbedUrl = (id: string) =>
   `https://www.crunchyroll.com/affiliate_iframeplayer?${makePlayerEmbedSearchParams(id)}`
 
-export const getSearchCandidates = () =>
-  fetch('https://www.crunchyroll.com/ajax/?req=RpcApiSearch_GetSearchCandidates')
+type SearchCandidateType = 'Series (Library Article)' | 'Person (Library Article)' | 'Series (SkyVision)' | ' (User-Created)'
+
+type SearchCandidate = {
+  type: SearchCandidateType
+  id: `${number}`
+  etp_guid: string
+  name: string
+  img: string
+  link: string
+}
+
+let searchCandidates: Promise<SearchCandidate[]>
+
+type SearchCandidateResult = {
+  result_code: number
+  message_list: []
+  suggested_redirect_url: null
+  data: SearchCandidate[]
+  exception_class: null
+  exception_error_code: null
+}
+
+export const getSearchCandidates = (fetch: FetchType) =>
+  fetch('https://www.crunchyroll.com/ajax/?req=RpcApiSearch_GetSearchCandidates', { proxyRuntime: true })
+    .then(res => res.text())
+    .then(res => res.slice('/*-secure-\n'.length, -'\n*/'.length))
+    .then(res => JSON.parse(res) as SearchCandidateResult)
+    .then(res => res.data)
+
+const getSeasonCardInfo = async (elem: HTMLElement, { fetch }: ExtraOptions): SeriesHandle => {
+  if (!searchCandidates) searchCandidates = getSearchCandidates(fetch)
+
+  const name = elem.querySelector('div > a > span:nth-child(2)[itemprop="name"]')!.textContent!.trim()!
+
+  const id = (await searchCandidates).find(candidate => candidate.name === name)?.id!
+
+
+
+  return (
+    populateUri({
+      scheme,
+      categories,
+      id,
+      url: elem.querySelector<HTMLAnchorElement>('div > a[itemprop="url"]')!.href,
+      images: [{
+        type: 'image' as const,
+        size: 'small' as const,
+        url: elem.querySelector<HTMLImageElement>('div > a > span.lineup-img-holder > img[itemprop="photo"]')!.src
+      }],
+      names: [{
+        score: 1,
+        language: LanguageTag.EN,
+        name: name.trim()!
+      }],
+      handles: [],
+      withDetails: false
+    })
+  )
+}
+
+export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
+  fetch('https://www.crunchyroll.com/lineup', { proxyRuntime: true })
+    .then(async res =>
+      Promise.all(
+        [
+          ...new DOMParser()
+            .parseFromString(await res.text(), 'text/html')
+            .querySelectorAll('#sortable li')
+        ]
+          .map(item => getSeasonCardInfo(item, { fetch }))
+      )
+    )
+    .then(res => res.filter(handle => handle.id))
+
+export const searchSeries: SearchSeries = ({ ...rest }, { fetch, ...extraOptions }) => {
+  const throttledFetch: FetchType = throttle((...args) => fetch(...args))
+  if ('latest' in rest && rest.latest) {
+    return from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
+  }
+  // if ('search' in rest && typeof rest.search === 'string') {
+  //   return from(searchAnime({ search: rest.search }, { ...extraOptions, fetch: throttledFetch }))
+  // }
+  return from([])
+}
