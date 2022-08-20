@@ -138,22 +138,55 @@ const getSeasonCardInfo = async (elem: HTMLElement, { fetch }: ExtraOptions): Se
   )
 }
 
-export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
-  fetch('https://www.crunchyroll.com/lineup', { proxyRuntime: true })
-    .then(async res =>
-      Promise.all(
-        [
-          ...new DOMParser()
+export const getAnimeSeason = ({ fetch }: ExtraOptions) => {
+
+  return (
+    fetch('https://www.crunchyroll.com/lineup', { proxyRuntime: true })
+      .then(async res => {
+        const doc =
+          new DOMParser()
             .parseFromString(await res.text(), 'text/html')
-            .querySelectorAll('#sortable li')
-        ]
-          .map(item => getSeasonCardInfo(item, { fetch }))
+
+        const continuing =
+          [
+            ...[...doc.querySelectorAll('.anime-lineup-heading')]
+              .filter(el => el.textContent === 'Continuing Simulcast Titles')
+              .at(0)
+              ?.nextElementSibling
+              ?.nextElementSibling
+              ?.querySelectorAll('#sortable li')
+            ?? []
+          ]
+        const currentSeason =
+          [
+            ...[...doc.querySelectorAll('.anime-lineup-heading')]
+              .filter(el => el.textContent === 'New Simulcast Titles')
+              .at(0)
+              ?.nextElementSibling
+              ?.nextElementSibling
+              ?.querySelectorAll('#sortable li')
+            ?? []
+          ]
+
+        return (
+          Promise.all(
+            [
+              ...continuing,
+              ...currentSeason
+            ]
+              .map(item => getSeasonCardInfo(item, { fetch }))
+          )
+        )
+      }
       )
-    )
-    .then(res => res.filter(handle => handle.id))
+      //todo: try to check if theres a way to get the anime ID even when it wasn't found in the searchCandidates list
+      .then(res => res.filter(handle => handle.id))
+  )
+}
 
 export const searchSeries: SearchSeries = ({ ...rest }, { fetch, ...extraOptions }) => {
   const throttledFetch: FetchType = throttle((...args) => fetch(...args))
+  console.log('crunchy search')
   if ('latest' in rest && rest.latest) {
     return from(getAnimeSeason({ ...extraOptions, fetch: throttledFetch }))
   }
