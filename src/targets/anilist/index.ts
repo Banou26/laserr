@@ -358,7 +358,7 @@ const mediaToSeriesHandle = (media: Media) => populateUri({
     media.startDate?.year
       ? [{
         language: 'jp',
-        start: new Date(media.startDate?.year, media.endDate?.month!, media.endDate?.day ?? undefined),
+        start: new Date(media.startDate?.year, media.startDate?.month!, media.startDate?.day ?? undefined),
         end:
           media.endDate?.year
             ? new Date(media.endDate?.year, media.endDate?.month!, media.endDate?.day ?? undefined)
