@@ -1,5 +1,5 @@
 import type { Category, ExtraOptions, GetSeries, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
-import { MediaSeason, MediaFormat, Media, MediaExternalLink, MediaStatus } from './types'
+import { MediaSeason, MediaFormat, Media, MediaExternalLink, MediaStatus, PageInfo } from './types'
 
 import { from, combineLatest, startWith, map, tap } from 'rxjs'
 import * as A from 'fp-ts/lib/Array'
@@ -17,7 +17,6 @@ export const name = 'Anilist'
 export const scheme = 'anilist'
 
 const searchQuery = `
-
 query (
   $season: MediaSeason
   $year: Int
@@ -168,6 +167,22 @@ const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, status, pa
       }
     })
   })
+
+const fetchFullMediaSeasonMedias = ({ season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus }, page = 1) =>
+  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, status, page })
+    .then(response => response.json())
+    .then(async json => {
+      const info: PageInfo = json.data.Page.pageInfo
+      const medias: Media[] = json.data.Page.media
+      if (info.hasNextPage) {
+        const nextPagesMedias = await fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status }, page + 1)
+        return [
+          ...medias,
+          ...nextPagesMedias
+        ]
+      }
+      return medias
+    })
 
 const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
   fetch('https://graphql.anilist.co/', {
@@ -401,13 +416,10 @@ const mediaToSeriesHandle = (media: Media) => populateUri({
 }) as SeriesHandle
 
 // todo: add support for multiple graphql response pages
-const getSeason = ({ season, year, excludeFormat, minEpisodes, status, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number }): Promise<SeriesHandle[]> =>
-  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, status, page })
-    .then(response => response.json())
-    .then(json => {
-      const medias: Media[] = json.data.Page.media
-      return medias.map(mediaToSeriesHandle)
-    })
+const getSeason = ({ season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus }): Promise<SeriesHandle[]> =>
+  fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status })
+    .then(res => console.log('res', res) || res)
+    .then(medias => medias.map(mediaToSeriesHandle))
 
 // todo: improve the previousSeason query
 export const searchSeries: SearchSeries = ({ ...rest }) => {
