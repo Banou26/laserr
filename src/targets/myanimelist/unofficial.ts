@@ -5,7 +5,7 @@ import { from, Observable } from 'rxjs'
 import pThrottle from 'p-throttle'
 
 
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from '../../../../scannarr/src'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries, Relation } from '../../../../scannarr/src'
 
 import { fromUri, fromUris, populateUri } from '../../../../scannarr/src/utils'
 import { languageToTag, LanguageTag } from '../../utils'
@@ -442,6 +442,11 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   //         )
   //     )
 
+  const getSideElement = (elem: Document, title: 'Alternative Titles' | 'Information' | 'Statistics' | 'External Links' | 'Streaming Platforms') =>
+    [...elem
+      ?.querySelectorAll('#content > table > tbody > tr > td.borderClass > div > h2')]
+      .find(elem => elem.textContent === title)
+
   return populateUri({
     // todo: infer airingSchedule from "Broadcast: Wednesdays at 23:00 (JST)" data on the side data
     averageScore:
@@ -509,6 +514,36 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
           ?.textContent
           ?.replaceAll('\n\n\n\n', '\n\n')!
     }],
+    relations:
+      [...elem
+        .querySelector('#content > table > tbody > tr > td:nth-child(2) > div.rightside.js-scrollfix-bottom-rel > table > tbody > tr:nth-child(3) > td > table')
+        ?.querySelectorAll('tr > td:nth-child(1)') ?? []]
+        .flatMap(rowElem => {
+          const titleText = rowElem.textContent as 'Adaptation:' | 'Prequel:' | 'Side story:' | 'Sequel:' | 'Other:'
+          const rowValues = rowElem.nextElementSibling
+          return (
+            [...rowValues?.querySelectorAll('a') ?? []]
+              .map(elem => ({
+                relation:
+                  titleText === 'Adaptation:' ? 'ADAPTATION'
+                  : titleText === 'Side story:' ? 'SIDE_STORY'
+                  : titleText === 'Prequel:' ? 'PREQUEL'
+                  : titleText === 'Sequel:' ? 'SEQUEL'
+                  : titleText === 'Other:' ? 'OTHER'
+                  : 'OTHER',
+                reference: populateUri({
+                  scheme,
+                  id: fixOrigin(elem.href).split('/').at(4)!,
+                  url: fixOrigin(elem.href),
+                  names: [{
+                    language: LanguageTag.JA,
+                    name: elem.textContent?.trim()!,
+                    score: 0.8
+                  }]
+                })
+              }) as Relation<SeriesHandle>)
+          )
+        }),
     dates: [date],
     handles: [],
     withDetails: true
