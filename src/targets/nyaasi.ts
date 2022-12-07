@@ -271,7 +271,10 @@ export const getItemAsTitle = toObservable(async (elem: HTMLElement, { fetch }: 
   // todo: rework anitomy so that it only loads the wasm once, rn it loads multiple times when called at the same time initially
   const { anime_title } = await anitomy(name) as AnitomyResult
   // const [teamEpisode, team] = existingTeam ? [undefined, await existingTeam] : await getTorrentAsEpisodeAndTeam(groupTag, row.link)
-
+  console.log('anitomyResult', await anitomy(name), name)
+  console.log('BRUH', await anitomy('[Erai-raws] Cyberpunk - Edgerunners - 01 + 10 [1080p][Multiple Subtitle] [ENG][POR-BR][SPA-LA][SPA][ARA][FRE][GER][ITA][JPN][POR][POL][DUT][NOB][FIN][TUR][SWE][GRE][HEB][RUM][IND][THA][KOR][DAN][CHI][VIE][UKR][HUN][CES][HRV][MAY][FIL]'))
+  console.log('BRUH2', await anitomy('[Coalgirls]_White_Album_1-13_(1280×720_Blu-Ray_FLAC)'))
+  console.log('anitomy', anitomy)
   const makeTitle = ({ teamEpisode, team }: { teamEpisode?: TeamEpisode, team?: Team } = {}): TitleHandle => populateUri({
     id: row.link.split('/').at(4)!,
     scheme: 'nyaa',
