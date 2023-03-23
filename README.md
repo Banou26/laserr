@@ -10,3 +10,8 @@ TODO:
 support https://github.com/erengy/anime-relations
 make use of the https://trash-guides.info/Sonarr/Sonarr-Release-Profile-RegEx-Anime/#must-not-contain ?
 support Jackett definitions: https://github.com/Jackett/Jackett/tree/master/src/Jackett.Common/Definitions
+
+video sources like 9anime ect
+https://github.com/justfoolingaround/animdl/tree/master/animdl/core/codebase/extractors/vidstream
+https://github.com/justfoolingaround/animdl/animdl/core/codebase/providers/nineanime/init.py
+https://github.com/justfoolingaround/animdl/animdl/core/codebase/extractors/vidstream/init.py
