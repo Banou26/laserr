@@ -8,7 +8,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "generate-types": "apollo schema:download --endpoint=https://graphql.anilist.co/ schema.gql && npx graphql-json-to-sdl ./schema.json ./schema.gql"
+    "generate-types": "apollo schema:download --endpoint=https://graphql.anilist.co/ schema.json && npx graphql-json-to-sdl ./schema.json ./schema.gql"
   },
   "author": "",
   "license": "ISC",
