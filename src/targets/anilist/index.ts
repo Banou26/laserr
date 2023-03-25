@@ -9,6 +9,12 @@ import { EqByUri } from '../../../../scannarr/src'
 import { fromUri, fromUris, populateUri } from '../../../../scannarr/src/utils/uri'
 import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
+import pThrottle from 'p-throttle'
+
+const throttle = pThrottle({
+	limit: 2,
+	interval: 1_000
+})
 
 export const icon = 'https://anilist.co/img/icons/favicon-32x32.png'
 export const origin = 'https://anilist.co'
@@ -149,7 +155,10 @@ const seasonVariables3 = {season: "SPRING", year: 2022, minEpisodes: 16, page: 1
 //   "credentials": "omit"
 // });
 
-const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, status, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number }) =>
+const fetchMediaSeason = (
+  { season, year, excludeFormat, minEpisodes, status, page = 1 }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number },
+  { fetch }: ExtraOptions
+) =>
   fetch('https://graphql.anilist.co/', {
     method: 'POST',
     "headers": {
@@ -168,14 +177,18 @@ const fetchMediaSeason = ({ season, year, excludeFormat, minEpisodes, status, pa
     })
   })
 
-const fetchFullMediaSeasonMedias = ({ season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus }, page = 1) =>
-  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, status, page })
+const fetchFullMediaSeasonMedias = (
+  { season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus },
+  page = 1,
+  extraOptions: ExtraOptions
+) =>
+  fetchMediaSeason({ season, year, excludeFormat, minEpisodes, status, page }, extraOptions)
     .then(response => response.json())
     .then(async json => {
       const info: PageInfo = json.data.Page.pageInfo
       const medias: Media[] = json.data.Page.media
       if (info.hasNextPage) {
-        const nextPagesMedias = await fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status }, page + 1)
+        const nextPagesMedias = await fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status }, page + 1, extraOptions)
         return [
           ...medias,
           ...nextPagesMedias
@@ -184,7 +197,7 @@ const fetchFullMediaSeasonMedias = ({ season, year, excludeFormat, minEpisodes, 
       return medias
     })
 
-const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
+const fetchSeries = ({ id, malId }: { id?: number, malId?: number }, { fetch }: ExtraOptions) =>
   fetch('https://graphql.anilist.co/', {
     method: 'POST',
     "headers": {
@@ -416,18 +429,23 @@ const mediaToSeriesHandle = (media: Media) => populateUri({
 }) as SeriesHandle
 
 // todo: add support for multiple graphql response pages
-const getSeason = ({ season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus }): Promise<SeriesHandle[]> =>
-  fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status })
+const getSeason = (
+  { season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus },
+  extraOptions: ExtraOptions
+  ): Promise<SeriesHandle[]> =>
+  fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status }, 1, extraOptions)
     .then(res => console.log('res', res) || res)
     .then(medias => medias.map(mediaToSeriesHandle))
 
 // todo: improve the previousSeason query
-export const searchSeries: SearchSeries = ({ ...rest }) => {
+export const searchSeries: SearchSeries = ({ ...rest }, extraOptions) => {
+  const throttledFetch: ExtraOptions['fetch'] = throttle((input: RequestInfo | URL, init?: RequestInit | undefined) => fetch(input, { ...init, noProxy: true }))
+
   if ('latest' in rest && rest.latest) {
     const { season, year } = getCurrentSeason(1)
     const { season: previousSeason, year: previousSeasonYear } = getPreviousSeason({ season, year })
-    const result = getSeason({ season, year })
-    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear, status: MediaStatus.Releasing })
+    const result = getSeason({ season, year }, { ...extraOptions, fetch: throttledFetch })
+    const leftOvers = getSeason({ season: previousSeason, year: previousSeasonYear, status: MediaStatus.Releasing }, { ...extraOptions, fetch: throttledFetch })
     return combineLatest([
       from(result),
       from(leftOvers)
@@ -463,15 +481,21 @@ const getIdFromUrl = (url: string): number => 1
 //     })
 
 
-export const getSeries: GetSeries = (options) =>
-  void console.log('id', fromUris(options.uri, 'anilist').id) ||
-  from(
-    fetchSeries({ id: 'uri' in options ? fromUris(options.uri, 'anilist').id : options.id })
-      .then(response => response.json())
-      .then(json => {
-        const medias: Media[] = json.data.Page.media
-        const series = medias.map(mediaToSeriesHandle).at(0)
-        if (!series) throw new Error(`Anilist getSeries '${'uri' in options ? options.uri : options.id}' not found`)
-        return series
-      })
+export const getSeries: GetSeries = (options, extraOptions) => {
+  const throttledFetch: ExtraOptions['fetch'] = throttle((input: RequestInfo | URL, init?: RequestInit | undefined) => fetch(input, { ...init, noProxy: true }))
+  console.log('id', fromUris(options.uri, 'anilist').id)
+  return (
+    
+    from(
+      fetchSeries({ id: 'uri' in options ? fromUris(options.uri, 'anilist').id : options.id }, { ...extraOptions, fetch: throttledFetch })
+        .then(response => response.json())
+        .then(json => {
+          const medias: Media[] = json.data.Page.media
+          const series = medias.map(mediaToSeriesHandle).at(0)
+          if (!series) throw new Error(`Anilist getSeries '${'uri' in options ? options.uri : options.id}' not found`)
+          return series
+        })
+    )
+  
   )
+}
