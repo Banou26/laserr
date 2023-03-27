@@ -4,17 +4,21 @@
 import { from, Observable } from 'rxjs'
 import pThrottle from 'p-throttle'
 
+import { schema } from 'scannarr'
+
 
 import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries, Relation } from '../../../../scannarr/src'
 
-import { fromUri, fromUris, populateUri } from '../../../../scannarr/src/utils'
+import { fromUri, fromUris, populateUri } from 'scannarr/src/utils'
 import { languageToTag, LanguageTag } from '../../utils'
+import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr/src/generated/graphql'
+import { MediaFormat } from '../anilist/types'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const origin = 'https://myanimelist.net'
 export const categories: Category[] = ['ANIME']
 export const name = 'MyAnimeList'
-export const scheme = 'mal'
+export const origin = 'mal'
 
 const throttle = pThrottle({
 	limit: 4,
@@ -60,7 +64,7 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
       ? undefined
       : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()) / 10,
-  scheme,
+  origin,
   categories,
   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
   url: elem.querySelector<HTMLAnchorElement>('.link-title')!.href,
@@ -86,7 +90,7 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   genres:
     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
       .map(({ textContent, href, parentElement }) => populateUri({
-        scheme,
+        origin,
         id: href!.split('/').at(5)!,
         adult: parentElement?.classList.contains('explicit'),
         url: fixOrigin(href),
@@ -116,47 +120,12 @@ export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
         .map(getSeasonCardInfo)
     )
 
-const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
-  scheme,
-  categories,
-  id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
-  url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
-  images: [{
-    type: 'poster' as const,
-    size: 'medium' as const,
-    url: (elem.querySelector<HTMLImageElement>('.picSurround img')!.src || elem.querySelector<HTMLImageElement>('.picSurround img')!.dataset.src!).replace('r/50x70/', '')
-  }],
-  names: [{
-    score: 1,
-    language: LanguageTag.JA,
-    name: elem.querySelector('.title strong')!.textContent!.trim()!
-  }],
-  synopses: [{
-    language: LanguageTag.EN,
-    synopsis: elem.querySelector('.pt4')!.textContent!.trim()!
-  }],
-  handles: [],
-  withDetails: false
-})
-
-export const searchAnime = ({ search }: { search: string }, { fetch }: ExtraOptions) =>
-  fetch(`https://myanimelist.net/anime.php?${new URLSearchParams(`q=${search}`).toString()}&cat=anime`)
-    .then(async res =>
-      [
-        ...new DOMParser()
-          .parseFromString(await res.text(), 'text/html')
-          .querySelectorAll('#content > div.js-categories-seasonal.js-block-list.list > table > tbody > tr')
-      ]
-        .slice(1)
-        .map(getSearchCardInfo)
-    )
-
 const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   averageScore:
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
       ? undefined
       : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()),
-  scheme,
+  origin,
   categories,
   id: elem.querySelector<HTMLElement>('[data-anime-id]')!.dataset.animeId!,
   url: elem.querySelector<HTMLAnchorElement>('.video-info-title a:last-of-type')!.href,
@@ -182,7 +151,7 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   titles:
     [...elem.querySelectorAll<HTMLAnchorElement>('.title a')]
       .map(elem => populateUri({
-        scheme,
+        origin,
         categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
         dates: [],
@@ -276,7 +245,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       ?.getAttribute('data-src')
 
   return populateUri({
-    scheme,
+    origin,
     categories,
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
     unit: 1,
@@ -351,7 +320,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
 
         return ({
           averageScore: scoreElem ? (Number(scoreElem.textContent) / 5) : undefined,
-          scheme,
+          origin,
           categories,
           id: `${url.split('/')[4]!}-${url.split('/')[7]!}`, // url.split('/')[7]!,
           unit: 1,
@@ -453,7 +422,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
       elem.querySelector<HTMLDivElement>('.score .score-label')?.textContent?.trim() === 'N/A'
       ? undefined
       : Number(elem.querySelector<HTMLDivElement>('.score .score-label')!.textContent?.trim()) / 10,
-    scheme,
+    origin,
     categories,
     id: url.split('/')[4]!,
     url: url,
@@ -532,7 +501,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
                   : titleText === 'Other:' ? 'OTHER'
                   : 'OTHER',
                 reference: populateUri({
-                  scheme,
+                  origin,
                   id: fixOrigin(elem.href).split('/').at(4)!,
                   url: fixOrigin(elem.href),
                   names: [{
@@ -624,7 +593,7 @@ export const searchTitles: SearchTitles = (options, { fetch, ...extraOptions }) 
         .series
         .uris
         .map(fromUri)
-        .find(({ scheme }) => scheme === 'mal')
+        .find(({ origin }) => origin === 'mal')
         ?.id
     if (!id) return from([])
 
@@ -646,7 +615,7 @@ const testSeriesTitles = async (limitedFetch) => {
   const firstTitle = titles.at(0)
   const firstTitleJSON = JSON.parse(JSON.stringify(firstTitle))
   expect(firstTitleJSON).to.deep.equal({
-    scheme,
+    origin,
     categories: ['ANIME'],
     id: '1-1',
     unit: 1,
@@ -690,7 +659,7 @@ const testSeriesTitle = async (limitedFetch) => {
   const title = await getSeriesTitle('1', 1, { fetch: limitedFetch })
   const titleJSON = JSON.parse(JSON.stringify(title))
   expect(titleJSON).to.deep.equal({
-    scheme,
+    origin,
     categories: ['ANIME'],
     id: '1-1',
     unit: 1,
@@ -730,7 +699,7 @@ const testSeries = async (limitedFetch) => {
   const series = await getSeries({ id: '1' }, { fetch: limitedFetch })
   const seriesJSON = JSON.parse(JSON.stringify(series))
   expect(seriesJSON).to.deep.equal({
-    scheme,
+    origin,
     categories: ['ANIME'],
     id: '1',
     url: 'https://myanimelist.net/anime/1/Cowboy_Bebop',
@@ -801,23 +770,23 @@ export const test = async () => {
 // globalThis.fetch(iconUrl)
 // addTarget({
 //   name: 'MyAnimeList',
-//   scheme,
+//   origin,
 //   categories,
 //   // icon: iconUrl,
 //   getTitle: {
-//     scheme,
+//     origin,
 //     categories,
 //     function: ({ uri, id }) =>
 //       getAnimeTitle(id ?? fromUri(uri!).id)
 //   },
 //   getEpisode: {
-//     scheme,
+//     origin,
 //     categories,
 //     function: ({ uri }) =>
 //       getAnimeEpisode(fromUri(uri!).id.split('-')[0], Number(fromUri(uri!).id.split('-')[1]))
 //   },
 //   searchTitle: {
-//     scheme,
+//     origin,
 //     categories,
 //     latest: true,
 //     pagination: true,
@@ -830,7 +799,7 @@ export const test = async () => {
 //       : Promise.resolve([])
 //   },
 //   searchEpisode: {
-//     scheme,
+//     origin,
 //     categories,
 //     latest: true,
 //     pagination: true,
@@ -839,3 +808,91 @@ export const test = async () => {
 //     function: async () => [] ?? getLatestEpisodes()
 //   }
 // })
+
+
+type Impossible<K extends keyof any> = {
+  [P in K]: never;
+};
+type NoExtraProperties<T, U extends T = T> = U & Impossible<Exclude<keyof U, keyof T>>;
+
+const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
+  // example: https://cdn.myanimelist.net/r/50x70/images/anime/1502/110723.webp?s=0e73de5f3b62a2e52a775311c349770f
+  //                                                           ↑↑↑↑ ↑↑↑↑↑↑
+  // both of these are identifiers that we can reuse to get the full size image like so:
+  //                                          ↓↓↓↓ ↓↓↓↓↓↓
+  // https://cdn.myanimelist.net/images/anime/1502/110723.jpg
+  const imgSrc =
+    elem
+      .querySelector<HTMLImageElement>('td:nth-child(1) > div > a > img')
+      ?.src
+  const imgSrcSplits = imgSrc?.split('/')
+
+  const fullSizeCoverImage =
+    imgSrcSplits &&
+    `https://cdn.myanimelist.net/images/anime/${imgSrcSplits[7]}/${imgSrcSplits[8]}.jpg`
+
+  const synonyms = [{
+    score: 1,
+    language: LanguageTag.JA,
+    synonym: elem.querySelector('.title strong')!.textContent!.trim()!,
+    isRomanized: true
+  }]
+
+  const format = elem.querySelector('td:nth-child(3)')?.textContent?.trim()
+
+  return {
+    ...populateUri({
+      origin,
+      id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
+      url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
+      handles: []
+    }),
+    title: {
+      romanized: synonyms[0]!.synonym
+    },
+    synonyms,
+    shortDescription: elem.querySelector('td:nth-child(2) > div.pt4')?.textContent?.trim(),
+    averageScore: Number(elem.querySelector('td:nth-child(5)')?.textContent?.trim()),
+    type: MediaType.Anime,
+    format:
+      format === 'TV' ? MediaFormat.Tv
+      : format === 'Movie' ? MediaFormat.Movie
+      : format === 'OVA' ? MediaFormat.Ova
+      : format === 'ONA' ? MediaFormat.Ona
+      : format === 'Special' ? MediaFormat.Special
+      : format === 'Music' ? MediaFormat.Music
+      : undefined,
+    coverImage: [{ medium: fullSizeCoverImage }]
+  }
+}
+
+type MediaParams = Parameters<Extract<QueryResolvers['Media'], Function>>
+
+export const searchAnime = (_, { search }: MediaParams[1], { fetch }: MediaParams[2], __) =>
+  fetch(`https://myanimelist.net/anime.php?${new URLSearchParams(`q=${search}`).toString()}&cat=anime&type=0&score=0&status=0&p=0&r=0&sm=0&sd=0&sy=0&em=0&ed=0&ey=0&c%5B%5D=a&c%5B%5D=b&c%5B%5D=c&c%5B%5D=d&c%5B%5D=e&c%5B%5D=f&c%5B%5D=g`)
+    .then(async res =>
+      [
+        ...new DOMParser()
+          .parseFromString(await res.text(), 'text/html')
+          .querySelectorAll<HTMLTableRowElement>('#content > div.js-categories-seasonal.js-block-list.list > table > tbody > tr')
+      ]
+        .slice(1)
+        .map(getSearchCardInfo)
+    )
+
+export const resolvers: Resolvers = {
+  Page: {
+    media: (...args) => {
+      const [, { search }] = args
+      if (search) {
+        return searchAnime(...args)
+      }
+      return null
+    }
+  },
+  Query: {
+    Media: async (_, { id }, { dataSources }) => {
+      
+    }
+  }
+}
