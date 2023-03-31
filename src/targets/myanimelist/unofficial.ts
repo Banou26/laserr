@@ -13,6 +13,7 @@ import { fromUri, fromUris, populateUri } from 'scannarr/src/utils'
 import { languageToTag, LanguageTag } from '../../utils'
 import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr/src/generated/graphql'
 import { MediaFormat } from '../anilist/types'
+import { NoExtraProperties } from 'src/utils/type'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const origin = 'https://myanimelist.net'
@@ -59,66 +60,66 @@ const getAnimePageId = (doc: Document) =>
 //         )
 //     )
 
-const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
-  averageScore:
-    elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
-      ? undefined
-      : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()) / 10,
-  origin,
-  categories,
-  id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
-  url: elem.querySelector<HTMLAnchorElement>('.link-title')!.href,
-  images: [{
-    type: 'poster' as const,
-    size: 'medium' as const,
-    url: elem.querySelector<HTMLImageElement>('img')!.src || elem.querySelector<HTMLImageElement>('img')!.dataset.src!
-  }],
-  names: [{
-    score: 1,
-    language: LanguageTag.JA,
-    name: elem.querySelector('.h2_anime_title')!.textContent!.trim()!
-  }],
-  popularity:
-    (elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('M') ? 1_000_000
-      : elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('K') ? 1_000
-      : 1)
-    * Number(elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.trim().replace('K', '').replace('M', '')),
-  synopses: [{
-    language: LanguageTag.EN,
-    synopsis: elem.querySelector('.preline')!.textContent!.trim()!
-  }],
-  genres:
-    [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
-      .map(({ textContent, href, parentElement }) => populateUri({
-        origin,
-        id: href!.split('/').at(5)!,
-        adult: parentElement?.classList.contains('explicit'),
-        url: fixOrigin(href),
-        name: textContent?.trim()!,
-        // categories
-      })),
-  dates: [{
-    language: LanguageTag.EN,
-    date: new Date(elem.querySelector('.prodsrc > .info > span:nth-child(1)')!.textContent!.trim())
-  }],
-  related: [],
-  titles: [],
-  recommended: [],
-  tags: [],
-  handles: [],
-  withDetails: false
-})
+// const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+//   averageScore:
+//     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
+//       ? undefined
+//       : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()) / 10,
+//   origin,
+//   categories,
+//   id: elem.querySelector<HTMLElement>('[id]')!.id.trim(),
+//   url: elem.querySelector<HTMLAnchorElement>('.link-title')!.href,
+//   images: [{
+//     type: 'poster' as const,
+//     size: 'medium' as const,
+//     url: elem.querySelector<HTMLImageElement>('img')!.src || elem.querySelector<HTMLImageElement>('img')!.dataset.src!
+//   }],
+//   names: [{
+//     score: 1,
+//     language: LanguageTag.JA,
+//     name: elem.querySelector('.h2_anime_title')!.textContent!.trim()!
+//   }],
+//   popularity:
+//     (elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('M') ? 1_000_000
+//       : elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('K') ? 1_000
+//       : 1)
+//     * Number(elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.trim().replace('K', '').replace('M', '')),
+//   synopses: [{
+//     language: LanguageTag.EN,
+//     synopsis: elem.querySelector('.preline')!.textContent!.trim()!
+//   }],
+//   genres:
+//     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
+//       .map(({ textContent, href, parentElement }) => populateUri({
+//         origin,
+//         id: href!.split('/').at(5)!,
+//         adult: parentElement?.classList.contains('explicit'),
+//         url: fixOrigin(href),
+//         name: textContent?.trim()!,
+//         // categories
+//       })),
+//   dates: [{
+//     language: LanguageTag.EN,
+//     date: new Date(elem.querySelector('.prodsrc > .info > span:nth-child(1)')!.textContent!.trim())
+//   }],
+//   related: [],
+//   titles: [],
+//   recommended: [],
+//   tags: [],
+//   handles: [],
+//   withDetails: false
+// })
 
-export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
-  fetch('https://myanimelist.net/anime/season')
-    .then(async res =>
-      [
-        ...new DOMParser()
-          .parseFromString(await res.text(), 'text/html')
-          .querySelectorAll('.seasonal-anime.js-seasonal-anime')
-      ]
-        .map(getSeasonCardInfo)
-    )
+// export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
+//   fetch('https://myanimelist.net/anime/season')
+//     .then(async res =>
+//       [
+//         ...new DOMParser()
+//           .parseFromString(await res.text(), 'text/html')
+//           .querySelectorAll('.seasonal-anime.js-seasonal-anime')
+//       ]
+//         .map(getSeasonCardInfo)
+//     )
 
 const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   averageScore:
@@ -809,12 +810,6 @@ export const test = async () => {
 //   }
 // })
 
-
-type Impossible<K extends keyof any> = {
-  [P in K]: never;
-};
-type NoExtraProperties<T, U extends T = T> = U & Impossible<Exclude<keyof U, keyof T>>;
-
 const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
   // example: https://cdn.myanimelist.net/r/50x70/images/anime/1502/110723.webp?s=0e73de5f3b62a2e52a775311c349770f
   //                                                           ↑↑↑↑ ↑↑↑↑↑↑
@@ -832,13 +827,16 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
     `https://cdn.myanimelist.net/images/anime/${imgSrcSplits[7]}/${imgSrcSplits[8]}.jpg`
 
   const synonyms = [{
-    score: 1,
+    isRomanized: true,
     language: LanguageTag.JA,
-    synonym: elem.querySelector('.title strong')!.textContent!.trim()!,
-    isRomanized: true
+    score: 1,
+    synonym: elem.querySelector('.title strong')!.textContent!.trim()!
   }]
 
   const format = elem.querySelector('td:nth-child(3)')?.textContent?.trim()
+
+  const startDateValue = elem.querySelector('td:nth-child(6)')?.textContent?.trim().split('-')
+  const endDateValue = elem.querySelector('td:nth-child(7)')?.textContent?.trim().split('-')
 
   return {
     ...populateUri({
@@ -847,13 +845,8 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
       url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
       handles: []
     }),
-    title: {
-      romanized: synonyms[0]!.synonym
-    },
-    synonyms,
-    shortDescription: elem.querySelector('td:nth-child(2) > div.pt4')?.textContent?.trim(),
     averageScore: Number(elem.querySelector('td:nth-child(5)')?.textContent?.trim()),
-    type: MediaType.Anime,
+    coverImage: [{ medium: fullSizeCoverImage }],
     format:
       format === 'TV' ? MediaFormat.Tv
       : format === 'Movie' ? MediaFormat.Movie
@@ -862,7 +855,28 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
       : format === 'Special' ? MediaFormat.Special
       : format === 'Music' ? MediaFormat.Music
       : undefined,
-    coverImage: [{ medium: fullSizeCoverImage }]
+    shortDescription: elem.querySelector('td:nth-child(2) > div.pt4')?.textContent?.trim(),
+    synonyms,
+    title: {
+      romanized: synonyms[0]!.synonym
+    },
+    type: MediaType.Anime,
+    startDate:
+      startDateValue
+        ? {
+          year: Number(startDateValue[0]),
+          month: Number(startDateValue[1]),
+          day: Number(startDateValue[2])
+        }
+        : undefined,
+    endDate:
+      endDateValue
+        ? {
+          year: Number(endDateValue[0]),
+          month: Number(endDateValue[1]),
+          day: Number(endDateValue[2])
+        }
+        : undefined
   }
 }
 
@@ -880,18 +894,53 @@ export const searchAnime = (_, { search }: MediaParams[1], { fetch }: MediaParam
         .map(getSearchCardInfo)
     )
 
+const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
+  ...populateUri({
+    origin,
+    id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
+    url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
+    handles: []
+  }),
+  averageScore:
+    elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
+      ? undefined
+      : Number(elem.querySelector<HTMLDivElement>('[title="Score"]')!.textContent?.trim()) / 10,
+  coverImage: [{
+    medium: elem.querySelector<HTMLImageElement>('img')!.src || elem.querySelector<HTMLImageElement>('img')!.dataset.src!
+  }],
+  description: elem.querySelector('.preline')!.textContent!.trim()!,
+  title: {
+    romanized: elem.querySelector('.h2_anime_title')!.textContent!.trim()!,
+    english: elem.querySelector('.h3_anime_subtitle')!.textContent!.trim()!,
+  }
+})
+
+export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], { fetch }: MediaParams[2], __) =>
+  fetch('https://myanimelist.net/anime/season')
+    .then(async res =>
+      [
+        ...new DOMParser()
+          .parseFromString(await res.text(), 'text/html')
+          .querySelectorAll<HTMLDivElement>('.seasonal-anime.js-seasonal-anime')
+      ]
+        .map(getSeasonCardInfo)
+    )
+
 export const resolvers: Resolvers = {
   Page: {
     media: (...args) => {
-      const [, { search }] = args
+      const [, { search, season }] = args
       if (search) {
         return searchAnime(...args)
+      }
+      if (season) {
+        return getAnimeSeason(...args)
       }
       return null
     }
   },
   Query: {
-    Media: async (_, { id }, { dataSources }) => {
+    Media: async (_, { id }) => {
       
     }
   }

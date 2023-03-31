@@ -29,6 +29,6 @@
     "fp-ts-std": "^0.14.2",
     "p-throttle": "^5.0.0",
     "rxjs": "^7.5.5",
-    "scannar": "file:../scannarr"
+    "scannarr": "file:../scannarr"
   }
 }

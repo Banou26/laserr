@@ -291,6 +291,21 @@ export const getCurrentSeason = (offset = 0, date = new Date()): SeasonObject =>
   }
 }
 
+const getDateSeason = (date: Date) => {
+  const month = date.getMonth()
+  return (
+    month >= 0 && month <= 2 ? "WINTER"
+    : month >= 3 && month <= 5 ? "SPRING"
+    : month >= 6 && month <= 8 ? "SUMMER"
+    : month >= 9 && month <= 11 && "FALL"
+  )
+}
+
+const getDateSeasonObject = (date: Date) => ({
+  season: getDateSeason(date),
+  year: date.getFullYear()
+})
+
 // from https://anichart.net/0bfe19ab50401093b305.worker.js:969
 // function nt(t) {
 //   let e = t.season
