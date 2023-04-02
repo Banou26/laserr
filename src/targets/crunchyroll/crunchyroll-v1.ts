@@ -1,10 +1,10 @@
-import type { Category, ExtraOptions, FetchType, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { Category, ExtraOptions, FetchType, SearchSeries, SeriesHandle } from 'scannarr'
 
 import pThrottle from 'p-throttle'
 import { from } from 'rxjs'
 
 import { LanguageTag } from '../../utils'
-import { populateUri } from '../../../../scannarr/src/utils'
+import { populateUri } from 'scannarr'
 
 const throttle = pThrottle({
 	limit: 4,

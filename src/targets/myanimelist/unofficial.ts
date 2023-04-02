@@ -7,26 +7,26 @@ import pThrottle from 'p-throttle'
 import { schema } from 'scannarr'
 
 
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries, Relation } from '../../../../scannarr/src'
+import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries, Relation } from 'scannarr'
 
-import { fromUri, fromUris, populateUri } from 'scannarr/src/utils'
+import { fromUri, fromUris, populateUri } from 'scannarr'
 import { languageToTag, LanguageTag } from '../../utils'
-import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr/src/generated/graphql'
+import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr'
 import { MediaFormat } from '../anilist/types'
 import { NoExtraProperties } from 'src/utils/type'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
-export const origin = 'https://myanimelist.net'
+export const originUrl = 'https://myanimelist.net'
+export const origin = 'mal'
 export const categories: Category[] = ['ANIME']
 export const name = 'MyAnimeList'
-export const origin = 'mal'
 
 const throttle = pThrottle({
 	limit: 4,
 	interval: 1_000
 })
 
-const fixOrigin = (url: string) => url.replace(document.location.origin, 'https://myanimelist.net')
+const fixOrigin = (url: string) => url.replace(document.location.origin, originUrl)
 
 const getDocumentUrl = (doc: Document): string =>
   (
@@ -876,7 +876,8 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
           month: Number(endDateValue[1]),
           day: Number(endDateValue[2])
         }
-        : undefined
+        : undefined,
+    isAdult: elem.querySelector('td:nth-child(9)')?.textContent?.trim().includes('R')
   }
 }
 
@@ -897,8 +898,8 @@ export const searchAnime = (_, { search }: MediaParams[1], { fetch }: MediaParam
 const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
   ...populateUri({
     origin,
-    id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
-    url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
+    id: elem.querySelector<HTMLAnchorElement>('.genres.js-genre')!.id.trim().replace('sinfo', ''),
+    url: elem.querySelector<HTMLAnchorElement>('.h2_anime_title .link-title')!.href,
     handles: []
   }),
   averageScore:
@@ -910,9 +911,20 @@ const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
   }],
   description: elem.querySelector('.preline')!.textContent!.trim()!,
   title: {
-    romanized: elem.querySelector('.h2_anime_title')!.textContent!.trim()!,
-    english: elem.querySelector('.h3_anime_subtitle')!.textContent!.trim()!,
-  }
+    romanized:
+      elem.querySelector('.h2_anime_title')
+        ? elem.querySelector('.h2_anime_title')?.textContent!.trim()!
+        : elem.querySelector('.h3_anime_subtitle')?.textContent!.trim()!,
+    english:
+      elem.querySelector('.h3_anime_subtitle')
+        ? elem.querySelector('.h3_anime_subtitle')?.textContent!.trim()!
+        : elem.querySelector('.h2_anime_title')?.textContent!.trim()!,
+  },
+  popularity:
+    (elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('M') ? 1e6
+      : elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('K') ? 1e3
+      : 1)
+    * Number(elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.trim().replace('K', '').replace('M', ''))
 })
 
 export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], { fetch }: MediaParams[2], __) =>
@@ -928,15 +940,14 @@ export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], { fetc
 
 export const resolvers: Resolvers = {
   Page: {
-    media: (...args) => {
-      const [, { search, season }] = args
-      if (search) {
-        return searchAnime(...args)
-      }
-      if (season) {
-        return getAnimeSeason(...args)
-      }
-      return null
+    media: async (...args) => {
+      const [, { search, season, sort }] = args
+      const result =
+        search ? await searchAnime(...args) :
+        season ? await getAnimeSeason(...args) :
+        []
+
+      return result
     }
   },
   Query: {

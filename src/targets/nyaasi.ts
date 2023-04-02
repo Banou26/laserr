@@ -1,4 +1,4 @@
-import type { SearchTitlesOptions, TitleHandle, Category, ExtraOptions, GetTitle, GetTitleOptions } from '../../../scannarr/src'
+import type { SearchTitlesOptions, TitleHandle, Category, ExtraOptions, GetTitle, GetTitleOptions } from 'scannarr'
 import type { AnitomyResult } from 'anitomyscript'
 
 import { from, Observable, map, mergeMap, combineLatest, startWith, catchError } from 'rxjs'
@@ -8,7 +8,7 @@ import { join } from 'fp-ts-std/Array'
 import pThrottle from 'p-throttle'
 import anitomy from 'anitomyscript/dist/anitomyscript.bundle'
 import { getBytesFromBiByteString } from '../utils/bytes'
-import { fromUri, populateUri, searchableTitles } from '../../../scannarr/src/utils'
+import { fromUri, populateUri } from 'scannarr'
 import toObservable from '../utils/async-observable'
 import { of } from 'fp-ts-std/Lazy'
 
@@ -364,7 +364,8 @@ export const _searchTitles = (options: SearchTitlesOptions, { fetch, ...extraOpt
   
   const trustedSources = true
 
-  const searchNames = await searchableTitles(names.map(({ name }) => name))
+  // const searchNames = awai(names.map(({ name }) => name))
+  const searchNames = undefined
 
   // todo: check if names containing parenthesis will cause problems with nyaa.si search engine
   const search =

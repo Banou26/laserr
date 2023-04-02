@@ -1,12 +1,11 @@
-import type { Category, ExtraOptions, GetSeries, SearchSeries, SeriesHandle } from '../../../../scannarr/src'
+import type { Category, ExtraOptions, GetSeries, SearchSeries, SeriesHandle } from 'scannarr'
 import { MediaSeason, MediaFormat, Media, MediaExternalLink, MediaStatus, PageInfo } from './types'
 
 import { from, combineLatest, startWith, map, tap } from 'rxjs'
 import * as A from 'fp-ts/lib/Array'
 import { pipe } from 'fp-ts/lib/function'
 
-import { EqByUri } from '../../../../scannarr/src'
-import { fromUri, fromUris, populateUri } from '../../../../scannarr/src/utils/uri'
+import { fromUri, fromUris, populateUri } from 'scannarr'
 import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
 import pThrottle from 'p-throttle'
