@@ -4,8 +4,9 @@
     "module": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext", "esnext.array"],
     "noImplicitAny": false,
-    "outDir": "./lib",
+    "outDir": "./build",
     "sourceMap": true,
+    "declaration": true,
     "noEmit": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -13,5 +14,7 @@
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "baseUrl": "."
-  }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"],
 }
