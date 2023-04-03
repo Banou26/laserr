@@ -13,7 +13,7 @@ import { fromUri, fromUris, populateUri } from 'scannarr'
 import { languageToTag, LanguageTag } from '../../utils'
 import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr'
 import { MediaFormat } from '../anilist/types'
-import { NoExtraProperties } from 'src/utils/type'
+import { MediaParams, NoExtraProperties } from '../../utils/type'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
@@ -880,8 +880,6 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
     isAdult: elem.querySelector('td:nth-child(9)')?.textContent?.trim().includes('R')
   }
 }
-
-type MediaParams = Parameters<Extract<QueryResolvers['Media'], Function>>
 
 export const searchAnime = (_, { search }: MediaParams[1], { fetch }: MediaParams[2], __) =>
   fetch(`https://myanimelist.net/anime.php?${new URLSearchParams(`q=${search}`).toString()}&cat=anime&type=0&score=0&status=0&p=0&r=0&sm=0&sd=0&sy=0&em=0&ed=0&ey=0&c%5B%5D=a&c%5B%5D=b&c%5B%5D=c&c%5B%5D=d&c%5B%5D=e&c%5B%5D=f&c%5B%5D=g`)
