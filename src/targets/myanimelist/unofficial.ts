@@ -909,14 +909,8 @@ const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
   }],
   description: elem.querySelector('.preline')!.textContent!.trim()!,
   title: {
-    romanized:
-      elem.querySelector('.h2_anime_title')
-        ? elem.querySelector('.h2_anime_title')?.textContent!.trim()!
-        : elem.querySelector('.h3_anime_subtitle')?.textContent!.trim()!,
-    english:
-      elem.querySelector('.h3_anime_subtitle')
-        ? elem.querySelector('.h3_anime_subtitle')?.textContent!.trim()!
-        : elem.querySelector('.h2_anime_title')?.textContent!.trim()!,
+    romanized: elem.querySelector('.h2_anime_title')?.textContent!.trim()!,
+    english: elem.querySelector('.h3_anime_subtitle')?.textContent!.trim()!,
   },
   popularity:
     (elem.querySelector<HTMLDivElement>('[title="Members"]')?.textContent?.includes('M') ? 1e6
@@ -939,13 +933,12 @@ export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], { fetc
 export const resolvers: Resolvers = {
   Page: {
     media: async (...args) => {
-      const [, { search, season, sort }] = args
-      const result =
+      const [, { search, season }] = args
+      return (
         search ? await searchAnime(...args) :
         season ? await getAnimeSeason(...args) :
         []
-
-      return result
+      )
     }
   },
   Query: {
