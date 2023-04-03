@@ -8,6 +8,6 @@ import * as Crunchyroll from './crunchyroll'
 export const targets: Target[] = [
   MAL.resolvers,
   // Nyaasi,
-  // Anilist,
+  Anilist.resolvers,
   // Crunchyroll
 ]
