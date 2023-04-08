@@ -30,6 +30,7 @@
     "chai": "^4.3.6",
     "fp-ts": "^2.12.1",
     "fp-ts-std": "^0.14.2",
+    "graphql": "^16.6.0",
     "p-throttle": "^5.0.0",
     "rxjs": "^7.5.5",
     "scannarr": "file:../scannarr"
