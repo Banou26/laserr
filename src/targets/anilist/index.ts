@@ -10,6 +10,7 @@ import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
 import pThrottle from 'p-throttle'
 import { MediaParams, NoExtraProperties } from '../../utils/type'
+import { HandleRelation } from 'scannarr'
 
 const throttle = pThrottle({
 	limit: 2,
@@ -341,7 +342,7 @@ const fetchSeason = () => {
 
 }
 
-const mediaToSeriesHandle = (media: AnilistMedia) => populateUri({
+const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
   averageScore:
     media.averageScore
       ? media.averageScore / 100
@@ -353,10 +354,12 @@ const mediaToSeriesHandle = (media: AnilistMedia) => populateUri({
         number: airingSchedule.episode
       }))
       : undefined,
-  scheme,
   categories,
-  id: media.id.toString(),
-  url: media.siteUrl ?? undefined,
+  ...populateUri({
+    origin,
+    id: media.id.toString(),
+    url: media.siteUrl ?? undefined,
+  }),
   genres:
     media.genres?.length
       ? (
@@ -407,10 +410,16 @@ const mediaToSeriesHandle = (media: AnilistMedia) => populateUri({
             : undefined
       }]
       : undefined,
-  handles: media.idMal ? [populateUri({
-    id: media.idMal.toString(),
-    scheme: 'mal'
-  })] : undefined,
+  handles: {
+    edges:
+      media.idMal ? [{
+        node: populateUri({
+          id: media.idMal.toString(),
+          scheme: 'mal'
+        }),
+        handleRelationType: HandleRelation.Identical
+      }] : []
+  },
   images: [
     ...media.coverImage ? [{
       type: 'poster' as const,
@@ -518,7 +527,19 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     origin,
     id: media.id.toString(),
     url: media.siteUrl,
-    handles: []
+    handles: {
+      edges: media.idMal
+        ? [{
+          node: populateUri({
+            origin: 'mal',
+            id: media.idMal.toString(),
+            url: `https://myanimelist.net/anime/${media.idMal}`,
+            handles: { edges: [] }
+          }),
+          handleRelationType: HandleRelation.Identical
+        }]
+        : []
+    }
   }),
   averageScore:
     media.averageScore
@@ -537,7 +558,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
           origin: 'yt',
           id: media.id.toString(),
           url: `https://www.youtube.com/watch?v=${media.id}`,
-          handles: []
+          handles: { edges: [] }
         }),
         thumbnail: media.trailer!.thumbnail
       }]
