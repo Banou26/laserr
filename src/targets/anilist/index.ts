@@ -575,7 +575,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
 export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], __, ___) => {
   if (!seasonYear) throw new Error('Anilist getAnimeSeason `seasonYear` is required')
 
-  const res = fetchFullMediaSeasonMedias({ season: season as MediaSeason, year: seasonYear }, 1)
+  const res = fetchFullMediaSeasonMedias({ season: season, year: seasonYear }, 1)
     .then(res => void console.log('res', res) || res)
     .then(medias => medias.map(anilistMediaToScannarrMedia))
 
