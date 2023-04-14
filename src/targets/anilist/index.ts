@@ -556,8 +556,8 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
       ? [{
         ...populateUri({
           origin: 'yt',
-          id: media.id.toString(),
-          url: `https://www.youtube.com/watch?v=${media.id}`,
+          id: media.trailer.id?.toString(),
+          url: `https://www.youtube.com/watch?v=${media.trailer.id}`,
           handles: { edges: [] }
         }),
         thumbnail: media.trailer!.thumbnail
