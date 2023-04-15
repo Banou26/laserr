@@ -1,2 +1,3 @@
 
-export * from './unofficial'
+// export * from './unofficial'
+export * from './jikan'
