@@ -11,6 +11,32 @@ const throttle = pThrottle({
 	interval: 1_000
 })
 
+// Can get new crunchy IDs from https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone
+// to episodes, tho needs bearer, can probably get one manually tho?
+// fetch("https://www.crunchyroll.com/content/v2/cms/seasons/GR9XGX1EY/episodes?locale=fr-FR", {
+//   "headers": {
+//     "accept": "application/json, text/plain, */*",
+//     "accept-language": "en-US,en;q=0.9",
+//     "authorization": "Bearer eyJhbGciOiJSUzXXXXG6ABhABxNrQjQ",
+//     "sec-ch-ua": "\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Google Chrome\";v=\"114\"",
+//     "sec-ch-ua-mobile": "?0",
+//     "sec-ch-ua-platform": "\"Windows\"",
+//     "sec-fetch-dest": "empty",
+//     "sec-fetch-mode": "cors",
+//     "sec-fetch-site": "same-origin"
+//   },
+//   "referrer": "https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone",
+//   "referrerPolicy": "strict-origin-when-cross-origin",
+//   "body": null,
+//   "method": "GET",
+//   "mode": "cors",
+//   "credentials": "include"
+// });
+
+// ca go from new IDS like https://www.crunchyroll.com/fr/watch/GN7UDVKPQ/new-world-map
+// to external IDs for embed thru https://www.crunchyroll.com/content/v2/cms/objects/GN7UDVKPQ?ratings=true&locale=fr-FR
+// check external_id "external_id": "EPI.895218"
+
 // https://www.crunchyroll.com/favicons/favicon-32x32.png
 export const icon = 'https://www.crunchyroll.com/favicons/apple-touch-icon.png'
 export const origin = 'https://www.crunchyroll.com/'
