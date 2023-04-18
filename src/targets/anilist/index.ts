@@ -137,6 +137,94 @@ query (
   }
 }
 `
+
+const GET_MEDIA = `
+query GetMedia ($id: Int, $idMal: Int) {
+  Media(idMal: $idMal, id: $id) {
+    id
+    idMal
+    title {
+      romaji
+      native
+      english
+    }
+    startDate {
+      year
+      month
+      day
+    }
+    endDate {
+      year
+      month
+      day
+    }
+    status
+    season
+    format
+    genres
+    synonyms
+    duration
+    popularity
+    episodes
+    source(version: 2)
+    countryOfOrigin
+    hashtag
+    averageScore
+    siteUrl
+    description
+    bannerImage
+    isAdult
+    coverImage {
+      extraLarge
+      color
+    }
+    trailer {
+      id
+      site
+      thumbnail
+    }
+    externalLinks {
+      site
+      url
+    }
+    rankings {
+      rank
+      type
+      season
+      allTime
+    }
+    studios(isMain: true) {
+      nodes {
+        id
+        name
+        siteUrl
+      }
+    }
+    relations {
+      edges {
+        relationType(version: 2)
+        node {
+          id
+          title {
+            romaji
+            native
+            english
+          }
+          siteUrl
+        }
+      }
+    }
+
+    airingSchedule(perPage: 25) {
+      nodes {
+        episode
+        airingAt
+      }
+    }
+  }
+}
+`
+
 // notYetAired: true
 // perPage: 2
 
@@ -196,6 +284,23 @@ const fetchFullMediaSeasonMedias = (
       }
       return medias
     })
+
+const fetchMedia = ({ id }: { id: number }) =>
+  fetch('https://graphql.anilist.co/', {
+    method: 'POST',
+    "headers": {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      query: GET_MEDIA,
+      variables: {
+        id
+      }
+    })
+  })
+    .then(response => response.json())
+    .then(json => json.data.Media)
+    .then(anilistMediaToScannarrMedia)
 
 const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
   fetch('https://graphql.anilist.co/', {
@@ -594,8 +699,6 @@ export const resolvers: Resolvers = {
     }
   },
   Query: {
-    Media: async (_, { id }) => {
-      
-    }
+    Media: async (_, { id }) => fetchMedia({ id: Number(id) })
   }
 }
