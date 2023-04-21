@@ -34,6 +34,7 @@ query (
   $page: Int
   $idMal: Int
   $id: Int
+  $type: MediaType
 ) {
   Page(page: $page) {
     pageInfo {
@@ -48,10 +49,10 @@ query (
       status: $status
       episodes_greater: $minEpisodes
       isAdult: false
-      type: ANIME
       sort: TITLE_ROMAJI
       idMal: $idMal
       id: $id
+      type: $type
     ) {
       id
       idMal
@@ -73,6 +74,7 @@ query (
       status
       season
       format
+      type
       genres
       synonyms
       duration
@@ -139,8 +141,8 @@ query (
 `
 
 const GET_MEDIA = `
-query GetMedia ($id: Int, $idMal: Int) {
-  Media(idMal: $idMal, id: $id) {
+query GetMedia ($id: Int, $idMal: Int, $type: MediaType) {
+  Media(idMal: $idMal, id: $id, type: $type) {
     id
     idMal
     title {
@@ -161,6 +163,7 @@ query GetMedia ($id: Int, $idMal: Int) {
     status
     season
     format
+    type
     genres
     synonyms
     duration
@@ -261,7 +264,8 @@ const fetchMediaSeason = (
         year,
         excludeFormat,
         minEpisodes,
-        page
+        page,
+        type: 'ANIME'
       }
     })
   })
@@ -294,13 +298,17 @@ const fetchMedia = ({ id }: { id: number }) =>
     body: JSON.stringify({
       query: GET_MEDIA,
       variables: {
-        id
+        id,
+        type: 'ANIME'
       }
     })
   })
     .then(response => response.json())
-    .then(json => json.data.Media)
-    .then(anilistMediaToScannarrMedia)
+    .then(json =>
+        json.data.Media
+          ? anilistMediaToScannarrMedia(json.data.Media)
+          : undefined
+      )
 
 const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
   fetch('https://graphql.anilist.co/', {
@@ -699,6 +707,12 @@ export const resolvers: Resolvers = {
     }
   },
   Query: {
-    Media: async (_, { id }) => fetchMedia({ id: Number(id) })
+    // todo: potentially add query to return data for MAL uris
+    Media: async (...args) => {
+      const [_, { id, uri }] = args
+      console.log('args', args)
+      // const malId = fromUri(uri)
+      return fetchMedia({ id: Number(id) })
+    }
   }
 }
