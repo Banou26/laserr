@@ -217,11 +217,19 @@ query GetMedia ($id: Int, $idMal: Int, $type: MediaType) {
         }
       }
     }
-
-    airingSchedule(perPage: 25) {
-      nodes {
-        episode
-        airingAt
+    airingSchedule {
+      edges {
+        node {
+          airingAt
+          episode
+          id
+          media {
+            id
+            idMal
+          }
+          mediaId
+          timeUntilAiring
+        }
       }
     }
   }
@@ -682,7 +690,19 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     native: media.title?.native,
     english: media.title?.english
   },
-  popularity: media.popularity
+  popularity: media.popularity,
+  airingSchedule: {
+    edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
+      node: {
+        airingAt: edge.node.airingAt,
+        episode: edge.node.episode,
+        uri: edge.node.id.toString(),
+        media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
+        mediaUri: edge.node?.media?.id.toString(),
+        timeUntilAiring: edge.node.timeUntilAiring,
+      }
+    }))
+  }
 })
 
 export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], __, ___) => {
@@ -709,7 +729,8 @@ export const resolvers: Resolvers = {
   Query: {
     // todo: potentially add query to return data for MAL uris
     Media: async (...args) => {
-      const [_, { id, uri }] = args
+      const [_, { id, uri, origin }] = args
+      if (origin !== 'anilist') return undefined
       console.log('args', args)
       // const malId = fromUri(uri)
       return fetchMedia({ id: Number(id) })
