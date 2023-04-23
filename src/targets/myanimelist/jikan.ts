@@ -2,8 +2,9 @@ import type { Media, Resolvers } from 'scannarr'
 
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { MediaStatus, populateUri } from 'scannarr'
+import { MediaStatus, populateUri, toUri } from 'scannarr'
 import pThrottle from 'p-throttle'
+import { MediaAiringSchedule } from 'scannarr'
 
 // https://jikan.moe/
 
@@ -20,7 +21,7 @@ const throttle = pThrottle({
 
 export interface Root {
   pagination: Pagination
-  data: Daum[]
+  data: AnimeResponse[]
 }
 
 export interface Pagination {
@@ -36,7 +37,20 @@ export interface Items {
   per_page: number
 }
 
-export interface Daum {
+export interface Episode {
+  mal_id: number
+  url: string
+  title: string
+  title_japanese: string
+  title_romanji: string
+  aired: string
+  score: number
+  filler: boolean
+  recap: boolean
+  forum_url: string
+}
+
+export interface AnimeResponse {
   mal_id: number
   url: string
   images: Images
@@ -186,7 +200,7 @@ export interface Demographic {
 }
 
 
-const normalizeToMedia = (data: Daum): NoExtraProperties<Media> => ({
+const normalizeToMedia = (data: AnimeResponse): NoExtraProperties<Media> => ({
   ...populateUri({
     origin,
     id: data.mal_id.toString(),
@@ -237,8 +251,82 @@ const normalizeToMedia = (data: Daum): NoExtraProperties<Media> => ({
         }),
         thumbnail: data.trailer.images.image_url
       }]
-    : undefined
+    : undefined,
+  // airingSchedule: {
+  //   edges: data.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
+  //     node: {
+  //       airingAt: edge.node.airingAt,
+  //       episode: edge.node.episode,
+  //       uri: edge.node.id.toString(),
+  //       media: edge.node.media,
+  //       mediaUri: edge.node?.media?.id.toString(),
+  //       timeUntilAiring: edge.node.timeUntilAiring,
+  //     }
+  //   }))
+  // }
 })
+
+
+const normalizeToAiringSchedule = (data: Episode): NoExtraProperties<MediaAiringSchedule> => {
+  const id = data.url.split('/')[4]
+  const episodeNumber = Number(data.url.split('/')[7])
+
+  const airingTime = new Date(data.aired).getTime()
+
+  return ({
+    ...populateUri({
+      origin,
+      id: `${id}-${episodeNumber}`,
+      url: data.url,
+      handles: {
+        edges: [],
+        nodes: []
+      }
+    }),
+    airingAt: airingTime,
+    episode: episodeNumber,
+    media: populateUri({
+      origin,
+      id,
+      url: data.url.split('/').slice(0, 4).join('/'),
+      handles: {
+        edges: [],
+        nodes: []
+      }
+    }),
+    mediaUri: toUri({ origin, id }),
+    timeUntilAiring: Date.now() - airingTime,
+    // thumbnail: String
+    title: {
+      english: data.title,
+      native: data.title_japanese,
+      romanized: data.title_romanji
+    }
+    // description: String
+  })
+}
+
+const fetchMediaEpisodes = ({ id }: { id: number }) =>
+  fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
+    .then(response => response.json())
+    .then(json =>
+        json.data
+          ? ({
+            edges: json.data.map(node => ({
+              node: normalizeToAiringSchedule(node)
+            }))
+          })
+          : undefined
+      )
+
+const fetchMedia = ({ id }: { id: number }) =>
+  fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
+    .then(response => response.json())
+    .then(json =>
+        json.data.Media
+          ? normalizeToMedia(json.data.Media)
+          : undefined
+      )
 
 const getSeasonNow = (page = 0): Promise<Root> =>
   throttle(() =>
@@ -266,10 +354,22 @@ export const resolvers: Resolvers = {
       )
     }
   },
-  // Query: {
-  //   Media: async (_, { id }) => {
-      
-  //   }
-  // }
+  Query: {
+    Media: async (...args) => {
+      const [_, { id, uri, origin: _origin }] = args
+      if (_origin !== origin) return undefined
+      return fetchMedia({ id })
+    }
+  },
+  Media: {
+    airingSchedule: async (...args) => {
+      const [, , { id, origin: _origin }] = args
+      if (_origin !== origin) return undefined
+      console.log('jikan airing schedule', id)
+      const res = await fetchMediaEpisodes({ id })
+      console.log('jikan airing schedule res', res)
+      return res
+    }
+  }
 }
 

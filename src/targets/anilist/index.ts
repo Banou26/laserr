@@ -694,9 +694,17 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   airingSchedule: {
     edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
       node: {
+        ...populateUri({
+          origin,
+          id: `${edge.node.id.toString()}-${edge.node.episode}`,
+          url: `https://anilist.co/anime/${media.id}`,
+          handles: {
+            edges: [],
+            nodes: []
+          }
+        }),
         airingAt: edge.node.airingAt,
         episode: edge.node.episode,
-        uri: edge.node.id.toString(),
         media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
         mediaUri: edge.node?.media?.id.toString(),
         timeUntilAiring: edge.node.timeUntilAiring,
@@ -729,9 +737,9 @@ export const resolvers: Resolvers = {
   Query: {
     // todo: potentially add query to return data for MAL uris
     Media: async (...args) => {
-      const [_, { id, uri, origin }] = args
-      if (origin !== 'anilist') return undefined
-      console.log('args', args)
+      const [_, { id, uri, origin: _origin }] = args
+      if (_origin !== origin) return undefined
+      // console.log('args', args)
       // const malId = fromUri(uri)
       return fetchMedia({ id: Number(id) })
     }
