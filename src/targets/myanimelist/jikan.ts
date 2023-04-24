@@ -323,8 +323,8 @@ const fetchMedia = ({ id }: { id: number }) =>
   fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
     .then(response => response.json())
     .then(json =>
-        json.data.Media
-          ? normalizeToMedia(json.data.Media)
+        json.data
+          ? normalizeToMedia(json.data)
           : undefined
       )
 
