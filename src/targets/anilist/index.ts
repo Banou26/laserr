@@ -11,6 +11,7 @@ import { AiringSchedule } from './types'
 import pThrottle from 'p-throttle'
 import { MediaParams, NoExtraProperties } from '../../utils/type'
 import { HandleRelation } from 'scannarr'
+import { toUri } from 'scannarr'
 
 const throttle = pThrottle({
 	limit: 2,
@@ -706,7 +707,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
         airingAt: edge.node.airingAt,
         episode: edge.node.episode,
         media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
-        mediaUri: edge.node?.media?.id.toString(),
+        mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
         timeUntilAiring: edge.node.timeUntilAiring,
       }
     }))
@@ -727,6 +728,7 @@ export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], __, __
 export const resolvers: Resolvers = {
   Page: {
     media: async (...args) => {
+      console.log('Anilist Page media', args)
       const [, { search, season }] = args
       return (
         season ? getAnimeSeason(...args) :
@@ -741,7 +743,10 @@ export const resolvers: Resolvers = {
       if (_origin !== origin) return undefined
       // console.log('args', args)
       // const malId = fromUri(uri)
-      return fetchMedia({ id: Number(id) })
-    }
+      const res = await fetchMedia({ id: Number(id) })
+      console.log('Anilist Media', res)
+      return res
+    },
+    Page: () => ({})
   }
 }

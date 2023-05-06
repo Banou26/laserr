@@ -267,9 +267,9 @@ const normalizeToMedia = (data: AnimeResponse): NoExtraProperties<Media> => ({
 })
 
 
-const normalizeToAiringSchedule = (data: Episode): NoExtraProperties<MediaAiringSchedule> => {
-  const id = data.url.split('/')[4]
-  const episodeNumber = Number(data.url.split('/')[7])
+const normalizeToAiringSchedule = (mediaId: number, data: Episode): NoExtraProperties<MediaAiringSchedule> => {
+  const id = data.url?.split('/')[4] ?? mediaId
+  const episodeNumber = Number(data.url?.split('/')[7] ?? data.mal_id)
 
   const airingTime = new Date(data.aired).getTime()
 
@@ -288,7 +288,7 @@ const normalizeToAiringSchedule = (data: Episode): NoExtraProperties<MediaAiring
     media: populateUri({
       origin,
       id,
-      url: data.url.split('/').slice(0, 4).join('/'),
+      url: data.url?.split('/').slice(0, 4).join('/') ?? `https://myanimelist.net/anime/${id}/`,
       handles: {
         edges: [],
         nodes: []
@@ -313,7 +313,7 @@ const fetchMediaEpisodes = ({ id }: { id: number }) =>
         json.data
           ? ({
             edges: json.data.map(node => ({
-              node: normalizeToAiringSchedule(node)
+              node: normalizeToAiringSchedule(id, node)
             }))
           })
           : undefined
@@ -358,16 +358,19 @@ export const resolvers: Resolvers = {
     Media: async (...args) => {
       const [_, { id, uri, origin: _origin }] = args
       if (_origin !== origin) return undefined
-      return fetchMedia({ id })
-    }
+      const res = await fetchMedia({ id })
+      console.log('Jikan Media', res)
+      return res
+    },
+    Page: () => ({})
   },
   Media: {
     airingSchedule: async (...args) => {
-      const [, , { id, origin: _origin }] = args
-      if (_origin !== origin) return undefined
-      console.log('jikan airing schedule', id)
+      const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
+      console.log('Jikan airingSchedule called with ', args, id, __origin)
+      if (__origin !== origin) return undefined
       const res = await fetchMediaEpisodes({ id })
-      console.log('jikan airing schedule res', res)
+      console.log('Jikan airingSchedule', res)
       return res
     }
   }
