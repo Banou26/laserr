@@ -295,7 +295,7 @@ const normalizeToAiringSchedule = (mediaId: number, data: Episode): NoExtraPrope
       }
     }),
     mediaUri: toUri({ origin, id }),
-    timeUntilAiring: Date.now() - airingTime,
+    timeUntilAiring: (airingTime - Date.now()) / 1000,
     // thumbnail: String
     title: {
       english: data.title,
