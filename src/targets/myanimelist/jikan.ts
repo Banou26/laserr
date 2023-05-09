@@ -4,7 +4,7 @@ import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
 import { MediaStatus, populateUri, toUri } from 'scannarr'
 import pThrottle from 'p-throttle'
-import { MediaAiringSchedule } from 'scannarr'
+import { MediaEpisode } from 'scannarr'
 
 // https://jikan.moe/
 
@@ -252,11 +252,11 @@ const normalizeToMedia = (data: AnimeResponse): NoExtraProperties<Media> => ({
         thumbnail: data.trailer.images.image_url
       }]
     : undefined,
-  // airingSchedule: {
-  //   edges: data.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
+  // episodes: {
+  //   edges: data.episodes?.edges?.filter(Boolean).map(edge => edge?.node && ({
   //     node: {
   //       airingAt: edge.node.airingAt,
-  //       episode: edge.node.episode,
+  //       episodeNumber: edge.node.episode,
   //       uri: edge.node.id.toString(),
   //       media: edge.node.media,
   //       mediaUri: edge.node?.media?.id.toString(),
@@ -267,7 +267,7 @@ const normalizeToMedia = (data: AnimeResponse): NoExtraProperties<Media> => ({
 })
 
 
-const normalizeToAiringSchedule = (mediaId: number, data: Episode): NoExtraProperties<MediaAiringSchedule> => {
+const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraProperties<MediaEpisode> => {
   const id = data.url?.split('/')[4] ?? mediaId
   const episodeNumber = Number(data.url?.split('/')[7] ?? data.mal_id)
 
@@ -284,7 +284,7 @@ const normalizeToAiringSchedule = (mediaId: number, data: Episode): NoExtraPrope
       }
     }),
     airingAt: airingTime,
-    episode: episodeNumber,
+    number: episodeNumber,
     media: populateUri({
       origin,
       id,
@@ -313,7 +313,7 @@ const fetchMediaEpisodes = ({ id }: { id: number }) =>
         json.data
           ? ({
             edges: json.data.map(node => ({
-              node: normalizeToAiringSchedule(id, node)
+              node: normalizeToMediaEpisode(id, node)
             }))
           })
           : undefined
@@ -365,12 +365,12 @@ export const resolvers: Resolvers = {
     Page: () => ({})
   },
   Media: {
-    airingSchedule: async (...args) => {
+    episodes: async (...args) => {
       const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
-      console.log('Jikan airingSchedule called with ', args, id, __origin)
+      console.log('Jikan episodes called with ', args, id, __origin)
       if (__origin !== origin) return undefined
       const res = await fetchMediaEpisodes({ id })
-      console.log('Jikan airingSchedule', res)
+      console.log('Jikan episodes', res)
       return res
     }
   }

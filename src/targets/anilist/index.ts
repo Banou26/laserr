@@ -469,7 +469,7 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
     media.averageScore
       ? media.averageScore / 100
       : undefined,
-  airingSchedule:
+  episodes:
     media.airingSchedule?.nodes
       ? media.airingSchedule.nodes?.map((airingSchedule: AiringSchedule) => ({
         date: new Date(airingSchedule.airingAt * 1000),
@@ -692,7 +692,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     english: media.title?.english
   },
   popularity: media.popularity,
-  airingSchedule: {
+  episodes: {
     edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
       node: {
         ...populateUri({
@@ -705,7 +705,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
           }
         }),
         airingAt: edge.node.airingAt,
-        episode: edge.node.episode,
+        number: edge.node.episode,
         media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
         mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
         timeUntilAiring: edge.node.timeUntilAiring,
