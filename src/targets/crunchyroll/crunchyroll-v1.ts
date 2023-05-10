@@ -17,7 +17,7 @@ const throttle = pThrottle({
 //   "headers": {
 //     "accept": "application/json, text/plain, */*",
 //     "accept-language": "en-US,en;q=0.9",
-//     "authorization": "Bearer eyJhbGciOiJSUzXXXXG6ABhABxNrQjQ",
+//     "authorization": "Bearer X",
 //     "sec-ch-ua": "\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Google Chrome\";v=\"114\"",
 //     "sec-ch-ua-mobile": "?0",
 //     "sec-ch-ua-platform": "\"Windows\"",
