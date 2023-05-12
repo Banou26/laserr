@@ -1,7 +1,22 @@
 
 // todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
 
+import { Resolvers } from 'scannarr'
 import { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
+import { async } from 'rxjs'
+import pThrottle from 'p-throttle'
+import { fromUri, fromUris, populateUri } from 'scannarr'
+
+const throttle = pThrottle({
+	limit: 1,
+	interval: 1_000
+})
+
+export const icon = 'https://static.crunchyroll.com/cxweb/assets/img/favicons/favicon-96x96.png'
+export const originUrl = 'https://www.crunchyroll.com'
+export const categories: Category[] = ['ANIME']
+export const name = 'Crunchyroll'
+export const origin = 'cr'
 
 // needs to have the etp_rt cookie set, for this, we need to authenticate
 // export const getToken = () =>
@@ -136,3 +151,57 @@ const search = (query: string) =>
 //   // const payload = {'session_id' : sessionId, 'media_type' : 'anime', 'fields':'series.url,series.series_id','limit':'1500','filter':'prefix:the-devil'}
 //   // fetch(`https://beta-api.crunchyroll.com/content/v1/search?session_id=${sessionId}&q=the devil`)
 // }
+
+export const resolvers: Resolvers = {
+  Page: {
+    media: async (...args) => {
+      const [_, { id, uri, origin: _origin, search }] = args
+      console.log('Crunchyroll Page Media called with ', args, id, _origin)
+      if (_origin !== origin) return undefined
+      return undefined
+    }
+  },
+  Query: {
+    Media: async (...args) => {
+      const [_, { id, uri, origin: _origin }] = args
+      if (_origin !== origin) return undefined
+
+      console.log('Crunchyroll Media called with ', args, id, _origin)
+      return undefined
+    },
+    // Episode: async (...args) => {
+    //   const [_, { id, uri, origin: _origin }] = args
+    //   if (_origin !== origin) return undefined
+
+    //   return {
+    //     ...populateUri({
+    //       origin,
+    //       id: id,
+    //       url: null,
+    //       handles: []
+    //     })
+    //   }
+    // },
+    Page: async (...args) => {
+      const [_, { id, uri, origin: _origin, search }] = args
+      console.log('Crunchyroll Page called with ', args, id, _origin)
+      return ({})
+    }
+  },
+  // Media: {
+  //   episodes: async (...args) => {
+  //     const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
+  //     console.log('Crunchyroll episodes called with ', args, id, __origin)
+  //     if (__origin !== origin) return undefined
+
+  //     return res
+  //   }
+  //   episode: async (...args) => {
+  //     const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
+  //     console.log('Crunchyroll episodes called with ', args, id, __origin)
+  //     if (__origin !== origin) return undefined
+
+  //     return res
+  //   }
+  // }
+}

@@ -1,2 +1,2 @@
 
-export * from './crunchyroll-v1'
+export * from './crunchyroll-beta'

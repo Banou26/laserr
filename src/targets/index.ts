@@ -9,5 +9,5 @@ export const targets: Target[] = [
   MAL,
   // Nyaasi,
   Anilist,
-  // Crunchyroll
+  Crunchyroll
 ]

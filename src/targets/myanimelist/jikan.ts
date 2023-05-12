@@ -5,6 +5,8 @@ import type { MediaParams, NoExtraProperties } from '../../utils/type'
 import { MediaStatus, populateUri, toUri } from 'scannarr'
 import pThrottle from 'p-throttle'
 import { MediaEpisode } from 'scannarr'
+import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
+import { gql } from '../../generated'
 
 // https://jikan.moe/
 
@@ -199,72 +201,120 @@ export interface Demographic {
   url: string
 }
 
-
-const normalizeToMedia = (data: AnimeResponse): NoExtraProperties<Media> => ({
-  ...populateUri({
-    origin,
-    id: data.mal_id.toString(),
-    url: data.url,
-    handles: {
-      edges: [],
-      nodes: []
+const SEARCH_CRUNCHYROLL_ANIME = gql(`
+  query SearchCrunchyrollHandle($origin: String!, $search: String!) {
+    Page {
+      media(origin: $origin, search: $search) {
+        origin
+        id
+        url
+        handles {
+          edges {
+            node {
+              origin
+              id
+              url
+              uri
+            }
+          }
+        }
+        title {
+          romanized
+          english
+          native
+        }
+      }
     }
-  }),
-  averageScore: data.score,
-  description: data.synopsis,
-  shortDescription: data.synopsis,
-  title: {
-    romanized: data.title,
-    english: data.title_english,
-    native: data.title_japanese
-  },
-  coverImage: [{
-    extraLarge: data.images.webp.large_image_url,
-    large: data.images.webp.large_image_url,
-    medium: data.images.webp.large_image_url,
-    color: ''
-  }],
-  popularity: data.popularity,
-  status:
-    data.status === 'Not yet aired' ? MediaStatus.NotYetReleased
-    : data.status === 'Currently Airing' ? MediaStatus.Releasing
-    : data.status === 'Finished Airing' ? MediaStatus.Finished
-    : undefined,
-  startDate: {
-    year: data.aired.prop.from.year,
-    month: data.aired.prop.from.month,
-    day: data.aired.prop.from.day
-  },
-  endDate: {
-    year: data.aired.prop.to.year,
-    month: data.aired.prop.to.month,
-    day: data.aired.prop.to.day
-  },
-  trailers:
-    data.trailer?.youtube_id
-      ? [{
-        ...populateUri({
-          origin: 'yt',
-          id: data.trailer.youtube_id,
-          url: `https://www.youtube.com/watch?v=${data.trailer.youtube_id}`,
-          handles: { edges: [], nodes: [] }
-        }),
-        thumbnail: data.trailer.images.image_url
-      }]
-    : undefined,
-  // episodes: {
-  //   edges: data.episodes?.edges?.filter(Boolean).map(edge => edge?.node && ({
-  //     node: {
-  //       airingAt: edge.node.airingAt,
-  //       episodeNumber: edge.node.episode,
-  //       uri: edge.node.id.toString(),
-  //       media: edge.node.media,
-  //       mediaUri: edge.node?.media?.id.toString(),
-  //       timeUntilAiring: edge.node.timeUntilAiring,
-  //     }
-  //   }))
-  // }
-})
+  }
+`)
+
+const findCrunchyrollAnime = async (context, title: string) => {
+  console.log('findCrunchyrollAnime query', SEARCH_CRUNCHYROLL_ANIME)
+  const { data } = await context.client.query({
+    query: SEARCH_CRUNCHYROLL_ANIME,
+    variables: {
+      origin: crynchyrollOrigin,
+      search: title
+    }
+  })
+  console.log('findCrunchyrollAnime', data)
+  return data.Page.media[0]
+}
+
+const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
+  console.log('Jikan normalizeToMedia', data, context)
+  const crunchyrollHandle =
+    context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
+      ? await findCrunchyrollAnime(context, data.title)
+      : undefined
+  console.log('crunchyrollHandle', crunchyrollHandle)
+
+  return ({
+    ...populateUri({
+      origin,
+      id: data.mal_id.toString(),
+      url: data.url,
+      handles: {
+        edges: [],
+        nodes: []
+      }
+    }),
+    averageScore: data.score,
+    description: data.synopsis,
+    shortDescription: data.synopsis,
+    title: {
+      romanized: data.title,
+      english: data.title_english,
+      native: data.title_japanese
+    },
+    coverImage: [{
+      extraLarge: data.images.webp.large_image_url,
+      large: data.images.webp.large_image_url,
+      medium: data.images.webp.large_image_url,
+      color: ''
+    }],
+    popularity: data.popularity,
+    status:
+      data.status === 'Not yet aired' ? MediaStatus.NotYetReleased
+      : data.status === 'Currently Airing' ? MediaStatus.Releasing
+      : data.status === 'Finished Airing' ? MediaStatus.Finished
+      : undefined,
+    startDate: {
+      year: data.aired.prop.from.year,
+      month: data.aired.prop.from.month,
+      day: data.aired.prop.from.day
+    },
+    endDate: {
+      year: data.aired.prop.to.year,
+      month: data.aired.prop.to.month,
+      day: data.aired.prop.to.day
+    },
+    trailers:
+      data.trailer?.youtube_id
+        ? [{
+          ...populateUri({
+            origin: 'yt',
+            id: data.trailer.youtube_id,
+            url: `https://www.youtube.com/watch?v=${data.trailer.youtube_id}`,
+            handles: { edges: [], nodes: [] }
+          }),
+          thumbnail: data.trailer.images.image_url
+        }]
+      : undefined,
+    // episodes: {
+    //   edges: data.episodes?.edges?.filter(Boolean).map(edge => edge?.node && ({
+    //     node: {
+    //       airingAt: edge.node.airingAt,
+    //       episodeNumber: edge.node.episode,
+    //       uri: edge.node.id.toString(),
+    //       media: edge.node.media,
+    //       mediaUri: edge.node?.media?.id.toString(),
+    //       timeUntilAiring: edge.node.timeUntilAiring,
+    //     }
+    //   }))
+    // }
+  })
+}
 
 
 const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraProperties<MediaEpisode> => {
@@ -319,12 +369,12 @@ const fetchMediaEpisodes = ({ id }: { id: number }) =>
           : undefined
       )
 
-const fetchMedia = ({ id }: { id: number }) =>
+const fetchMedia = ({ id }: { id: number }, context) =>
   fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
     .then(response => response.json())
     .then(json =>
         json.data
-          ? normalizeToMedia(json.data)
+          ? normalizeToMedia(json.data, context)
           : undefined
       )
 
@@ -358,8 +408,8 @@ export const resolvers: Resolvers = {
     Media: async (...args) => {
       const [_, { id, uri, origin: _origin }] = args
       if (_origin !== origin) return undefined
-      const res = await fetchMedia({ id })
-      console.log('Jikan Media', res)
+      const res = await fetchMedia({ id }, args[2])
+      console.log('Jikan Media', args, res)
       return res
     },
     Page: () => ({})
@@ -375,4 +425,3 @@ export const resolvers: Resolvers = {
     }
   }
 }
-
