@@ -29,35 +29,49 @@ export const origin = 'cr'
 //     body: new URLSearchParams({grant_type: 'etp_rt_cookie'})
 //   }).then(res => res.json()).then(res => res.data.session_id)
 
-export const getToken = () =>
+let _token: {
+  readonly access_token: string;
+  readonly expires_in: number;
+  readonly token_type: "Bearer";
+  readonly scope: "account content offline_access";
+  readonly country: string;
+}
+export const getToken = async ({ fetch = window.fetch }) =>
+  _token
+  ?? (
     fetch('https://www.crunchyroll.com/auth/v1/token', {
       headers: {
         accept: 'application/json, text/plain, */*',
-        'accept-language': 'en-US,en;q=0.9',
+        // 'accept-language': 'en-US,en;q=0.9',
         authorization: `Basic ${btoa('cr_web:')}`,
         'content-type': 'application/x-www-form-urlencoded',
-        'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin'
+        // 'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
+        // 'sec-ch-ua-mobile': '?0',
+        // 'sec-ch-ua-platform': '"Windows"',
+        // 'sec-fetch-dest': 'empty',
+        // 'sec-fetch-mode': 'cors',
+        // 'sec-fetch-site': 'same-origin'
       },
-      referrer: 'https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone',
-      referrerPolicy: 'strict-origin-when-cross-origin',
+      // referrer: 'https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone',
+      // referrerPolicy: 'strict-origin-when-cross-origin',
       body: 'grant_type=client_id',
       method: 'POST',
       mode: 'cors',
       credentials: 'include'
     })
       .then(res => res.json())
-      .then(res => ({
-        access_token: res.access_token as string,
-        expires_in: res.expires_in as number,
-        token_type: 'Bearer',
-        scope: 'account content offline_access',
-        country: 'US' as string
-      }) as const)
+      .then(res => {
+        const token = ({
+          access_token: res.access_token as string,
+          expires_in: res.expires_in as number,
+          token_type: 'Bearer',
+          scope: 'account content offline_access',
+          country: 'US' as string
+        }) as const
+        _token = token
+        return token
+      })
+  )
 
 
 const getSeries = (mediaId: string) =>
@@ -126,6 +140,39 @@ const search = (query: string) =>
     "credentials": "include"
   }).then(async res => (await res.json()) as { total: number, data: SearchData[], meta: SearchMeta })
 
+const makeSearchParams = (
+  { search, n = 50, type, locale = 'en-US', ratings = true }:
+  {
+    search: string,
+    n?: number,
+    type: ('music'| 'series' | 'episode' | 'top_results' | 'movie_listing')[],
+    locale?: string,
+    ratings?: boolean
+  }
+) =>
+  new URLSearchParams({ search, n: n.toString(), type: type.join(','), locale, ratings: ratings.toString() }).toString()
+
+const searchAnime = (title: string, { fetch = window.fetch }) =>
+  fetch(`https://www.crunchyroll.com/content/v2/discover/search?${makeSearchParams({ search: title, type: ['series'] })}`, {
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "accept-language": "en-US,en;q=0.9",
+      "authorization": `Bearer ${getToken({ fetch })}`,
+      "sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin"
+    },
+    "referrer": "https://www.crunchyroll.com/fr/search?q=Hell%27s%20Paradise",
+    "referrerPolicy": "strict-origin-when-cross-origin",
+    "body": null,
+    "method": "GET",
+    "mode": "cors",
+    "credentials": "include"
+  });
+
 // 6 episodes, series, music & concerts 
 // fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Sto&n=6&type=music,series,episode,top_results,movie_listing&preferred_audio_language=ja-JP&locale=fr-FR", {
 //   "headers": {
@@ -155,9 +202,14 @@ const search = (query: string) =>
 export const resolvers: Resolvers = {
   Page: {
     media: async (...args) => {
-      const [_, { id, uri, origin: _origin, search }] = args
+      const [_, { id, uri, origin: _origin, search }, { fetch }] = args
       console.log('Crunchyroll Page Media called with ', args, id, _origin)
+
       if (_origin !== origin) return undefined
+
+      const result = searchAnime(search, { fetch })
+      console.log('Crunchyroll Page Media result ', result)
+
       return undefined
     }
   },

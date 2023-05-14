@@ -245,7 +245,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
   console.log('Jikan normalizeToMedia', data, context)
   const crunchyrollHandle =
     context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
-      ? await findCrunchyrollAnime(context, data.title)
+      ? await findCrunchyrollAnime(context, data.title_english)
       : undefined
   console.log('crunchyrollHandle', crunchyrollHandle)
 
