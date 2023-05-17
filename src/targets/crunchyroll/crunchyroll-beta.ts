@@ -37,23 +37,20 @@ let _token: {
   readonly country: string;
 }
 export const getToken = async ({ fetch = window.fetch }) =>
+  console.log('getToken') ||
   _token
-  ?? (
+  || (
     fetch('https://www.crunchyroll.com/auth/v1/token', {
       headers: {
         accept: 'application/json, text/plain, */*',
-        // 'accept-language': 'en-US,en;q=0.9',
         authorization: `Basic ${btoa('cr_web:')}`,
         'content-type': 'application/x-www-form-urlencoded',
-        // 'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
-        // 'sec-ch-ua-mobile': '?0',
-        // 'sec-ch-ua-platform': '"Windows"',
-        // 'sec-fetch-dest': 'empty',
-        // 'sec-fetch-mode': 'cors',
-        // 'sec-fetch-site': 'same-origin'
       },
-      // referrer: 'https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone',
-      // referrerPolicy: 'strict-origin-when-cross-origin',
+      hostname: "www.crunchyroll.com",
+      pathname: "/auth/v1/token",
+      protocol: "https:",
+      search: "",
+      stealth: "https://www.crunchyroll.com",
       body: 'grant_type=client_id',
       method: 'POST',
       mode: 'cors',
@@ -150,24 +147,15 @@ const makeSearchParams = (
     ratings?: boolean
   }
 ) =>
-  new URLSearchParams({ search, n: n.toString(), type: type.join(','), locale, ratings: ratings.toString() }).toString()
+  new URLSearchParams({ q: search, n: n.toString(), type: type.join(','), locale, ratings: ratings.toString() }).toString()
 
-const searchAnime = (title: string, { fetch = window.fetch }) =>
+const searchAnime = async (title: string, { fetch = window.fetch }) =>
   fetch(`https://www.crunchyroll.com/content/v2/discover/search?${makeSearchParams({ search: title, type: ['series'] })}`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
-      "accept-language": "en-US,en;q=0.9",
-      "authorization": `Bearer ${getToken({ fetch })}`,
-      "sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
-      "sec-ch-ua-mobile": "?0",
-      "sec-ch-ua-platform": "\"Windows\"",
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-origin"
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    "referrer": "https://www.crunchyroll.com/fr/search?q=Hell%27s%20Paradise",
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "body": null,
+    stealth: "https://www.crunchyroll.com",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
