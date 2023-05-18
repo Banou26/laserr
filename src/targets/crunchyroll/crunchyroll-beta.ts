@@ -29,47 +29,54 @@ export const origin = 'cr'
 //     body: new URLSearchParams({grant_type: 'etp_rt_cookie'})
 //   }).then(res => res.json()).then(res => res.data.session_id)
 
-let _token: {
+type CrunchyrollAuthToken = {
+  timestamp: number;
   readonly access_token: string;
   readonly expires_in: number;
   readonly token_type: "Bearer";
   readonly scope: "account content offline_access";
   readonly country: string;
 }
-export const getToken = async ({ fetch = window.fetch }) =>
-  console.log('getToken') ||
-  _token
-  || (
-    fetch('https://www.crunchyroll.com/auth/v1/token', {
-      headers: {
-        accept: 'application/json, text/plain, */*',
-        authorization: `Basic ${btoa('cr_web:')}`,
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      hostname: "www.crunchyroll.com",
-      pathname: "/auth/v1/token",
-      protocol: "https:",
-      search: "",
-      stealth: "https://www.crunchyroll.com",
-      body: 'grant_type=client_id',
-      method: 'POST',
-      mode: 'cors',
-      credentials: 'include'
-    })
-      .then(res => res.json())
-      .then(res => {
-        const token = ({
-          access_token: res.access_token as string,
-          expires_in: res.expires_in as number,
-          token_type: 'Bearer',
-          scope: 'account content offline_access',
-          country: 'US' as string
-        }) as const
-        _token = token
-        return token
-      })
-  )
 
+let _token: CrunchyrollAuthToken
+
+export const fetchToken = async ({ fetch = window.fetch }) =>
+  fetch('https://www.crunchyroll.com/auth/v1/token', {
+    headers: {
+      accept: 'application/json, text/plain, */*',
+      authorization: `Basic ${btoa('cr_web:')}`,
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    hostname: "www.crunchyroll.com",
+    pathname: "/auth/v1/token",
+    protocol: "https:",
+    search: "",
+    stealth: "https://www.crunchyroll.com/search",
+    body: 'grant_type=client_id',
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'include'
+  })
+    .then(res => res.json())
+    .then(res => {
+      const token = ({
+        timestamp: Date.now(),
+        access_token: res.access_token as string,
+        expires_in: res.expires_in as number,
+        token_type: 'Bearer',
+        scope: 'account content offline_access',
+        country: 'US' as string
+      }) as const
+      _token = token
+      localStorage.setItem('crunchyroll-token', JSON.stringify(token))
+      return token
+    })
+
+const getToken = ({ fetch = window.fetch }) => {
+  const savedToken: CrunchyrollAuthToken | undefined = JSON.parse(localStorage.getItem('crunchyroll-token') || 'null') ?? _token ?? undefined
+  if (savedToken && Date.now() - savedToken.timestamp < savedToken.expires_in * 1000) return savedToken
+  return fetchToken({ fetch })
+}
 
 const getSeries = (mediaId: string) =>
   fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}?preferred_audio_language=ja-JP&locale=fr-FR`, {
@@ -155,11 +162,12 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    stealth: "https://www.crunchyroll.com",
+    proxyCache: '3600000',
+    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
-  });
+  })
 
 // 6 episodes, series, music & concerts 
 // fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Sto&n=6&type=music,series,episode,top_results,movie_listing&preferred_audio_language=ja-JP&locale=fr-FR", {
