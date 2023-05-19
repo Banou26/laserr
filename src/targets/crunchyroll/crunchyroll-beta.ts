@@ -1,11 +1,15 @@
 
-// todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
+import type { Media, Resolvers } from 'scannarr'
 
-import { Resolvers } from 'scannarr'
-import { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
-import { async } from 'rxjs'
+import type { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
+
 import pThrottle from 'p-throttle'
-import { fromUri, fromUris, populateUri } from 'scannarr'
+import { populateUri } from 'scannarr'
+import { swAlign } from 'seal-wasm'
+
+import { NoExtraProperties } from '../../utils/type'
+
+// todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
 
 const throttle = pThrottle({
 	limit: 1,
@@ -17,6 +21,109 @@ export const originUrl = 'https://www.crunchyroll.com'
 export const categories: Category[] = ['ANIME']
 export const name = 'Crunchyroll'
 export const origin = 'cr'
+
+export interface CrunchyrollSerie {
+  id: string
+  description: string
+  type: string
+  new: boolean
+  rating: Rating
+  slug: string
+  search_metadata: SearchMetadata
+  promo_description: string
+  slug_title: string
+  linked_resource_key: string
+  external_id: string
+  title: string
+  series_metadata: SeriesMetadata
+  images: Images
+  channel_id: string
+  promo_title: string
+}
+
+export interface Rating {
+  "3s": N3s
+  "4s": N4s
+  "5s": N5s
+  average: string
+  total: number
+  "1s": N1s
+  "2s": N2s
+}
+
+export interface N3s {
+  displayed: string
+  percentage: number
+  unit: string
+}
+
+export interface N4s {
+  displayed: string
+  percentage: number
+  unit: string
+}
+
+export interface N5s {
+  displayed: string
+  percentage: number
+  unit: string
+}
+
+export interface N1s {
+  displayed: string
+  percentage: number
+  unit: string
+}
+
+export interface N2s {
+  displayed: string
+  percentage: number
+  unit: string
+}
+
+export interface SearchMetadata {
+  score: number
+}
+
+export interface SeriesMetadata {
+  audio_locales: string[]
+  availability_notes: string
+  episode_count: number
+  extended_description: string
+  extended_maturity_rating: ExtendedMaturityRating
+  is_dubbed: boolean
+  is_mature: boolean
+  is_simulcast: boolean
+  is_subbed: boolean
+  mature_blocked: boolean
+  maturity_ratings: string[]
+  season_count: number
+  series_launch_year: number
+  subtitle_locales: string[]
+  tenant_categories: string[]
+}
+
+export interface ExtendedMaturityRating {}
+
+export interface Images {
+  poster_tall: PosterTall[][]
+  poster_wide: PosterWide[][]
+}
+
+export interface PosterTall {
+  height: number
+  source: string
+  type: string
+  width: number
+}
+
+export interface PosterWide {
+  height: number
+  source: string
+  type: string
+  width: number
+}
+
 
 // needs to have the etp_rt cookie set, for this, we need to authenticate
 // export const getToken = () =>
@@ -156,6 +263,29 @@ const makeSearchParams = (
 ) =>
   new URLSearchParams({ q: search, n: n.toString(), type: type.join(','), locale, ratings: ratings.toString() }).toString()
 
+
+const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProperties<Media> => ({
+  ...populateUri({
+    origin,
+    id: serie.id,
+    url: `https://www.crunchyroll.com/fr/series/${serie.id}`,
+    handles: {
+      edges: []
+    }
+  }),
+  averageScore: Number(serie.rating.average) / 5,
+  coverImage: [{
+    extraLarge: serie.images.poster_tall.at(-1)?.source,
+    large: serie.images.poster_tall.at(-1)?.source,
+    medium: serie.images.poster_tall.at(-1)?.source
+  }],
+  description: serie.description,
+  title: {
+    english: serie.title
+  }
+})
+  
+
 const searchAnime = async (title: string, { fetch = window.fetch }) =>
   fetch(`https://www.crunchyroll.com/content/v2/discover/search?${makeSearchParams({ search: title, type: ['series'] })}`, {
     "headers": {
@@ -167,6 +297,34 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
+  })
+  .then(async res => (await res.json()) as { total: number, data: SearchData[], meta: SearchMeta })
+  .then(({ data }) => data[0]?.items.filter(({ type }) => type === 'series'))
+  .then(async (series) => {
+    const seriesScore =
+      (
+        await Promise.all(
+          series
+            ?.map(async (serie) => {
+              const alignment = await swAlign(
+                title,
+                serie.title,
+                { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 }
+              )
+              
+              return ({
+                serie,
+                score: alignment.score / Math.max(title.length, serie.title.length),
+                alignment
+              })
+            })
+          ?? []
+        )
+      )
+      .sort((a, b) => b.score - a.score)
+    const bestMatch = seriesScore[0]
+    if (!bestMatch || bestMatch.score < 0.5) return
+    return crunchyrollSerieToScannarrMedia(bestMatch.serie)
   })
 
 // 6 episodes, series, music & concerts 
@@ -201,12 +359,12 @@ export const resolvers: Resolvers = {
       const [_, { id, uri, origin: _origin, search }, { fetch }] = args
       console.log('Crunchyroll Page Media called with ', args, id, _origin)
 
-      if (_origin !== origin) return undefined
+      if (_origin !== origin) return
 
-      const result = searchAnime(search, { fetch })
+      const result = await searchAnime(search, { fetch })
       console.log('Crunchyroll Page Media result ', result)
 
-      return undefined
+      return [result]
     }
   },
   Query: {
