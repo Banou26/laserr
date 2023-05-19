@@ -1,4 +1,4 @@
-import type { Media, Resolvers } from 'scannarr'
+import { HandleRelation, Media, Resolvers } from 'scannarr'
 
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
@@ -208,6 +208,8 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
         origin
         id
         url
+        uri
+        handler
         handles {
           edges {
             node {
@@ -215,13 +217,25 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
               id
               url
               uri
+              handler
+              handles {
+                edges {
+                  node {
+                    origin
+                    id
+                    url
+                    uri
+                    handler
+                  }
+                }
+              }
+              title {
+                romanized
+                english
+                native
+              }
             }
           }
-        }
-        title {
-          romanized
-          english
-          native
         }
       }
     }
@@ -229,7 +243,7 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
 `)
 
 const findCrunchyrollAnime = async (context, title: string) => {
-  console.log('findCrunchyrollAnime query', SEARCH_CRUNCHYROLL_ANIME)
+  // console.log('findCrunchyrollAnime query', SEARCH_CRUNCHYROLL_ANIME)
   const { data } = await context.client.query({
     query: SEARCH_CRUNCHYROLL_ANIME,
     variables: {
@@ -237,12 +251,12 @@ const findCrunchyrollAnime = async (context, title: string) => {
       search: title
     }
   })
-  console.log('findCrunchyrollAnime', data)
-  return data.Page.media[0]
+  // console.log('findCrunchyrollAnime', data)
+  return data.Page.media[0].handles.edges[0].node
 }
 
 const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
-  console.log('Jikan normalizeToMedia', data, context)
+  // console.log('Jikan normalizeToMedia', data, context)
   const crunchyrollHandle =
     context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
       ? await findCrunchyrollAnime(context, data.title_english)
@@ -255,8 +269,17 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       id: data.mal_id.toString(),
       url: data.url,
       handles: {
-        edges: [],
-        nodes: []
+        edges:
+          crunchyrollHandle  
+            ? [{
+              node: crunchyrollHandle,
+              handleRelationType: HandleRelation.Identical
+            }]
+            : [],
+        nodes:
+          crunchyrollHandle
+            ? [crunchyrollHandle]
+            : []
       }
     }),
     averageScore: data.score,

@@ -357,7 +357,7 @@ export const resolvers: Resolvers = {
   Page: {
     media: async (...args) => {
       const [_, { id, uri, origin: _origin, search }, { fetch }] = args
-      console.log('Crunchyroll Page Media called with ', args, id, _origin)
+      // console.log('Crunchyroll Page Media called with ', args, id, _origin)
 
       if (_origin !== origin) return
 
