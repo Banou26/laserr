@@ -1,5 +1,5 @@
 
-import type { Media, Resolvers } from 'scannarr'
+import type { Media, MediaEpisode, Resolvers } from 'scannarr'
 
 import type { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
 
@@ -8,6 +8,7 @@ import { populateUri } from 'scannarr'
 import { swAlign } from 'seal-wasm'
 
 import { NoExtraProperties } from '../../utils/type'
+import { toUri } from 'scannarr'
 
 // todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
 
@@ -124,6 +125,92 @@ export interface PosterWide {
   width: number
 }
 
+export interface CrunchyrollEpisode {
+  season_tags: string[]
+  season_number: number
+  images: Images
+  is_subbed: boolean
+  season_id: string
+  recent_audio_locale: string
+  streams_link?: string
+  slug_title: string
+  eligible_region: string
+  upload_date: string
+  series_slug_title: string
+  series_id: string
+  availability_notes: string
+  premium_available_date: string
+  available_date: any
+  description: string
+  episode_air_date: string
+  audio_locale: string
+  channel_id: string
+  next_episode_title?: string
+  mature_blocked: boolean
+  versions: Version[]
+  ad_breaks: AdBreak[]
+  season_slug_title: string
+  identifier: string
+  is_premium_only: boolean
+  series_title: string
+  episode: string
+  slug: string
+  is_mature: boolean
+  maturity_ratings: string[]
+  closed_captions_available: boolean
+  media_type: string
+  production_episode_id: string
+  premium_date: any
+  listing_id: string
+  extended_maturity_rating: ExtendedMaturityRating
+  duration_ms: number
+  is_dubbed: boolean
+  next_episode_id?: string
+  sequence_number: number
+  hd_flag: boolean
+  seo_title: string
+  seo_description: string
+  available_offline: boolean
+  season_title: string
+  free_available_date: string
+  subtitle_locales: string[]
+  episode_number: number
+  availability_starts: string
+  title: string
+  is_clip: boolean
+  availability_ends: string
+  id: string
+}
+
+export interface Images {
+  thumbnail: Thumbnail[][]
+}
+
+export interface Thumbnail {
+  height: number
+  source: string
+  type: string
+  width: number
+}
+
+export interface Version {
+  audio_locale: string
+  guid: string
+  is_premium_only: boolean
+  media_guid: string
+  original: boolean
+  season_guid: string
+  variant: string
+}
+
+export interface AdBreak {
+  offset_ms: number
+  type: string
+}
+
+export interface ExtendedMaturityRating {}
+
+
 
 // needs to have the etp_rt cookie set, for this, we need to authenticate
 // export const getToken = () =>
@@ -198,47 +285,75 @@ const getSeries = async (mediaId: string, { fetch = window.fetch }) =>
     "credentials": "include"
   })
   .then(async res => (await res.json()) as { total: number, data: GetSeriesData[] })
-  .then(res => res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!))
+  .then(async res => {
+    // const episodes = 
+    console.log('CR EPISODES', await getEpisodes(mediaId, { fetch }))
 
-const getEpisodes = (mediaId: string) => 
+    return res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!)
+  })
+
+const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
+  fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}/seasons?force_locale=&preferred_audio_language=ja-JP&locale=fr-FR`, {
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
+    },
+    proxyCache: '3600000',
+    stealth: "https://www.crunchyroll.com/search",
+    "method": "GET",
+    "mode": "cors",
+    "credentials": "include"
+  })
+  .then(async res => (await res.json()) as { total: number, data: GetSeriesData[] })
+  .then(async res => {
+    // const episodes = 
+    
+    const ret = (
+      res.data[0]
+        ? ({
+          ...crunchyrollSeasonToScannarrMedia(res.data[0]!),
+          episodes: async () => {
+            const episodes = await getEpisodes(res.data[0]?.id, { fetch })
+            console.log('CR EPISODES', episodes)
+
+            return {
+              edges: episodes.map(episode => ({ node: episode })),
+              nodes: episodes
+            }
+          }
+        })
+        : undefined
+    )
+
+    console.log('RETTTTTTTTT', ret)
+
+    return ret
+  })
+
+const getEpisodes = async (mediaId: string, { fetch = window.fetch }) => 
   fetch(`https://www.crunchyroll.com/content/v2/cms/seasons/${mediaId}/episodes?preferred_audio_language=ja-JP&locale=en-US`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
-      "accept-language": "en-US,en;q=0.9",
-      "authorization": "Bearer X",
-      "sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
-      "sec-ch-ua-mobile": "?0",
-      "sec-ch-ua-platform": "\"Windows\"",
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-origin"
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    "referrer": "https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone",
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "body": null,
+    proxyCache: '3600000',
+    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
   })
     .then(async res => (await res.json()) as { total: number, data: GetEpisodesData[], meta: GetEpisodesMeta })
+    .then(res => res.data.map(episodeData => crunchyrollEpisodeToScannarrMediaEpisode(mediaId, episodeData)))
 
-const search = (query: string) =>
+const search = async (query: string, { fetch = window.fetch }) =>
   // 100 episodes
   fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Stone&n=100&start=100&type=episode&preferred_audio_language=ja-JP&locale=en-US", {
     "headers": {
       "accept": "application/json, text/plain, */*",
-      "accept-language": "en-US,en;q=0.9",
-      "authorization": "Bearer X",
-      "sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
-      "sec-ch-ua-mobile": "?0",
-      "sec-ch-ua-platform": "\"Windows\"",
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-origin"
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    "referrer": "https://www.crunchyroll.com/fr/search?f=episode&q=Dr%20Stone",
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "body": null,
+    proxyCache: '3600000',
+    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
@@ -261,15 +376,12 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
   ...populateUri({
     origin,
     id: serie.id,
-    url: `https://www.crunchyroll.com/fr/series/${serie.id}`,
+    url: `https://www.crunchyroll.com/series/${serie.id}`,
     handles: {
       edges: []
     }
   }),
-  averageScore:
-    serie.rating
-      ? Number(serie.rating.average) / 5
-      : undefined,
+  averageScore: Number(serie.rating.average) / 5,
   coverImage: [{
     extraLarge: serie.images.poster_tall.at(-1)?.source,
     large: serie.images.poster_tall.at(-1)?.source,
@@ -278,6 +390,38 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
   description: serie.description,
   title: {
     english: serie.title
+  }
+})
+
+const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProperties<Media> => ({
+  ...populateUri({
+    origin,
+    id: serie.series_id,
+    url: `https://www.crunchyroll.com/series/${serie.id}`,
+    handles: {
+      edges: []
+    }
+  }),
+  description: serie.description,
+  title: {
+    english: serie.title
+  }
+})
+
+const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: CrunchyrollEpisode): NoExtraProperties<MediaEpisode> => ({
+  ...populateUri({
+    origin,
+    id: episode.id,
+    url: `https://www.crunchyroll.com/watch/${episode.id}`,
+    handles: {
+      edges: []
+    }
+  }),
+  number: Number(episode.episode),
+  mediaUri: toUri({ origin, id: mediaId }),
+  description: episode.description,
+  title: {
+    english: episode.title
   }
 })
 
@@ -335,7 +479,7 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
 //     "sec-fetch-mode": "cors",
 //     "sec-fetch-site": "same-origin"
 //   },
-//   "referrer": "https://www.crunchyroll.com/fr/search?q=Dr%20Sto",
+//   "referrer": "https://www.crunchyroll.com/search?q=Dr%20Sto",
 //   "referrerPolicy": "strict-origin-when-cross-origin",
 //   "body": null,
 //   "method": "GET",
@@ -367,23 +511,24 @@ export const resolvers: Resolvers = {
       const [_, { id, uri, origin: _origin }, { fetch }] = args
       if (_origin !== origin) return undefined
 
-      const result = await getSeries(id, { fetch })
+      const result = await getSeason(id, { fetch })
       console.log('Crunchyroll Media called with ', args, id, _origin, result)
       return result
     },
-    // Episode: async (...args) => {
-    //   const [_, { id, uri, origin: _origin }] = args
-    //   if (_origin !== origin) return undefined
+    Episode: async (...args) => {
+      const [_, { id, uri, origin: _origin }] = args
+      if (_origin !== origin) return undefined
+      console.log('Crunchyroll Episode called with ', args, id, _origin)
 
-    //   return {
-    //     ...populateUri({
-    //       origin,
-    //       id: id,
-    //       url: null,
-    //       handles: []
-    //     })
-    //   }
-    // },
+      // return {
+      //   ...populateUri({
+      //     origin,
+      //     id: id,
+      //     url: null,
+      //     handles: []
+      //   })
+      // }
+    },
     Page: async (...args) => {
       const [_, { id, uri, origin: _origin, search }] = args
       console.log('Crunchyroll Page called with ', args, id, _origin)
