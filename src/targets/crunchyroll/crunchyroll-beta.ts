@@ -185,30 +185,23 @@ const getToken = ({ fetch = window.fetch }) => {
   return fetchToken({ fetch })
 }
 
-const getSeries = (mediaId: string) =>
-  fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}?preferred_audio_language=ja-JP&locale=fr-FR`, {
+const getSeries = async (mediaId: string, { fetch = window.fetch }) =>
+  fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}?preferred_audio_language=ja-JP&locale=en-US`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
-      "accept-language": "en-US,en;q=0.9",
-      "authorization": "Bearer X",
-      "sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
-      "sec-ch-ua-mobile": "?0",
-      "sec-ch-ua-platform": "\"Windows\"",
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-origin"
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    "referrer": "https://www.crunchyroll.com/fr/series/GYEXQKJG6/dr-stone",
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "body": null,
+    proxyCache: '3600000',
+    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
   })
   .then(async res => (await res.json()) as { total: number, data: GetSeriesData[] })
+  .then(res => res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!))
 
 const getEpisodes = (mediaId: string) => 
-  fetch(`https://www.crunchyroll.com/content/v2/cms/seasons/${mediaId}/episodes?preferred_audio_language=ja-JP&locale=fr-FR`, {
+  fetch(`https://www.crunchyroll.com/content/v2/cms/seasons/${mediaId}/episodes?preferred_audio_language=ja-JP&locale=en-US`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
       "accept-language": "en-US,en;q=0.9",
@@ -231,7 +224,7 @@ const getEpisodes = (mediaId: string) =>
 
 const search = (query: string) =>
   // 100 episodes
-  fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Stone&n=100&start=100&type=episode&preferred_audio_language=ja-JP&locale=fr-FR", {
+  fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Stone&n=100&start=100&type=episode&preferred_audio_language=ja-JP&locale=en-US", {
     "headers": {
       "accept": "application/json, text/plain, */*",
       "accept-language": "en-US,en;q=0.9",
@@ -273,7 +266,10 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
       edges: []
     }
   }),
-  averageScore: Number(serie.rating.average) / 5,
+  averageScore:
+    serie.rating
+      ? Number(serie.rating.average) / 5
+      : undefined,
   coverImage: [{
     extraLarge: serie.images.poster_tall.at(-1)?.source,
     large: serie.images.poster_tall.at(-1)?.source,
@@ -284,7 +280,6 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
     english: serie.title
   }
 })
-  
 
 const searchAnime = async (title: string, { fetch = window.fetch }) =>
   fetch(`https://www.crunchyroll.com/content/v2/discover/search?${makeSearchParams({ search: title, type: ['series'] })}`, {
@@ -328,7 +323,7 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
   })
 
 // 6 episodes, series, music & concerts 
-// fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Sto&n=6&type=music,series,episode,top_results,movie_listing&preferred_audio_language=ja-JP&locale=fr-FR", {
+// fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Sto&n=6&type=music,series,episode,top_results,movie_listing&preferred_audio_language=ja-JP&locale=en-US", {
 //   "headers": {
 //     "accept": "application/json, text/plain, */*",
 //     "accept-language": "en-US,en;q=0.9",
@@ -369,11 +364,12 @@ export const resolvers: Resolvers = {
   },
   Query: {
     Media: async (...args) => {
-      const [_, { id, uri, origin: _origin }] = args
+      const [_, { id, uri, origin: _origin }, { fetch }] = args
       if (_origin !== origin) return undefined
 
-      console.log('Crunchyroll Media called with ', args, id, _origin)
-      return undefined
+      const result = await getSeries(id, { fetch })
+      console.log('Crunchyroll Media called with ', args, id, _origin, result)
+      return result
     },
     // Episode: async (...args) => {
     //   const [_, { id, uri, origin: _origin }] = args
