@@ -411,7 +411,7 @@ const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraPrope
 const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: CrunchyrollEpisode): NoExtraProperties<MediaEpisode> => ({
   ...populateUri({
     origin,
-    id: episode.id,
+    id: `${mediaId}-${episode.id}`,
     url: `https://www.crunchyroll.com/watch/${episode.id}`,
     handles: {
       edges: []
