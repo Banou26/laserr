@@ -250,7 +250,7 @@ export type MediaEdge = HandleEdge & {
 export type MediaEpisode = {
   __typename?: 'MediaEpisode';
   /** The time the episode airs at */
-  airingAt: Scalars['Float'];
+  airingAt?: Maybe<Scalars['Float']>;
   /** The description of the episode */
   description?: Maybe<Scalars['String']>;
   handler: Scalars['String'];
@@ -266,7 +266,7 @@ export type MediaEpisode = {
   /** The url for the thumbnail image of the video */
   thumbnail?: Maybe<Scalars['String']>;
   /** Seconds until episode starts airing */
-  timeUntilAiring: Scalars['Float'];
+  timeUntilAiring?: Maybe<Scalars['Float']>;
   /** The title of the episode */
   title?: Maybe<MediaTitle>;
   uri: Scalars['Uri'];
