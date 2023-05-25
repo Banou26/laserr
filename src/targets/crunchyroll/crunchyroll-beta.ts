@@ -9,6 +9,7 @@ import { swAlign } from 'seal-wasm'
 
 import { NoExtraProperties } from '../../utils/type'
 import { toUri } from 'scannarr'
+import { MediaEpisodePlaybackType } from 'scannarr'
 
 // todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
 
@@ -22,6 +23,117 @@ export const originUrl = 'https://www.crunchyroll.com'
 export const categories: Category[] = ['ANIME']
 export const name = 'Crunchyroll'
 export const origin = 'cr'
+
+export interface GetEpisodeResponse {
+  total: number
+  data: GetEpisodeData[]
+  meta: Meta
+}
+
+export interface GetEpisodeData {
+  title: string
+  description: string
+  images: Images
+  slug_title: string
+  rating: Rating
+  episode_metadata: CrunchyrollEpisode
+  type: string
+  slug: string
+  id: string
+  streams_link: string
+  linked_resource_key: string
+  external_id: string
+  promo_description: string
+  channel_id: string
+  promo_title: string
+}
+
+export interface Images {
+  thumbnail: Thumbnail[][]
+}
+
+export interface Thumbnail {
+  height: number
+  source: string
+  type: string
+  width: number
+}
+
+export interface Rating {
+  down: Down
+  total: number
+  up: Up
+}
+
+export interface Down {
+  displayed: string
+  unit: string
+}
+
+export interface Up {
+  displayed: string
+  unit: string
+}
+
+export interface EpisodeMetadata {
+  ad_breaks: AdBreak[]
+  audio_locale: string
+  availability_ends: string
+  availability_notes: string
+  availability_starts: string
+  available_date: any
+  available_offline: boolean
+  closed_captions_available: boolean
+  duration_ms: number
+  eligible_region: string
+  episode: string
+  episode_air_date: string
+  episode_number: number
+  extended_maturity_rating: ExtendedMaturityRating
+  free_available_date: string
+  identifier: string
+  is_clip: boolean
+  is_dubbed: boolean
+  is_mature: boolean
+  is_premium_only: boolean
+  is_subbed: boolean
+  mature_blocked: boolean
+  maturity_ratings: string[]
+  premium_available_date: string
+  premium_date: any
+  season_id: string
+  season_number: number
+  season_slug_title: string
+  season_title: string
+  sequence_number: number
+  series_id: string
+  series_slug_title: string
+  series_title: string
+  subtitle_locales: string[]
+  upload_date: string
+  versions: Version[]
+}
+
+export interface AdBreak {
+  offset_ms: number
+  type: string
+}
+
+export interface ExtendedMaturityRating {}
+
+export interface Version {
+  audio_locale: string
+  guid: string
+  is_premium_only: boolean
+  media_guid: string
+  original: boolean
+  season_guid: string
+  variant: string
+}
+
+export interface Meta {}
+
+
 
 export interface CrunchyrollSerie {
   id: string
@@ -345,6 +457,21 @@ const getEpisodes = async (mediaId: string, { fetch = window.fetch }) =>
     .then(async res => (await res.json()) as { total: number, data: GetEpisodesData[], meta: GetEpisodesMeta })
     .then(res => res.data.map(episodeData => crunchyrollEpisodeToScannarrMediaEpisode(mediaId, episodeData)))
 
+const getEpisode = async (mediaId: string, episodeId: string, { fetch = window.fetch }) => 
+  fetch(`https://www.crunchyroll.com/content/v2/cms/objects/${episodeId}?ratings=true&locale=en-US`, {
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
+    },
+    proxyCache: '3600000',
+    stealth: "https://www.crunchyroll.com/search",
+    "method": "GET",
+    "mode": "cors",
+    "credentials": "include"
+  })
+    .then(async res => (await res.json()) as { total: number, data: GetEpisodeData[], meta: GetEpisodesMeta })
+    .then(res => res.data[0] ? crunchyrollEpisodeToScannarrMediaEpisode(mediaId, res.data[0]) : undefined)
+
 const search = async (query: string, { fetch = window.fetch }) =>
   // 100 episodes
   fetch("https://www.crunchyroll.com/content/v2/discover/search?q=Dr+Stone&n=100&start=100&type=episode&preferred_audio_language=ja-JP&locale=en-US", {
@@ -422,7 +549,22 @@ const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: Crun
   description: episode.description,
   title: {
     english: episode.title
-  }
+  },
+  playback:
+    episode.external_id
+      ? {
+        type: MediaEpisodePlaybackType.IFRAME,
+        url: `https://www.crunchyroll.com/affiliate_iframeplayer?${
+          new URLSearchParams({
+            aff: 'af-44915-aeey',
+            media_id: episode.external_id.replace('EPI.', ''),
+            video_format: 0,
+            video_quality: 0,
+            auto_play: 0
+          })
+        }`
+      }
+      : undefined
 })
 
 const searchAnime = async (title: string, { fetch = window.fetch }) =>
@@ -516,18 +658,14 @@ export const resolvers: Resolvers = {
       return result
     },
     Episode: async (...args) => {
-      const [_, { id, uri, origin: _origin }] = args
-      if (_origin !== origin) return undefined
-      console.log('Crunchyroll Episode called with ', args, id, _origin)
+      const [_, { id, uri, origin: _origin }, { fetch }] = args
+      const [mediaId, episodeId] = id?.split('-')
+      if (_origin !== origin || !episodeId || !episodeId) return undefined
 
-      // return {
-      //   ...populateUri({
-      //     origin,
-      //     id: id,
-      //     url: null,
-      //     handles: []
-      //   })
-      // }
+      const res = await getEpisode(mediaId, episodeId, { fetch })
+      console.log('Crunchyroll Episode called with ', args, id, _origin, res)
+
+      return res
     },
     Page: async (...args) => {
       const [_, { id, uri, origin: _origin, search }] = args
