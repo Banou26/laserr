@@ -23,6 +23,8 @@ export const originUrl = 'https://www.crunchyroll.com'
 export const categories: Category[] = ['ANIME']
 export const name = 'Crunchyroll'
 export const origin = 'cr'
+export const official = true
+export const metadataOnly = false
 
 export interface GetEpisodeResponse {
   total: number
@@ -553,7 +555,8 @@ const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: Crun
   playback:
     episode.external_id
       ? {
-        type: MediaEpisodePlaybackType.IFRAME,
+        type: MediaEpisodePlaybackType.Iframe,
+        origin,
         url: `https://www.crunchyroll.com/affiliate_iframeplayer?${
           new URLSearchParams({
             aff: 'af-44915-aeey',

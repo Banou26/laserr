@@ -23,6 +23,8 @@ export const originUrl = 'https://anilist.co'
 export const categories: Category[] = ['ANIME']
 export const name = 'Anilist'
 export const origin = 'anilist'
+export const official = true
+export const metadataOnly = true
 
 const searchQuery = `
 query (

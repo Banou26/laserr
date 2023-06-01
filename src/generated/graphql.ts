@@ -263,6 +263,8 @@ export type MediaEpisode = {
   /** The episode number */
   number: Scalars['Int'];
   origin: Scalars['String'];
+  /** The playback information for the episode */
+  playback?: Maybe<MediaEpisodePlayback>;
   /** The url for the thumbnail image of the video */
   thumbnail?: Maybe<Scalars['String']>;
   /** Seconds until episode starts airing */
@@ -288,6 +290,27 @@ export type MediaEpisodeEdge = {
   /** The uri of the connection */
   uri?: Maybe<Scalars['Int']>;
 };
+
+export type MediaEpisodePlayback = {
+  __typename?: 'MediaEpisodePlayback';
+  /** Stringified json data for the playback, useful for custom players */
+  data?: Maybe<Scalars['String']>;
+  /** The origin for the playback, can be used to determine libraries that can handle that playback */
+  origin?: Maybe<Scalars['String']>;
+  /** The type of playback */
+  type?: Maybe<MediaEpisodePlaybackType>;
+  /** The uri for the playback, could be a torrent magnet uri */
+  uri?: Maybe<Scalars['String']>;
+  /** The url for the playback, can be a html embed url */
+  url?: Maybe<Scalars['String']>;
+};
+
+export enum MediaEpisodePlaybackType {
+  Custom = 'CUSTOM',
+  Iframe = 'IFRAME',
+  Other = 'OTHER',
+  Torrent = 'TORRENT'
+}
 
 /** An external link to another site related to the media or its properties */
 export type MediaExternalLink = Handle & {

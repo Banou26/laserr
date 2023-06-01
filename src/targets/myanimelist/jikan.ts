@@ -15,10 +15,13 @@ export const originUrl = 'https://myanimelist.net'
 export const origin = 'mal'
 export const categories = ['ANIME']
 export const name = 'MyAnimeList'
+export const official = true
+export const metadataOnly = true
 
 const throttle = pThrottle({
 	limit: 3,
-	interval: 1_000
+  strict: true,
+	interval: 3_000
 })
 
 export interface Root {
@@ -380,26 +383,31 @@ const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraPropert
 }
 
 const fetchMediaEpisodes = ({ id }: { id: number }) =>
-  fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
-    .then(response => response.json())
-    .then(json =>
-        json.data
-          ? ({
-            edges: json.data.map(node => ({
-              node: normalizeToMediaEpisode(id, node)
-            }))
-          })
-          : undefined
-      )
+  throttle(() =>
+    fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
+      .then(response => response.json())
+      .then(json =>
+          json.data
+            ? ({
+              edges: json.data.map(node => ({
+                node: normalizeToMediaEpisode(id, node)
+              }))
+            })
+            : undefined
+        )
+  )()
 
 const fetchMedia = ({ id }: { id: number }, context) =>
-  fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
-    .then(response => response.json())
-    .then(json =>
-        json.data
-          ? normalizeToMedia(json.data, context)
-          : undefined
-      )
+  throttle(() =>
+    fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
+      .then(response => response.json())
+      .then(json =>
+          json.data
+            ? normalizeToMedia(json.data, context)
+            : undefined
+        )
+  )()
+
 
 const getSeasonNow = (page = 0): Promise<Root> =>
   throttle(() =>
