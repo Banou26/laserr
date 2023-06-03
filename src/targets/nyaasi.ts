@@ -16,6 +16,8 @@ export const origin = 'https://nyaa.si'
 export const categories: Category[] = ['ANIME']
 export const name = 'Nyaa'
 export const scheme = 'nyaa'
+export const official = false
+export const metadataOnly = false
 
 const throttle = pThrottle({
 	limit: 2,
