@@ -580,7 +580,7 @@ const getSeason = (
   { season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus },
 ): Promise<SeriesHandle[]> =>
   fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status }, 1)
-    .then(res => console.log('res', res) || res)
+    // .then(res => console.log('res', res) || res)
     .then(medias => medias.map(mediaToSeriesHandle))
 
 // todo: improve the previousSeason query
@@ -609,7 +609,7 @@ export const searchSeries: SearchSeries = ({ ...rest }) => {
             A.uniq(EqByUri),
           ) as SeriesHandle[]
       ),
-      tap(val => console.log('val', val))
+      // tap(val => console.log('val', val))
     )
   }
 
@@ -629,7 +629,7 @@ const getIdFromUrl = (url: string): number => 1
 
 export const getSeries: GetSeries = (options) => {
   const throttledFetch: ExtraOptions['fetch'] = throttle((input: RequestInfo | URL, init?: RequestInit | undefined) => fetch(input, { ...init, noProxy: true }))
-  console.log('id', fromUris(options.uri, 'anilist').id)
+  // console.log('id', fromUris(options.uri, 'anilist').id)
   return (
     
     from(
@@ -720,17 +720,17 @@ export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], __, __
   if (!seasonYear) throw new Error('Anilist getAnimeSeason `seasonYear` is required')
 
   const res = fetchFullMediaSeasonMedias({ season: season, year: seasonYear }, 1)
-    .then(res => void console.log('res', res) || res)
+    // .then(res => void console.log('res', res) || res)
     .then(medias => medias.map(anilistMediaToScannarrMedia))
 
-  console.log('res2', res)
+  // console.log('res2', res)
   return res
 }
 
 export const resolvers: Resolvers = {
   Page: {
     media: async (...args) => {
-      console.log('Anilist Page media', args)
+      // console.log('Anilist Page media', args)
       const [, { search, season }] = args
       return (
         season ? getAnimeSeason(...args) :
@@ -746,7 +746,7 @@ export const resolvers: Resolvers = {
       // console.log('args', args)
       // const malId = fromUri(uri)
       const res = await fetchMedia({ id: Number(id) })
-      console.log('Anilist Media', res)
+      // console.log('Anilist Media', res)
       return res
     },
     Page: () => ({})

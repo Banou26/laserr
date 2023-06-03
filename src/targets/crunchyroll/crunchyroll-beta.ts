@@ -401,7 +401,7 @@ const getSeries = async (mediaId: string, { fetch = window.fetch }) =>
   .then(async res => (await res.json()) as { total: number, data: GetSeriesData[] })
   .then(async res => {
     // const episodes = 
-    console.log('CR EPISODES', await getEpisodes(mediaId, { fetch }))
+    // console.log('CR EPISODES', await getEpisodes(mediaId, { fetch }))
 
     return res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!)
   })
@@ -428,7 +428,7 @@ const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
           ...crunchyrollSeasonToScannarrMedia(res.data[0]!),
           episodes: async () => {
             const episodes = await getEpisodes(res.data[0]?.id, { fetch })
-            console.log('CR EPISODES', episodes)
+            // console.log('CR EPISODES', episodes)
 
             return {
               edges: episodes.map(episode => ({ node: episode })),
@@ -439,7 +439,7 @@ const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
         : undefined
     )
 
-    console.log('RETTTTTTTTT', ret)
+    // console.log('RETTTTTTTTT', ret)
 
     return ret
   })
@@ -646,7 +646,7 @@ export const resolvers: Resolvers = {
       if (_origin !== origin) return
 
       const result = await searchAnime(search, { fetch })
-      console.log('Crunchyroll Page Media result ', result)
+      // console.log('Crunchyroll Page Media result ', result)
 
       return [result]
     }
@@ -657,7 +657,7 @@ export const resolvers: Resolvers = {
       if (_origin !== origin) return undefined
 
       const result = await getSeason(id, { fetch })
-      console.log('Crunchyroll Media called with ', args, id, _origin, result)
+      // console.log('Crunchyroll Media called with ', args, id, _origin, result)
       return result
     },
     Episode: async (...args) => {
@@ -666,13 +666,13 @@ export const resolvers: Resolvers = {
       if (_origin !== origin || !episodeId || !episodeId) return undefined
 
       const res = await getEpisode(mediaId, episodeId, { fetch })
-      console.log('Crunchyroll Episode called with ', args, id, _origin, res)
+      // console.log('Crunchyroll Episode called with ', args, id, _origin, res)
 
       return res
     },
     Page: async (...args) => {
       const [_, { id, uri, origin: _origin, search }] = args
-      console.log('Crunchyroll Page called with ', args, id, _origin)
+      // console.log('Crunchyroll Page called with ', args, id, _origin)
       return ({})
     }
   },

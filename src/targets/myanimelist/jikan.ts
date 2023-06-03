@@ -264,7 +264,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
     context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
       ? await findCrunchyrollAnime(context, data.title_english)
       : undefined
-  console.log('crunchyrollHandle', crunchyrollHandle)
+  // console.log('crunchyrollHandle', crunchyrollHandle)
 
   return ({
     ...populateUri({
@@ -440,7 +440,7 @@ export const resolvers: Resolvers = {
       const [_, { id, uri, origin: _origin }] = args
       if (_origin !== origin) return undefined
       const res = await fetchMedia({ id }, args[2])
-      console.log('Jikan Media', args, res)
+      // console.log('Jikan Media', args, res)
       return res
     },
     Page: () => ({})
@@ -448,10 +448,10 @@ export const resolvers: Resolvers = {
   Media: {
     episodes: async (...args) => {
       const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
-      console.log('Jikan episodes called with ', args, id, __origin)
+      // console.log('Jikan episodes called with ', args, id, __origin)
       if (__origin !== origin) return undefined
       const res = await fetchMediaEpisodes({ id })
-      console.log('Jikan episodes', res)
+      // console.log('Jikan episodes', res)
       return res
     }
   }
