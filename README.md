@@ -15,3 +15,7 @@ video sources like 9anime ect
 https://github.com/justfoolingaround/animdl/tree/master/animdl/core/codebase/extractors/vidstream
 https://github.com/justfoolingaround/animdl/animdl/core/codebase/providers/nineanime/init.py
 https://github.com/justfoolingaround/animdl/animdl/core/codebase/extractors/vidstream/init.py
+
+https://anify.tv/
+https://consumet.org/ https://github.com/consumet/api.consumet.org
+https://docs.enime.moe/ https://api.enime.moe/mapping/anilist/1 https://docs.enime.moe/ https://github.com/Enime-Project/api.enime.moe
