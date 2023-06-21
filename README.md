@@ -19,3 +19,7 @@ https://github.com/justfoolingaround/animdl/animdl/core/codebase/extractors/vids
 https://anify.tv/
 https://consumet.org/ https://github.com/consumet/api.consumet.org
 https://docs.enime.moe/ https://api.enime.moe/mapping/anilist/1 https://docs.enime.moe/ https://github.com/Enime-Project/api.enime.moe
+
+https://mirror.animetosho.org/
+https://animetosho.org/animes/anidbID
+https://animetosho.org/episodes/aniDBepisodeID
