@@ -45,3 +45,5 @@ so just messing around with the urls I found
 https://feed.animetosho.org/json?t=search&cat=5070&extended=1&offset=0&limit=75&aid=12681 uses aid which is the anidb id for an anime (this is searching for made in abyss)
 
 https://feed.animetosho.org/json?t=search&cat=5070&extended=1&offset=0&limit=75&eid=188559 uses eid for the anidb episode id (this is searching for made in abyss episode 1)
+
+https://chiaki.site/?/tools/watch_order
