@@ -47,3 +47,9 @@ https://feed.animetosho.org/json?t=search&cat=5070&extended=1&offset=0&limit=75&
 https://feed.animetosho.org/json?t=search&cat=5070&extended=1&offset=0&limit=75&eid=188559 uses eid for the anidb episode id (this is searching for made in abyss episode 1)
 
 https://chiaki.site/?/tools/watch_order
+
+https://thetvdb.com/api-information
+
+https://discord.com/channels/953341991134064651/1001493036573925416/1121392357842112603
+
+trailer thumbnail thru YT api: https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=xMZQ9s1lU2M&format=json
