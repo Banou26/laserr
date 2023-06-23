@@ -53,3 +53,15 @@ https://thetvdb.com/api-information
 https://discord.com/channels/953341991134064651/1001493036573925416/1121392357842112603
 
 trailer thumbnail thru YT api: https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=xMZQ9s1lU2M&format=json
+
+
+https://discord.com/channels/953341991134064651/1001493036573925416/1121829231748468796
+
+https://skyhook.sonarr.tv/v1/tvdb/shows/en/421069
+
+https://thexem.info/
+https://thexem.info/xem/show/5632
+
+
+https://github.com/Enime-Project/api.enime.moe/blob/dev/src/mapping/meta/meta.service.ts#L19
+https://github.com/Enime-Project/api.enime.moe/blob/dev/src/mapping/meta/impl/tvdb.ts#L21
