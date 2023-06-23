@@ -643,7 +643,7 @@ export const resolvers: Resolvers = {
       const [_, { id, uri, origin: _origin, search }, { fetch }] = args
       // console.log('Crunchyroll Page Media called with ', args, id, _origin)
 
-      if (_origin !== origin) return
+      if (_origin !== origin) return []
 
       const result = await searchAnime(search, { fetch })
       // console.log('Crunchyroll Page Media result ', result)
