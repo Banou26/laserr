@@ -18,11 +18,20 @@ export const name = 'MyAnimeList'
 export const official = true
 export const metadataOnly = true
 
-const throttle = pThrottle({
+// https://docs.api.jikan.moe/#section/Information/Rate-Limiting is wrong
+const throttleSec = pThrottle({
 	limit: 3,
   strict: true,
-	interval: 3_000
+	interval: 3000
 })
+
+const throttleMin = pThrottle({
+	limit: 60,
+  strict: true,
+	interval: 60_000
+})
+
+const throttle = (func: (...args: any[]) => any) => throttleSec(throttleMin(func))
 
 export interface Root {
   pagination: Pagination
@@ -382,38 +391,35 @@ const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraPropert
   })
 }
 
-const fetchMediaEpisodes = ({ id }: { id: number }) =>
-  throttle(() =>
-    fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
-      .then(response => response.json())
-      .then(json =>
-          json.data
-            ? ({
-              edges: json.data.map(node => ({
-                node: normalizeToMediaEpisode(id, node)
-              }))
-            })
-            : undefined
-        )
-  )()
+const fetchMediaEpisodes = throttle(({ id }: { id: number }) =>
+  fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
+    .then(response => response.json())
+    .then(json =>
+        json.data
+          ? ({
+            edges: json.data.map(node => ({
+              node: normalizeToMediaEpisode(id, node)
+            }))
+          })
+          : undefined
+      )
+)
 
-const fetchMedia = ({ id }: { id: number }, context) =>
-  throttle(() =>
-    fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
-      .then(response => response.json())
-      .then(json =>
-          json.data
-            ? normalizeToMedia(json.data, context)
-            : undefined
-        )
-  )()
+const fetchMedia = throttle(({ id }: { id: number }, context) =>
+  fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
+    .then(response => response.json())
+    .then(json =>
+        json.data
+          ? normalizeToMedia(json.data, context)
+          : undefined
+      )
+)
 
 
-const getSeasonNow = (page = 0): Promise<Root> =>
-  throttle(() =>
-    fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}`)
-      .then(res => res.json())
-  )()
+const getSeasonNow = throttle((page = 1): Promise<Root> =>
+  fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}`)
+    .then(res => res.json())
+)
 
 const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], { fetch }: MediaParams[2], __) => {
   const { data, pagination } = await getSeasonNow()
