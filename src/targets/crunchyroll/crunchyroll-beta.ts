@@ -359,7 +359,6 @@ export const fetchToken = async ({ fetch = window.fetch }) =>
     pathname: "/auth/v1/token",
     protocol: "https:",
     search: "",
-    stealth: "https://www.crunchyroll.com/search",
     body: 'grant_type=client_id',
     method: 'POST',
     mode: 'cors',
@@ -392,8 +391,6 @@ const getSeries = async (mediaId: string, { fetch = window.fetch }) =>
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    proxyCache: '3600000',
-    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
@@ -412,8 +409,6 @@ const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    proxyCache: '3600000',
-    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
@@ -450,8 +445,6 @@ const getEpisodes = async (mediaId: string, { fetch = window.fetch }) =>
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    proxyCache: '3600000',
-    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
@@ -465,8 +458,6 @@ const getEpisode = async (mediaId: string, episodeId: string, { fetch = window.f
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    proxyCache: '3600000',
-    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
@@ -481,8 +472,6 @@ const search = async (query: string, { fetch = window.fetch }) =>
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    proxyCache: '3600000',
-    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
@@ -576,8 +565,6 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
     },
-    proxyCache: '3600000',
-    stealth: "https://www.crunchyroll.com/search",
     "method": "GET",
     "mode": "cors",
     "credentials": "include"
