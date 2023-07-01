@@ -403,8 +403,20 @@ const getSeries = async (mediaId: string, { fetch = window.fetch }) =>
     return res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!)
   })
 
+const _getSeason = async (mediaId: string, { fetch = window.fetch }) =>
+  fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}/seasons?force_locale=&preferred_audio_language=ja-JP&locale=en-US`, {
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
+    },
+    "method": "GET",
+    "mode": "cors",
+    "credentials": "include"
+  })
+  .then(async res => (await res.json()) as { total: number, data: GetSeriesData[] })
+
 const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
-  fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}/seasons?force_locale=&preferred_audio_language=ja-JP&locale=fr-FR`, {
+  fetch(`https://www.crunchyroll.com/content/v2/cms/series/${mediaId}/seasons?force_locale=&preferred_audio_language=ja-JP&locale=en-US`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
@@ -421,15 +433,14 @@ const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
       res.data[0]
         ? ({
           ...crunchyrollSeasonToScannarrMedia(res.data[0]!),
-          episodes: async () => {
-            const episodes = await getEpisodes(res.data[0]?.id, { fetch })
-            // console.log('CR EPISODES', episodes)
+          // episodes: async () => {
+          //   const episodes = await getEpisodes(res.data[0]?.id, { fetch })
 
-            return {
-              edges: episodes.map(episode => ({ node: episode })),
-              nodes: episodes
-            }
-          }
+          //   return {
+          //     edges: episodes.map(episode => ({ node: episode })),
+          //     nodes: episodes
+          //   }
+          // }
         })
         : undefined
     )
@@ -439,7 +450,7 @@ const getSeason = async (mediaId: string, { fetch = window.fetch }) =>
     return ret
   })
 
-const getEpisodes = async (mediaId: string, { fetch = window.fetch }) => 
+const getEpisodes = async (mediaId: string, { fetch = window.fetch }) =>
   fetch(`https://www.crunchyroll.com/content/v2/cms/seasons/${mediaId}/episodes?preferred_audio_language=ja-JP&locale=en-US`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
@@ -505,7 +516,10 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
     large: serie.images.poster_tall.at(-1)?.source,
     medium: serie.images.poster_tall.at(-1)?.source
   }],
-  description: serie.description,
+  description:
+    serie.description.length
+      ? serie.description
+      : null,
   title: {
     english: serie.title
   }
@@ -520,7 +534,10 @@ const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraPrope
       edges: []
     }
   }),
-  description: serie.description,
+  description:
+    serie.description.length
+      ? serie.description
+      : null,
   title: {
     english: serie.title
   }
@@ -532,13 +549,19 @@ const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: Crun
     id: `${mediaId}-${episode.id}`,
     url: `https://www.crunchyroll.com/watch/${episode.id}`,
     handles: {
-      edges: []
+      edges: [],
+      nodes: []
     }
   }),
   number: Number(episode.episode),
   mediaUri: toUri({ origin, id: mediaId }),
-  description: episode.description,
+  description:
+    episode.description.length
+      ? episode.description
+      : null,
   title: {
+    native: null,
+    romanized: null,
     english: episode.title
   },
   playback:
@@ -560,7 +583,7 @@ const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: Crun
 })
 
 const searchAnime = async (title: string, { fetch = window.fetch }) =>
-  fetch(`https://www.crunchyroll.com/content/v2/discover/search?${makeSearchParams({ search: title, type: ['series'] })}`, {
+  fetch(`https://www.crunchyroll.com/content/v2/discover/search?${makeSearchParams({ search: title, type: ['series'], locale: 'en-US' })}`, {
     "headers": {
       "accept": "application/json, text/plain, */*",
       "authorization": `Bearer ${(await getToken({ fetch })).access_token}`,
@@ -663,20 +686,28 @@ export const resolvers: Resolvers = {
       return ({})
     }
   },
-  // Media: {
-  //   episodes: async (...args) => {
-  //     const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
-  //     console.log('Crunchyroll episodes called with ', args, id, __origin)
-  //     if (__origin !== origin) return undefined
+  Media: {
+    episodes: async (...args) => {
+      const [{ id, uri, origin: _origin }, _, { fetch }] = args
+      // console.log('Crunchyroll Media.Episode called with ', args, id, _origin)
+      if (_origin !== origin ) return undefined
+      const season = await _getSeason(id, { fetch })
+      const res = await getEpisodes(season.data[0]?.id, { fetch })
+      // console.log('Crunchyroll Media.Episode called with ', args, id, _origin, season.data[0]?.id, res)
 
-  //     return res
-  //   }
-  //   episode: async (...args) => {
-  //     const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
-  //     console.log('Crunchyroll episodes called with ', args, id, __origin)
-  //     if (__origin !== origin) return undefined
+      return {
+        edges: res.map((episode) => ({
+          node: episode
+        })),
+        nodes: res
+      }
+    }
+    // episode: async (...args) => {
+    //   const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
+    //   console.log('Crunchyroll episodes called with ', args, id, __origin)
+    //   if (__origin !== origin) return undefined
 
-  //     return res
-  //   }
-  // }
+    //   return res
+    // }
+  }
 }
