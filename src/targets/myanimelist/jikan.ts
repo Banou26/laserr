@@ -224,11 +224,6 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
                   }
                 }
               }
-              title {
-                romanized
-                english
-                native
-              }
             }
           }
         }
@@ -238,7 +233,6 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
 `)
 
 const findCrunchyrollAnime = async (context, title: string) => {
-  // console.log('findCrunchyrollAnime query', SEARCH_CRUNCHYROLL_ANIME)
   const { data } = await context.client.query({
     query: SEARCH_CRUNCHYROLL_ANIME,
     variables: {
@@ -246,12 +240,10 @@ const findCrunchyrollAnime = async (context, title: string) => {
       search: title
     }
   })
-  // console.log('findCrunchyrollAnime', data)
   return data.Page.media[0].handles.edges[0].node
 }
 
 const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
-  // console.log('Jikan normalizeToMedia', data, context)
   const crunchyrollHandle =
     context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
       ? await findCrunchyrollAnime(context, data.title_english)
