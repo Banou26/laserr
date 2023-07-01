@@ -260,8 +260,12 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
   const aniDBSource =
     data.external?.find(site => site.name === 'AniDB')
   const aniDBId =
-    new URL(aniDBSource?.url).searchParams.get('aid')
-    ?? new URL(aniDBSource?.url).pathname.split('/')[2]
+    aniDBSource
+      ? (
+        new URL(aniDBSource?.url).searchParams.get('aid')
+        ?? new URL(aniDBSource?.url).pathname.split('/')[2]
+      )
+      : undefined
 
   // todo: make a system to automatically create handle lists that are using same ids
   const aniDBHandle =
@@ -269,7 +273,8 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       ? populateUri({
         origin: 'anidb',
         id: aniDBId,
-        url: aniDBSource?.url
+        url: aniDBSource?.url,
+        handles: []
       })
       : undefined
 
@@ -278,7 +283,8 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       ? populateUri({
         origin: 'animetosho',
         id: aniDBId,
-        url: `https://animetosho.org/series/_.${aniDBId}`
+        url: `https://animetosho.org/series/_.${aniDBId}`,
+        handles: []
       })
       : undefined
   // console.log('crunchyrollHandle', crunchyrollHandle)
@@ -290,23 +296,23 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       url: data.url,
       handles: {
         edges: [
-          ...crunchyrollHandle && [{
+          ...crunchyrollHandle ? [{
             node: crunchyrollHandle,
             handleRelationType: HandleRelation.Identical
-          }],
-          ...aniDBHandle && [{
+          }] : [],
+          ...aniDBHandle ? [{
             node: aniDBHandle,
             handleRelationType: HandleRelation.Identical
-          }],
-          ...animetoshoHandle && [{
+          }] : [],
+          ...animetoshoHandle ? [{
             node: animetoshoHandle,
             handleRelationType: HandleRelation.Identical
-          }]
+          }] : []
         ],
         nodes: [
-          ...crunchyrollHandle && [crunchyrollHandle],
-          ...aniDBHandle && [aniDBHandle],
-          ...animetoshoHandle && [animetoshoHandle]
+          ...crunchyrollHandle ? [crunchyrollHandle] : [],
+          ...aniDBHandle ? [aniDBHandle] : [],
+          ...animetoshoHandle ? [animetoshoHandle] : []
         ]
       }
     }),
