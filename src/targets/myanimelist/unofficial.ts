@@ -166,16 +166,14 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
         tags: [],
         releaseDate: [],
         handles: {
-          edges: [],
-          nodes: []
+          edges: []
         },
         recommended: []
       })),
   recommended: [],
   tags: [],
   handles: {
-    edges: [],
-    nodes: []
+    edges: []
   },
   withDetails: false
 })
@@ -300,8 +298,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
         ? []
         : [{ language: LanguageTag.EN, synopsis }],
     handles: {
-      edges: [],
-      nodes: []
+      edges: []
     },
     tags: [],
     related: [],
@@ -525,8 +522,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
         }),
     dates: [date],
     handles: {
-      edges: [],
-      nodes: []
+      edges: []
     },
     withDetails: true
   })
@@ -660,8 +656,7 @@ const testSeriesTitles = async (limitedFetch) => {
     ],
     synopses: [],
     handles: {
-      edges: [],
-      nodes: []
+      edges: []
     },
     tags: [],
     related: [],
@@ -703,8 +698,7 @@ const testSeriesTitle = async (limitedFetch) => {
 (Source: Wikipedia)`
     }],
     handles: {
-      edges: [],
-      nodes: []
+      edges: []
     },
     tags: [],
     related: [],
@@ -766,8 +760,7 @@ While developing bonds and working to catch a colorful cast of criminals, the Be
     recommended: [],
     tags: [],
     handles: {
-      edges: [],
-      nodes: []
+      edges: []
     },
     uri: 'mal:1',
     withDetails: true
@@ -865,8 +858,7 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
       id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
       url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
       handles: {
-        edges: [],
-        nodes: []
+        edges: []
       }
     }),
     averageScore: Number(elem.querySelector('td:nth-child(5)')?.textContent?.trim()),
@@ -923,8 +915,7 @@ const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
     id: elem.querySelector<HTMLAnchorElement>('.genres.js-genre')!.id.trim().replace('sinfo', ''),
     url: elem.querySelector<HTMLAnchorElement>('.h2_anime_title .link-title')!.href,
     handles: {
-      edges: [],
-      nodes: []
+      edges: []
     }
   }),
   averageScore:

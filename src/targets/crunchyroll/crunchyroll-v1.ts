@@ -158,7 +158,9 @@ const getSeasonCardInfo = async (elem: HTMLElement, { fetch }: ExtraOptions): Se
         language: LanguageTag.EN,
         name: name.trim()!
       }],
-      handles: [],
+      handles: {
+        edges: []
+      },
       withDetails: false
     })
   )

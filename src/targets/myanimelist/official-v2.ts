@@ -101,7 +101,9 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   titles: [],
   recommended: [],
   tags: [],
-  handles: [],
+  handles: {
+    edges: []
+  },
   withDetails: false
 })
 
@@ -135,7 +137,9 @@ const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
     language: LanguageTag.EN,
     synopsis: elem.querySelector('.pt4')!.textContent!.trim()!
   }],
-  handles: [],
+  handles: {
+    edges: []
+  },
   withDetails: false
 })
 
@@ -195,12 +199,16 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
         related: [],
         tags: [],
         releaseDate: [],
-        handles: [],
+        handles: {
+          edges: []
+        },
         recommended: []
       })),
   recommended: [],
   tags: [],
-  handles: [],
+  handles: {
+    edges: []
+  },
   withDetails: false
 })
 
@@ -323,7 +331,9 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       elem.querySelector('.di-t.w100.mb8 ~ .pt8.pb8 .badresult')
         ? []
         : [{ language: LanguageTag.EN, synopsis }],
-    handles: [],
+    handles: {
+      edges: []
+    },
     tags: [],
     related: [],
     recommended: [],
@@ -510,7 +520,9 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
           ?.replaceAll('\n\n\n\n', '\n\n')!
     }],
     dates: [date],
-    handles: [],
+    handles: {
+      edges: []
+    },
     withDetails: true
   })
 }
@@ -640,7 +652,9 @@ const testSeriesTitles = async (limitedFetch) => {
       }
     ],
     synopses: [],
-    handles: [],
+    handles: {
+      edges: []
+    },
     tags: [],
     related: [],
     uri: 'mal:1-1',
@@ -680,7 +694,9 @@ const testSeriesTitle = async (limitedFetch) => {
 
 (Source: Wikipedia)`
     }],
-    handles: [],
+    handles: {
+      edges: []
+    },
     tags: [],
     related: [],
     uri: 'mal:1-1',
@@ -740,7 +756,9 @@ While developing bonds and working to catch a colorful cast of criminals, the Be
     titles: [],
     recommended: [],
     tags: [],
-    handles: [],
+    handles: {
+      edges: []
+    },
     uri: 'mal:1',
     withDetails: true
   })

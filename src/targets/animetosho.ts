@@ -21,7 +21,9 @@ export const fromRelatedHandle = (handle: Handle) => {
         handle.url?.includes('https://anidb.net/anime/') ? `https://animetosho.org/series/_.${handle.id}`
         : handle.url?.includes('https://anidb.net/episode/') ? `https://animetosho.org/episode/_.${handle.id}`
         : undefined,
-      handles: []
+      handles: {
+        edges: []
+      }
     })
   }
 }

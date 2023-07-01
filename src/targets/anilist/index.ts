@@ -486,15 +486,21 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
     origin,
     id: media.id.toString(),
     url: media.siteUrl ?? undefined,
+    handles: {
+      edges: []
+    }
   }),
   genres:
     media.genres?.length
       ? (
         media.genres.map((genre: string) => populateUri({
-          scheme,
+          origin,
           id: genre,
           url: `https://anilist.co/search/anime?genres=${genre}`,
-          name: genre
+          name: genre,
+          handles: {
+            edges: []
+          }
         }))
       )
       : undefined,
@@ -542,7 +548,10 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
       media.idMal ? [{
         node: populateUri({
           id: media.idMal.toString(),
-          scheme: 'mal'
+          origin: 'mal',
+          handles: {
+            edges: []
+          }
         }),
         handleRelationType: HandleRelation.Identical
       }] : []
@@ -655,17 +664,18 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     id: media.id.toString(),
     url: media.siteUrl,
     handles: {
-      edges: media.idMal
-        ? [{
-          node: populateUri({
-            origin: 'mal',
-            id: media.idMal.toString(),
-            url: `https://myanimelist.net/anime/${media.idMal}`,
-            handles: { edges: [] }
-          }),
-          handleRelationType: HandleRelation.Identical
-        }]
-        : []
+      edges:
+        media.idMal
+          ? [{
+            node: populateUri({
+              origin: 'mal',
+              id: media.idMal.toString(),
+              url: `https://myanimelist.net/anime/${media.idMal}`,
+              handles: { edges: [] }
+            }),
+            handleRelationType: HandleRelation.Identical
+          }]
+          : []
     }
   }),
   averageScore:
@@ -705,8 +715,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
           id: `${edge.node.id.toString()}-${edge.node.episode}`,
           url: `https://anilist.co/anime/${media.id}`,
           handles: {
-            edges: [],
-            nodes: []
+            edges: []
           }
         }),
         airingAt: edge.node.airingAt,

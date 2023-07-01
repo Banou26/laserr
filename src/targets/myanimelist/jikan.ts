@@ -274,7 +274,9 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         origin: 'anidb',
         id: aniDBId,
         url: aniDBSource?.url,
-        handles: []
+        handles: {
+          edges: []
+        }
       })
       : undefined
 
@@ -284,7 +286,9 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         origin: 'animetosho',
         id: aniDBId,
         url: `https://animetosho.org/series/_.${aniDBId}`,
-        handles: []
+        handles: {
+          edges: []
+        }
       })
       : undefined
   // console.log('crunchyrollHandle', crunchyrollHandle)
@@ -308,11 +312,6 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
             node: animetoshoHandle,
             handleRelationType: HandleRelation.Identical
           }] : []
-        ],
-        nodes: [
-          ...crunchyrollHandle ? [crunchyrollHandle] : [],
-          ...aniDBHandle ? [aniDBHandle] : [],
-          ...animetoshoHandle ? [animetoshoHandle] : []
         ]
       }
     }),
@@ -353,7 +352,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
             origin: 'yt',
             id: data.trailer.youtube_id,
             url: `https://www.youtube.com/watch?v=${data.trailer.youtube_id}`,
-            handles: { edges: [], nodes: [] }
+            handles: { edges: [] }
           }),
           thumbnail: data.trailer.images.image_url
         }]
@@ -386,8 +385,7 @@ const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraPropert
       id: `${id}-${episodeNumber}`,
       url: data.url,
       handles: {
-        edges: [],
-        nodes: []
+        edges: []
       }
     }),
     airingAt: airingTime,
@@ -397,8 +395,7 @@ const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraPropert
       id,
       url: data.url?.split('/').slice(0, 4).join('/') ?? `https://myanimelist.net/anime/${id}/`,
       handles: {
-        edges: [],
-        nodes: []
+        edges: []
       }
     }),
     mediaUri: toUri({ origin, id }),
