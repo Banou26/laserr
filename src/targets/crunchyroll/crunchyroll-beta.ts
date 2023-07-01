@@ -578,8 +578,8 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
           series
             ?.map(async (serie) => {
               const alignment = await swAlign(
-                title,
-                serie.title,
+                title.toLowerCase(),
+                serie.title.toLowerCase(),
                 { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 }
               )
               
