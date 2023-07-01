@@ -8,8 +8,6 @@ import { MediaEpisode } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 
-// https://jikan.moe/
-
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
 export const origin = 'mal'
@@ -17,21 +15,6 @@ export const categories = ['ANIME']
 export const name = 'MyAnimeList'
 export const official = true
 export const metadataOnly = true
-
-// https://docs.api.jikan.moe/#section/Information/Rate-Limiting is wrong
-const throttleSec = pThrottle({
-	limit: 3,
-  strict: true,
-	interval: 3000
-})
-
-const throttleMin = pThrottle({
-	limit: 60,
-  strict: true,
-	interval: 60_000
-})
-
-const throttle = (func: (...args: any[]) => any) => throttleSec(throttleMin(func))
 
 export interface Root {
   pagination: Pagination
@@ -273,6 +256,31 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
     context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
       ? await findCrunchyrollAnime(context, data.title_english)
       : undefined
+
+  const aniDBSource =
+    data.external?.find(site => site.name === 'AniDB')
+  const aniDBId =
+    new URL(aniDBSource?.url).searchParams.get('aid')
+    ?? new URL(aniDBSource?.url).pathname.split('/')[2]
+
+  // todo: make a system to automatically create handle lists that are using same ids
+  const aniDBHandle =
+    aniDBSource
+      ? populateUri({
+        origin: 'anidb',
+        id: aniDBId,
+        url: aniDBSource?.url
+      })
+      : undefined
+
+  const animetoshoHandle =
+    aniDBSource
+      ? populateUri({
+        origin: 'animetosho',
+        id: aniDBId,
+        url: `https://animetosho.org/series/_.${aniDBId}`
+      })
+      : undefined
   // console.log('crunchyrollHandle', crunchyrollHandle)
 
   return ({
@@ -281,17 +289,25 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       id: data.mal_id.toString(),
       url: data.url,
       handles: {
-        edges:
-          crunchyrollHandle  
-            ? [{
-              node: crunchyrollHandle,
-              handleRelationType: HandleRelation.Identical
-            }]
-            : [],
-        nodes:
-          crunchyrollHandle
-            ? [crunchyrollHandle]
-            : []
+        edges: [
+          ...crunchyrollHandle && [{
+            node: crunchyrollHandle,
+            handleRelationType: HandleRelation.Identical
+          }],
+          ...aniDBHandle && [{
+            node: aniDBHandle,
+            handleRelationType: HandleRelation.Identical
+          }],
+          ...animetoshoHandle && [{
+            node: animetoshoHandle,
+            handleRelationType: HandleRelation.Identical
+          }]
+        ],
+        nodes: [
+          ...crunchyrollHandle && [crunchyrollHandle],
+          ...aniDBHandle && [aniDBHandle],
+          ...animetoshoHandle && [animetoshoHandle]
+        ]
       }
     }),
     averageScore: data.score,
@@ -391,8 +407,9 @@ const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraPropert
   })
 }
 
-const fetchMediaEpisodes = throttle(({ id }: { id: number }) =>
-  fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
+const fetchMediaEpisodes = ({ id }: { id: number }, context: MediaParams[2]) =>
+  context
+    .fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
     .then(response => response.json())
     .then(json =>
         json.data
@@ -403,32 +420,34 @@ const fetchMediaEpisodes = throttle(({ id }: { id: number }) =>
           })
           : undefined
       )
-)
 
-const fetchMedia = throttle(({ id }: { id: number }, context) =>
-  fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
+const fetchMedia = ({ id }: { id: number }, context: MediaParams[2]) =>
+  context
+    .fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
     .then(response => response.json())
     .then(json =>
         json.data
           ? normalizeToMedia(json.data, context)
           : undefined
       )
-)
 
 
-const getSeasonNow = throttle((page = 1): Promise<Root> =>
-  fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}`)
+const getSeasonNow = (page = 1, context: MediaParams[2]): Promise<Root> =>
+  context
+    .fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}`)
     .then(res => res.json())
-)
 
-const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], { fetch }: MediaParams[2], __) => {
-  const { data, pagination } = await getSeasonNow()
+const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], context: MediaParams[2], __) => {
+  const { data, pagination } = await getSeasonNow(1, context)
   const getRest = async (page = 1) => {
     if (page > pagination.last_visible_page) return []
-    const { data } = await getSeasonNow(page)
+    const { data } = await getSeasonNow(page, context)
     return [...data, ...await getRest(page + 1)]
   }
-  return [...data, ...await getRest()].map(normalizeToMedia)
+  return (
+    [...data, ...await getRest()]
+      .map(normalizeToMedia)
+  )
 }
 
 export const resolvers: Resolvers = {
@@ -436,8 +455,9 @@ export const resolvers: Resolvers = {
     media: async (...args) => {
       const [, { search, season }] = args
       return (
-        season ? await getFullSeasonNow(...args) :
-        []
+        season
+          ? await getFullSeasonNow(...args)
+          : []
       )
     }
   },
@@ -449,6 +469,16 @@ export const resolvers: Resolvers = {
       // console.log('Jikan Media', args, res)
       return res
     },
+    Episode: async (...args) => {
+      const [_, { id: _id, origin: _origin }] = args
+      // console.log('Jikan Episode', args, id, __origin)
+      if (_origin !== origin || !_id) return undefined
+      const [id, episodeNumber] = _id.split('-').map(Number)
+      if (!id) return undefined
+      const res = await fetchMediaEpisodes({ id }, args[2])
+      console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
+      return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
+    },
     Page: () => ({})
   },
   Media: {
@@ -456,9 +486,9 @@ export const resolvers: Resolvers = {
       const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
       // console.log('Jikan episodes called with ', args, id, __origin)
       if (__origin !== origin) return undefined
-      const res = await fetchMediaEpisodes({ id })
+      const res = await fetchMediaEpisodes({ id }, args[2])
       // console.log('Jikan episodes', res)
       return res
     }
   }
-}
+} satisfies Resolvers

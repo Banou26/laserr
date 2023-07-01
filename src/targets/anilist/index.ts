@@ -258,7 +258,7 @@ const seasonVariables3 = {season: "SPRING", year: 2022, minEpisodes: 16, page: 1
 //   "credentials": "omit"
 // });
 
-const fetchMediaSeason = (
+const fetchMediaSeason = throttle((
   { season, year, excludeFormat, minEpisodes, status, page = 1 }:
   { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number }
 ) =>
@@ -280,6 +280,7 @@ const fetchMediaSeason = (
       }
     })
   })
+)
 
 const fetchFullMediaSeasonMedias = (
   { season, year, excludeFormat, minEpisodes, status }: { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus },
@@ -300,7 +301,7 @@ const fetchFullMediaSeasonMedias = (
       return medias
     })
 
-const fetchMedia = ({ id }: { id: number }) =>
+const fetchMedia = throttle(({ id }: { id: number }) =>
   fetch('https://graphql.anilist.co/', {
     method: 'POST',
     "headers": {
@@ -320,8 +321,9 @@ const fetchMedia = ({ id }: { id: number }) =>
           ? anilistMediaToScannarrMedia(json.data.Media)
           : undefined
       )
+)
 
-const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
+const fetchSeries = throttle(({ id, malId }: { id?: number, malId?: number }) =>
   fetch('https://graphql.anilist.co/', {
     method: 'POST',
     "headers": {
@@ -335,6 +337,7 @@ const fetchSeries = ({ id, malId }: { id?: number, malId?: number }) =>
       }
     })
   })
+)
 
 type SeasonObject = {
   season: MediaSeason

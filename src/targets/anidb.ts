@@ -7,3 +7,37 @@
 // * All information is cached for 6 days (i.e. FileBot will not request the same information twice, unless the information we have is more than 6 days old already)
 // * If our 200 request per 24 hour limit is 50% exhausted, then FileBot will prefer previously cached information regardless of age to conserve requests if possible (i.e. you may end up with episode data that is 2-3 months old that was cached in a previous run long ago)
 // * A single banned response will switch the AniDB client into offline mode for the remaining process life-time and all subsequent requests that cannot be served by the cache will fail immediately
+
+
+import type { Handle, Resolvers } from 'scannarr'
+
+import { populateUri } from 'scannarr'
+
+import * as AT from './animetosho'
+
+export const icon = 'https://cdn-eu.anidb.net/css/assets/images/touch/apple-touch-icon.png'
+export const originUrl = 'https://anidb.net/'
+export const origin = 'anidb'
+export const categories = ['ANIME']
+export const name = 'AniDB'
+export const official = true
+export const metadataOnly = true
+
+export const fromRelatedHandle = (handle: Handle) => {
+  if (handle.origin === AT.origin) {
+    return populateUri({
+      origin: AT.origin,
+      id: handle.id,
+      url:
+        handle.url?.includes('https://animetosho.org/series/') ? `https://anidb.net/anime/${handle.id}`
+        : handle.url?.includes('https://animetosho.org/episode/') ? `https://anidb.net/episode/${handle.id}`
+        : undefined,
+      handles: []
+    })
+  }
+}
+
+
+export const resolvers: Resolvers = {
+
+} satisfies Resolvers
