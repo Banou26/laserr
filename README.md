@@ -37,6 +37,9 @@ https://animetosho.org/about talks about a json api being available if you swap 
 so 
 https://animetosho.org/feed/json?t=search&cat=5070&extended=1&offset=0&limit=75&q=Uchuu%20Senkan%20Tiramisu+01 will work
 
+https://animetosho.org/episode/mashle-8.266011
+https://animetosho.org/episode/_.ANIDB_EPISODE_ID_HERE
+
 
 looking at https://storage.animetosho.org/dbexport/
 it makes mention of aid, eid (and others) relating to anidb (check what they mean with the link)
@@ -65,3 +68,5 @@ https://thexem.info/xem/show/5632
 
 https://github.com/Enime-Project/api.enime.moe/blob/dev/src/mapping/meta/meta.service.ts#L19
 https://github.com/Enime-Project/api.enime.moe/blob/dev/src/mapping/meta/impl/tvdb.ts#L21
+
+https://api.ani.zip/mappings?anidb_id=11712
