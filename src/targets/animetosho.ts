@@ -28,6 +28,50 @@ export const fromRelatedHandle = (handle: Handle) => {
   }
 }
 
-export const resolvers: Resolvers = {
+// https://animetosho.org/search?filter%5B0%5D%5Bt%5D=nyaa_class&filter%5B0%5D%5Bv%5D=trusted&order=&q=1080&aid=14758
 
+const getPlayback = async (doc: Document) => {
+  doc.body.querySelectorAll('.home_list_entry')
+}
+
+export const resolvers: Resolvers = {
+  Query: {
+    Page: () => ({}),
+    Episode: async (...args) => {
+      const [_, { id: _id, origin: _origin }] = args
+      if (_origin !== origin || !_id) return undefined
+      console.log('AnimeTosho Episode', args, _id, _origin)
+      return populateUri({
+        origin: origin,
+        id: _id,
+        url: `https://animetosho.org/episode/_.${_id}`,
+        handles: {
+          edges: []
+        },
+        playback: {}
+      })
+    },
+  },
+  MediaEpisode: {
+    playback: async (parent, args, context) => {
+      const { id: _id, origin: _origin } = parent
+      if (_origin !== origin || !_id) return undefined
+      console.log('AnimeTosho MediaEpisode playback')
+
+      const res = await context.fetch(
+        `https://animetosho.org/search?${
+          new URLSearchParams({
+              "filter[0][t]": "nyaa_class",
+              "filter[0][v]": "trusted",
+              "order": "",
+              "q": "1080",
+              "aid": _id.toString()
+          })
+      }`)
+
+      console.log('res', res)
+
+      return undefined
+    }
+  }
 } satisfies Resolvers

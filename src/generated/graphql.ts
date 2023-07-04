@@ -264,7 +264,7 @@ export type MediaEpisode = {
   number: Scalars['Float'];
   origin: Scalars['String'];
   /** The playback information for the episode */
-  playback?: Maybe<MediaEpisodePlayback>;
+  playback?: Maybe<MediaEpisodePlaybackConnection>;
   /** The url for the thumbnail image of the video */
   thumbnail?: Maybe<Scalars['String']>;
   /** Seconds until episode starts airing */
@@ -303,6 +303,23 @@ export type MediaEpisodePlayback = {
   uri?: Maybe<Scalars['String']>;
   /** The url for the playback, can be a html embed url */
   url?: Maybe<Scalars['String']>;
+};
+
+/** Media connection edge */
+export type MediaEpisodePlaybackConnection = {
+  __typename?: 'MediaEpisodePlaybackConnection';
+  edges?: Maybe<Array<Maybe<MediaEpisodePlaybackEdge>>>;
+  nodes?: Maybe<Array<Maybe<MediaEpisodePlayback>>>;
+  /** The pagination information */
+  pageInfo?: Maybe<PageInfo>;
+};
+
+/** MediaEpisodePlayback connection edge */
+export type MediaEpisodePlaybackEdge = {
+  __typename?: 'MediaEpisodePlaybackEdge';
+  node?: Maybe<MediaEpisodePlayback>;
+  /** The uri of the connection */
+  uri?: Maybe<Scalars['Int']>;
 };
 
 export enum MediaEpisodePlaybackType {
@@ -576,24 +593,17 @@ export type Origin = {
 
 export type Page = {
   __typename?: 'Page';
-  episodePlayback: Array<MediaEpisodePlayback>;
+  episode: Array<MediaEpisode>;
   media: Array<Media>;
   origin: Array<Origin>;
   pageInfo: PageInfo;
 };
 
 
-export type PageEpisodePlaybackArgs = {
+export type PageEpisodeArgs = {
   id?: InputMaybe<Scalars['String']>;
-  name?: InputMaybe<Scalars['String']>;
-  names?: InputMaybe<Array<Scalars['String']>>;
-  number?: InputMaybe<Scalars['Int']>;
   origin?: InputMaybe<Scalars['String']>;
-  quality?: InputMaybe<Scalars['String']>;
-  resolution?: InputMaybe<Scalars['String']>;
   search?: InputMaybe<Scalars['String']>;
-  season?: InputMaybe<Scalars['Int']>;
-  trusted?: InputMaybe<Scalars['Boolean']>;
   uri?: InputMaybe<Scalars['String']>;
 };
 
