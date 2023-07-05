@@ -1,0 +1,1 @@
+// https://subsplease.org/shows/mushoku-tensei/

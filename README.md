@@ -70,3 +70,27 @@ https://github.com/Enime-Project/api.enime.moe/blob/dev/src/mapping/meta/meta.se
 https://github.com/Enime-Project/api.enime.moe/blob/dev/src/mapping/meta/impl/tvdb.ts#L21
 
 https://api.ani.zip/mappings?anidb_id=11712
+
+https://www.jsonapi.co/public-api/category/Anime
+
+https://www.crunchyroll.com/ajax/?req=RpcApiSearch_GetSearchCandidates
+
+https://www.opensubtitles.org/fr/ssearch/sublanguageid-/idmovie-546206
+
+https://newznab.readthedocs.io/en/latest/misc/api/#list-of-attributes
+https://www.techradar.com/best/best-nzb-indexing-websites
+https://theindex.moe/library/anime
+https://theindex.moe/
+https://github.com/popcorn-time-ru/popcorn-ru
+https://awesomeopensource.com/projects/radarr
+
+https://fanarttv.docs.apiary.io/#
+https://trakt.tv/
+https://www.tvtime.com/
+https://www.imdb.com/
+https://www.themoviedb.org/
+https://eztv.wf/
+https://torrends.to/settings/#search_url
+https://torrends.info/
+https://thetvdb.com/
+https://github.com/JimmyLaurent/torrent-search-api
