@@ -3,6 +3,7 @@ import type { Handle, Resolvers } from 'scannarr'
 import { populateUri } from 'scannarr'
 
 import * as anidb from './anidb'
+import { MediaEpisodePlayback } from '../generated/graphql'
 
 export const icon = 'https://animetosho.org/inc/favicon.ico'
 export const originUrl = 'https://animetosho.org/'
@@ -29,10 +30,40 @@ export const fromRelatedHandle = (handle: Handle) => {
 }
 
 // https://animetosho.org/search?filter%5B0%5D%5Bt%5D=nyaa_class&filter%5B0%5D%5Bv%5D=trusted&order=&q=1080&aid=14758
+const searchAnime = ({ id, search }: { id: string, search: string }) =>
+  new URLSearchParams({
+    "filter[0][t]": "nyaa_class",
+    "filter[0][v]": "trusted",
+    "order": "",
+    "q": search,
+    "aid": id.toString()
+  })
 
-const getPlayback = async (doc: Document) => {
-  doc.body.querySelectorAll('.home_list_entry')
+// https://animetosho.org/series/mushoku-tensei-isekai-ittara-honki-dasu.14758
+const parseSeriesUrlId = (url: string) => url.split('.')[2]
+
+// https://animetosho.org/view/erai-raws-mushoku-tensei-isekai-ittara-honki-dasu.n1361996
+const parseTorrentUrlId = (url: string) => url.split('.')[2]
+
+const entryToMediaEpisodePlayback = (elem: Element): MediaEpisodePlayback => {
+  const torrentPageUrl = elem?.querySelector<HTMLAnchorElement>('.link a')?.href
+
+  if (!torrentPageUrl) throw new Error('Animetosho, no torrent page link url found')
+
+
+  return populateUri({
+    id: parseTorrentUrlId(torrentPageUrl),
+    origin,
+    url: torrentPageUrl,
+    handles: {
+      edges: []
+    }
+  })
 }
+
+const getPlaybackElements = async (doc: Document) =>
+  [...doc.body.querySelectorAll('.home_list_entry')]
+  .map(entry => entryToMediaEpisodePlayback(entry))
 
 export const resolvers: Resolvers = {
   Query: {
