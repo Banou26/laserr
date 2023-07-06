@@ -291,17 +291,31 @@ export type MediaEpisodeEdge = {
   uri?: Maybe<Scalars['Int']>;
 };
 
-export type MediaEpisodePlayback = {
+export type MediaEpisodePlayback = Handle & {
   __typename?: 'MediaEpisodePlayback';
-  /** Stringified json data for the playback, useful for custom players */
+  bytes?: Maybe<Scalars['Int']>;
+  /** Stringified (json?) data for the playback, useful for custom players */
   data?: Maybe<Scalars['String']>;
-  /** The origin for the playback, can be used to determine libraries that can handle that playback */
-  origin?: Maybe<Scalars['String']>;
+  episodeRange?: Maybe<Scalars['String']>;
+  filename?: Maybe<Scalars['String']>;
+  filesCount?: Maybe<Scalars['Int']>;
+  format?: Maybe<Scalars['String']>;
+  handler: Scalars['String'];
+  handles: HandleConnection;
+  hash?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  media?: Maybe<Media>;
+  mediaEpisode?: Maybe<MediaEpisode>;
+  origin: Scalars['String'];
+  resolution?: Maybe<Scalars['String']>;
+  structure?: Maybe<MediaEpisodePlaybackFileStructure>;
+  team?: Maybe<Scalars['String']>;
+  thumbnails?: Maybe<Array<Maybe<Scalars['String']>>>;
+  title?: Maybe<MediaTitle>;
   /** The type of playback */
   type?: Maybe<MediaEpisodePlaybackType>;
-  /** The uri for the playback, could be a torrent magnet uri */
-  uri?: Maybe<Scalars['String']>;
-  /** The url for the playback, can be a html embed url */
+  uploadDate?: Maybe<Scalars['Int']>;
+  uri: Scalars['Uri'];
   url?: Maybe<Scalars['String']>;
 };
 
@@ -321,6 +335,11 @@ export type MediaEpisodePlaybackEdge = {
   /** The uri of the connection */
   uri?: Maybe<Scalars['Int']>;
 };
+
+export enum MediaEpisodePlaybackFileStructure {
+  Multi = 'MULTI',
+  Single = 'SINGLE'
+}
 
 export enum MediaEpisodePlaybackType {
   Custom = 'CUSTOM',
