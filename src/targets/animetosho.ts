@@ -45,25 +45,168 @@ const parseSeriesUrlId = (url: string) => url.split('.')[2]
 // https://animetosho.org/view/erai-raws-mushoku-tensei-isekai-ittara-honki-dasu.n1361996
 const parseTorrentUrlId = (url: string) => url.split('.')[2]
 
-const entryToMediaEpisodePlayback = (elem: Element): MediaEpisodePlayback => {
-  const torrentPageUrl = elem?.querySelector<HTMLAnchorElement>('.link a')?.href
+const rowToMediaEpisodePlayback = (elem: Element): MediaEpisodePlayback => {
+  const torrentPageElement = elem?.querySelector<HTMLAnchorElement>('.link a')
+  if (!torrentPageElement) throw new Error('Animetosho, no torrent page link element found')
 
-  if (!torrentPageUrl) throw new Error('Animetosho, no torrent page link url found')
+  const url = torrentPageElement?.href
+  if (!url) throw new Error('Animetosho, no torrent link url found on the torrent page link element')
 
+  const filename = torrentPageElement?.textContent
+  if (!filename) throw new Error('Animetosho, no torrent filename found on the torrent page link element')
+
+  const timeElement = elem.querySelector<HTMLDivElement>('.date')
+  if (!timeElement) throw new Error('Animetosho, no time element found')
+  const timeString = timeElement.getAttribute('title')?.replace('Date/time submitted: ', '')
+  if (!timeString) throw new Error('Animetosho, no title attribute on the time element found')
+  const uploadDate = new Date(timeString).getTime()
+
+  const bytesElement = elem.querySelector('.size')
+  if (!bytesElement) throw new Error('Animetosho, no bytes element found')
+  const bytesString =
+    bytesElement
+      .getAttribute('title')
+      ?.replace('Total file size: ', '')
+      .replace(' bytes', '')
+      .replaceAll(',', '')
+  if (!bytesString) throw new Error('Animetosho, no title attribute on the bytes element found')
+  const bytes = Number(bytesString)
+
+  const name = elem.querySelector('.serieslink')?.textContent
+  if (!name) throw new Error('Animetosho, no torrent name found on the torrent page link element')
 
   return populateUri({
-    id: parseTorrentUrlId(torrentPageUrl),
+    id: parseTorrentUrlId(url),
     origin,
-    url: torrentPageUrl,
+    url,
     handles: {
       edges: []
+    },
+    filename,
+    name,
+    uploadDate,
+    bytes
+  })
+}
+
+const getListRows = (doc: Document) => [...doc.body.querySelectorAll('.home_list_entry')]
+
+const getListRowsAsMediaEpisodePlayback = (doc: Document) =>
+  getListRows(doc)
+    .map(rowToMediaEpisodePlayback)
+
+const seriesPageToMedia = (doc: Document) => {
+  const urlElement = document.querySelector<HTMLAnchorElement>('#content > div:nth-child(3) > a')
+  if (!urlElement) throw new Error('Animetosho, no url element found')
+  const url = urlElement?.href.replace(new URL(urlElement?.href).search, '')
+
+  const titleElement = doc.body.querySelector<HTMLHeadingElement>('.title')
+  if (!titleElement) throw new Error('Animetosho, no title element found')
+  const title = titleElement?.textContent
+  if (!title) throw new Error('Animetosho, no title textContent found')
+
+  const descriptionElement = doc.body.querySelector<HTMLDivElement>('#content > table > tbody > tr > td > div:nth-child(2)')
+  if (!descriptionElement) throw new Error('Animetosho, no description element found')
+  const description = descriptionElement?.textContent
+  if (!description) throw new Error('Animetosho, no description textContent found')
+
+  const imageElement = doc.body.querySelector<HTMLImageElement>('#content > table > tbody > tr > td > a > img')
+  if (!imageElement) throw new Error('Animetosho, no image element found')
+  const image = imageElement?.src
+  if (!image) throw new Error('Animetosho, no image src found')
+
+  return populateUri({
+    origin,
+    id: parseSeriesUrlId(url),
+    url,
+    // todo: add related handles
+    handles: {
+      edges: []
+    },
+    title: {
+      native: null,
+      romanized: title,
+      english: null
+    },
+    description,
+    coverImage: [{
+      medium: image
+    }],
+    episodes: {
+      edges: getListRowsAsMediaEpisodePlayback(doc)
     }
   })
 }
 
-const getPlaybackElements = async (doc: Document) =>
-  [...doc.body.querySelectorAll('.home_list_entry')]
-  .map(entry => entryToMediaEpisodePlayback(entry))
+const fetchSeriesPage = async (url: string) => {
+  const text = await (await fetch(url)).text()
+  const doc = new DOMParser().parseFromString(text, 'text/html')
+  return seriesPageToMedia(doc)
+}
+
+const torrentToMediaEpisodePlayback = (torrent: Torrent): MediaEpisodePlayback => {
+  const urlElement = torrent.element.querySelector<HTMLAnchorElement>('#newcomment')
+  if (!urlElement) throw new Error('Animetosho, no url element found')
+  const url =
+    urlElement
+      .getAttribute('action')
+      ?.replace(new URL(urlElement?.href).hash, '')
+  if (!url) throw new Error('Animetosho, no url href found')
+
+  const titleElement = torrent.element.querySelector<HTMLAnchorElement>('#nav_bc > a:nth-child(2)')
+  if (!titleElement) throw new Error('Animetosho, no title element found')
+  const title = titleElement?.textContent
+  if (!title) throw new Error('Animetosho, no title textContent found')
+
+  const filenameElement = torrent.element.querySelector<HTMLAnchorElement>('.title')
+  if (!filenameElement) throw new Error('Animetosho, no filename element found')
+  const filename = filenameElement?.textContent
+  if (!filename) throw new Error('Animetosho, no filename textContent found')
+
+  const timeElement = torrent.element.querySelector<HTMLDivElement>('#content > table:nth-child(3) > tbody > tr:nth-child(2) > td')
+  if (!timeElement) throw new Error('Animetosho, no time element found')
+  const timeString = timeElement?.textContent
+  if (!timeString) throw new Error('Animetosho, no time textContent found')
+
+  const thumbnails =
+    [...torrent.element.querySelectorAll<HTMLAnchorElement>('.screenthumb')]
+      .map(img => img.href)
+
+  const bytesElement = torrent.element.querySelector<HTMLDivElement>('#content > table:nth-child(4) > tbody > tr:nth-child(1) > td > span')
+  if (!bytesElement) throw new Error('Animetosho, no bytes element found')
+  const bytesString =
+    bytesElement
+      .getAttribute('title')
+      ?.replace('Total file size: ', '')
+      .replace(' bytes', '')
+      .replaceAll(',', '')
+  if (!bytesString) throw new Error('Animetosho, no bytes textContent found')
+  const bytes = Number(bytesString)
+
+  const dateElement = torrent.element.querySelector<HTMLDivElement>('#content > table:nth-child(3) > tbody > tr:nth-child(2) > td')
+  if (!dateElement) throw new Error('Animetosho, no date element found')
+  const dateString = dateElement?.textContent
+  if (!dateString) throw new Error('Animetosho, no date textContent found')
+  const uploadDate = new Date(dateString)
+
+  return populateUri({
+    id: parseTorrentUrlId(url),
+    origin,
+    url: url,
+    handles: {
+      edges: []
+    },
+    filename,
+    title: {
+      native: null,
+      romanized: title,
+      english: null
+    },
+    uploadDate,
+    bytes,
+    thumbnails
+  })
+}
 
 export const resolvers: Resolvers = {
   Query: {
@@ -81,7 +224,7 @@ export const resolvers: Resolvers = {
         },
         playback: {}
       })
-    },
+    }
   },
   MediaEpisode: {
     playback: async (parent, args, context) => {
