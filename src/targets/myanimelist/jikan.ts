@@ -4,7 +4,7 @@ import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
 import { MediaStatus, populateUri, toUri } from 'scannarr'
 import pThrottle from 'p-throttle'
-import { MediaEpisode } from 'scannarr'
+import { Episode } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 
@@ -365,7 +365,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
 }
 
 
-const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraProperties<MediaEpisode> => {
+const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<Episode> => {
   const id = data.url?.split('/')[4] ?? mediaId
   const episodeNumber = Number(data.url?.split('/')[7] ?? data.mal_id)
 
@@ -402,7 +402,7 @@ const normalizeToMediaEpisode = (mediaId: number, data: Episode): NoExtraPropert
   })
 }
 
-const fetchMediaEpisodes = ({ id }: { id: number }, context: MediaParams[2]) =>
+const fetchEpisodes = ({ id }: { id: number }, context: MediaParams[2]) =>
   context
     .fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`)
     .then(response => response.json())
@@ -410,7 +410,7 @@ const fetchMediaEpisodes = ({ id }: { id: number }, context: MediaParams[2]) =>
         json.data
           ? ({
             edges: json.data.map(node => ({
-              node: normalizeToMediaEpisode(id, node)
+              node: normalizeToEpisode(id, node)
             }))
           })
           : undefined
@@ -470,7 +470,7 @@ export const resolvers: Resolvers = {
       if (_origin !== origin || !_id) return undefined
       const [id, episodeNumber] = _id.split('-').map(Number)
       if (!id) return undefined
-      const res = await fetchMediaEpisodes({ id }, args[2])
+      const res = await fetchEpisodes({ id }, args[2])
       console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
       return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
     },
@@ -481,7 +481,7 @@ export const resolvers: Resolvers = {
       const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
       // console.log('Jikan episodes called with ', args, id, __origin)
       if (__origin !== origin) return undefined
-      const res = await fetchMediaEpisodes({ id }, args[2])
+      const res = await fetchEpisodes({ id }, args[2])
       // console.log('Jikan episodes', res)
       return res
     }

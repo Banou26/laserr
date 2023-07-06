@@ -3,7 +3,7 @@ import type { Handle, Resolvers } from 'scannarr'
 import { populateUri } from 'scannarr'
 
 import * as anidb from './anidb'
-import { Media, MediaEpisodePlayback } from '../generated/graphql'
+import { Media, PlaybackSource } from '../generated/graphql'
 
 export const icon = 'https://animetosho.org/inc/favicon.ico'
 export const originUrl = 'https://animetosho.org/'
@@ -45,7 +45,7 @@ const parseSeriesUrlId = (url: string) => url.split('.')[2]
 // https://animetosho.org/view/erai-raws-mushoku-tensei-isekai-ittara-honki-dasu.n1361996
 const parseTorrentUrlId = (url: string) => url.split('.')[2]
 
-const rowToMediaEpisodePlayback = (elem: Element): MediaEpisodePlayback => {
+const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   const torrentPageElement = elem?.querySelector<HTMLAnchorElement>('.link a')
   if (!torrentPageElement) throw new Error('Animetosho, no torrent page link element found')
 
@@ -91,9 +91,9 @@ const rowToMediaEpisodePlayback = (elem: Element): MediaEpisodePlayback => {
 
 const getListRows = (doc: Document) => [...doc.body.querySelectorAll('.home_list_entry')]
 
-const getListRowsAsMediaEpisodePlayback = (doc: Document) =>
+const getListRowsAsPlaybackSource = (doc: Document) =>
   getListRows(doc)
-    .map(rowToMediaEpisodePlayback)
+    .map(rowToPlaybackSource)
 
 const seriesPageToMedia = (doc: Document): Media => {
   const urlElement = doc.body.querySelector<HTMLAnchorElement>('#content > div:nth-child(3) > a')
@@ -134,7 +134,7 @@ const seriesPageToMedia = (doc: Document): Media => {
     }],
     episodes: {
       edges: []
-      // edges: getListRowsAsMediaEpisodePlayback(doc)
+      // edges: getListRowsAsPlaybackSource(doc)
     }
   })
 }
@@ -151,7 +151,7 @@ const fetchSeriesPageMedia = (url: string, { fetch = window.fetch }) =>
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
     .then(seriesPageToMedia)
 
-const torrentToMediaEpisodePlayback = (doc: Document): MediaEpisodePlayback => {
+const torrentToPlaybackSource = (doc: Document): PlaybackSource => {
   const urlElement = doc.body.querySelector<HTMLAnchorElement>('#newcomment')
   if (!urlElement) throw new Error('Animetosho, no url element found')
   const url =
@@ -219,7 +219,7 @@ const fetchTorrentPage = (url: string, { fetch = window.fetch }) =>
   fetch(url)
     .then(res => res.text())
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
-    .then(torrentToMediaEpisodePlayback)
+    .then(torrentToPlaybackSource)
 
 export const resolvers: Resolvers = {
   Query: {
@@ -245,11 +245,11 @@ export const resolvers: Resolvers = {
       })
     }
   },
-  MediaEpisode: {
+  Episode: {
     playback: async (parent, args, context) => {
       const { id: _id, origin: _origin } = parent
       if (_origin !== origin || !_id) return undefined
-      console.log('AnimeTosho MediaEpisode playback')
+      console.log('AnimeTosho Episode playback')
 
       const res = await context.fetch(
         `https://animetosho.org/search?${

@@ -45,7 +45,7 @@ export const resolvers: Resolvers = {
   //     if (_origin !== origin || !_id) return undefined
   //     const [id, episodeNumber] = _id.split('-').map(Number)
   //     if (!id) return undefined
-  //     const res = await fetchMediaEpisodes({ id }, args[2])
+  //     const res = await fetchEpisodes({ id }, args[2])
   //     console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
   //     return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
   //   },
@@ -56,7 +56,7 @@ export const resolvers: Resolvers = {
   //     const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
   //     // console.log('Jikan episodes called with ', args, id, __origin)
   //     if (__origin !== origin) return undefined
-  //     const res = await fetchMediaEpisodes({ id }, args[2])
+  //     const res = await fetchEpisodes({ id }, args[2])
   //     // console.log('Jikan episodes', res)
   //     return res
   //   }

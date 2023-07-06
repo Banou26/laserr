@@ -109,7 +109,7 @@ export type Media = Handle & {
   description?: Maybe<Scalars['String']>;
   /** The last official release date of the media */
   endDate?: Maybe<FuzzyDate>;
-  episodes?: Maybe<MediaEpisodeConnection>;
+  episodes?: Maybe<EpisodeConnection>;
   /** External links to another site related to the media */
   externalLinks?: Maybe<Array<Maybe<MediaExternalLink>>>;
   format?: Maybe<MediaFormat>;
@@ -157,7 +157,7 @@ export type MediaDescriptionArgs = {
  * Media is a type of handle that represents a media.
  * It generally represents a Movie, TV Show, Game, Package, ect...
  */
-export type MediaEpisodesArgs = {
+export type EpisodesArgs = {
   notYetAired?: InputMaybe<Scalars['Boolean']>;
   page?: InputMaybe<Scalars['Int']>;
   perPage?: InputMaybe<Scalars['Int']>;
@@ -247,14 +247,14 @@ export type MediaEdge = HandleEdge & {
   node: Media;
 };
 
-export type MediaEpisode = {
-  __typename?: 'MediaEpisode';
+export type Episode = {
+  __typename?: 'Episode';
   /** The time the episode airs at */
   airingAt?: Maybe<Scalars['Float']>;
   /** The description of the episode */
   description?: Maybe<Scalars['String']>;
   handler: Scalars['String'];
-  handles: MediaEpisodeConnection;
+  handles: EpisodeConnection;
   id: Scalars['String'];
   /** The associate media of the episode */
   media?: Maybe<Media>;
@@ -264,7 +264,7 @@ export type MediaEpisode = {
   number: Scalars['Float'];
   origin: Scalars['String'];
   /** The playback information for the episode */
-  playback?: Maybe<MediaEpisodePlaybackConnection>;
+  playback?: Maybe<PlaybackSourceConnection>;
   /** The url for the thumbnail image of the video */
   thumbnail?: Maybe<Scalars['String']>;
   /** Seconds until episode starts airing */
@@ -275,24 +275,24 @@ export type MediaEpisode = {
   url?: Maybe<Scalars['String']>;
 };
 
-export type MediaEpisodeConnection = {
-  __typename?: 'MediaEpisodeConnection';
-  edges?: Maybe<Array<Maybe<MediaEpisodeEdge>>>;
-  nodes?: Maybe<Array<Maybe<MediaEpisode>>>;
+export type EpisodeConnection = {
+  __typename?: 'EpisodeConnection';
+  edges?: Maybe<Array<Maybe<EpisodeEdge>>>;
+  nodes?: Maybe<Array<Maybe<Episode>>>;
   /** The pagination information */
   pageInfo?: Maybe<PageInfo>;
 };
 
-/** MediaEpisode connection edge */
-export type MediaEpisodeEdge = {
-  __typename?: 'MediaEpisodeEdge';
-  node?: Maybe<MediaEpisode>;
+/** Episode connection edge */
+export type EpisodeEdge = {
+  __typename?: 'EpisodeEdge';
+  node?: Maybe<Episode>;
   /** The uri of the connection */
   uri?: Maybe<Scalars['Int']>;
 };
 
-export type MediaEpisodePlayback = Handle & {
-  __typename?: 'MediaEpisodePlayback';
+export type PlaybackSource = Handle & {
+  __typename?: 'PlaybackSource';
   bytes?: Maybe<Scalars['Int']>;
   /** Stringified (json?) data for the playback, useful for custom players */
   data?: Maybe<Scalars['String']>;
@@ -305,43 +305,43 @@ export type MediaEpisodePlayback = Handle & {
   hash?: Maybe<Scalars['String']>;
   id: Scalars['String'];
   media?: Maybe<Media>;
-  mediaEpisode?: Maybe<MediaEpisode>;
+  Episode?: Maybe<Episode>;
   origin: Scalars['String'];
   resolution?: Maybe<Scalars['String']>;
-  structure?: Maybe<MediaEpisodePlaybackFileStructure>;
+  structure?: Maybe<PlaybackSourceFileStructure>;
   team?: Maybe<Scalars['String']>;
   thumbnails?: Maybe<Array<Maybe<Scalars['String']>>>;
   title?: Maybe<MediaTitle>;
   /** The type of playback */
-  type?: Maybe<MediaEpisodePlaybackType>;
+  type?: Maybe<PlaybackSourceType>;
   uploadDate?: Maybe<Scalars['Int']>;
   uri: Scalars['Uri'];
   url?: Maybe<Scalars['String']>;
 };
 
 /** Media connection edge */
-export type MediaEpisodePlaybackConnection = {
-  __typename?: 'MediaEpisodePlaybackConnection';
-  edges?: Maybe<Array<Maybe<MediaEpisodePlaybackEdge>>>;
-  nodes?: Maybe<Array<Maybe<MediaEpisodePlayback>>>;
+export type PlaybackSourceConnection = {
+  __typename?: 'PlaybackSourceConnection';
+  edges?: Maybe<Array<Maybe<PlaybackSourceEdge>>>;
+  nodes?: Maybe<Array<Maybe<PlaybackSource>>>;
   /** The pagination information */
   pageInfo?: Maybe<PageInfo>;
 };
 
-/** MediaEpisodePlayback connection edge */
-export type MediaEpisodePlaybackEdge = {
-  __typename?: 'MediaEpisodePlaybackEdge';
-  node?: Maybe<MediaEpisodePlayback>;
+/** PlaybackSource connection edge */
+export type PlaybackSourceEdge = {
+  __typename?: 'PlaybackSourceEdge';
+  node?: Maybe<PlaybackSource>;
   /** The uri of the connection */
   uri?: Maybe<Scalars['Int']>;
 };
 
-export enum MediaEpisodePlaybackFileStructure {
+export enum PlaybackSourceFileStructure {
   Multi = 'MULTI',
   Single = 'SINGLE'
 }
 
-export enum MediaEpisodePlaybackType {
+export enum PlaybackSourceType {
   Custom = 'CUSTOM',
   Iframe = 'IFRAME',
   Other = 'OTHER',
@@ -612,7 +612,7 @@ export type Origin = {
 
 export type Page = {
   __typename?: 'Page';
-  episode: Array<MediaEpisode>;
+  episode: Array<Episode>;
   media: Array<Media>;
   origin: Array<Origin>;
   pageInfo: PageInfo;
@@ -682,7 +682,7 @@ export type PageInfo = {
 
 export type Query = {
   __typename?: 'Query';
-  Episode?: Maybe<MediaEpisode>;
+  Episode?: Maybe<Episode>;
   Media?: Maybe<Media>;
   Origin?: Maybe<Origin>;
   Page: Page;

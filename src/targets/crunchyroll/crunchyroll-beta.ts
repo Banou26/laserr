@@ -1,5 +1,5 @@
 
-import type { Media, MediaEpisode, Resolvers } from 'scannarr'
+import type { Media, Episode, Resolvers } from 'scannarr'
 
 import type { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
 
@@ -9,7 +9,7 @@ import { swAlign } from 'seal-wasm'
 
 import { NoExtraProperties } from '../../utils/type'
 import { toUri } from 'scannarr'
-import { MediaEpisodePlaybackType } from 'scannarr'
+import { PlaybackSourceType } from 'scannarr'
 
 // todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
 
@@ -461,7 +461,7 @@ const getEpisodes = async (mediaId: string, { fetch = window.fetch }) =>
     "credentials": "include"
   })
     .then(async res => (await res.json()) as { total: number, data: GetEpisodesData[], meta: GetEpisodesMeta })
-    .then(res => res.data.map(episodeData => crunchyrollEpisodeToScannarrMediaEpisode(mediaId, episodeData)))
+    .then(res => res.data.map(episodeData => crunchyrollEpisodeToScannarrEpisode(mediaId, episodeData)))
 
 const getEpisode = async (mediaId: string, episodeId: string, { fetch = window.fetch }) => 
   fetch(`https://www.crunchyroll.com/content/v2/cms/objects/${episodeId}?ratings=true&locale=en-US`, {
@@ -474,7 +474,7 @@ const getEpisode = async (mediaId: string, episodeId: string, { fetch = window.f
     "credentials": "include"
   })
     .then(async res => (await res.json()) as { total: number, data: GetEpisodeData[], meta: GetEpisodesMeta })
-    .then(res => res.data[0] ? crunchyrollEpisodeToScannarrMediaEpisode(mediaId, res.data[0]) : undefined)
+    .then(res => res.data[0] ? crunchyrollEpisodeToScannarrEpisode(mediaId, res.data[0]) : undefined)
 
 const search = async (query: string, { fetch = window.fetch }) =>
   // 100 episodes
@@ -543,7 +543,7 @@ const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraPrope
   }
 })
 
-const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: CrunchyrollEpisode): NoExtraProperties<MediaEpisode> => ({
+const crunchyrollEpisodeToScannarrEpisode = (mediaId: string, episode: CrunchyrollEpisode): NoExtraProperties<Episode> => ({
   ...populateUri({
     origin,
     id: `${mediaId}-${episode.id}`,
@@ -567,7 +567,7 @@ const crunchyrollEpisodeToScannarrMediaEpisode = (mediaId: string, episode: Crun
   playback:
     episode.external_id
       ? {
-        type: MediaEpisodePlaybackType.Iframe,
+        type: PlaybackSourceType.Iframe,
         origin,
         url: `https://www.crunchyroll.com/affiliate_iframeplayer?${
           new URLSearchParams({
