@@ -95,6 +95,12 @@ const getListRowsAsPlaybackSource = (doc: Document) =>
   getListRows(doc)
     .map(rowToPlaybackSource)
 
+const searchPlaybackSources = async (id: string, search: string) =>
+  fetch(`https://animetosho.org/search?${searchAnime({ id, search })}`)
+    .then(res => res.text())
+    .then(text => new DOMParser().parseFromString(text, 'text/html'))
+    .then(getListRowsAsPlaybackSource)
+
 const seriesPageToMedia = (doc: Document): Media => {
   const urlElement = doc.body.querySelector<HTMLAnchorElement>('#content > div:nth-child(3) > a')
   if (!urlElement) throw new Error('Animetosho, no url element found')
@@ -222,6 +228,16 @@ const fetchTorrentPage = (url: string, { fetch = window.fetch }) =>
     .then(torrentToPlaybackSource)
 
 export const resolvers: Resolvers = {
+  Page: {
+    playbackSource: async (...args) => {
+      console.log('AnimeTosho playbackSource', args)
+      const [_, { id: _id, origin: _origin }, { fetch }] = args
+      if (_origin !== origin || !_id) return []
+      const res = await searchPlaybackSources(_id, { fetch })
+      console.log('AnimeTosho playbackSource', args, _id, _origin, res)
+      return res ?? []
+    }
+  },
   Query: {
     Page: () => ({}),
     Media: async (...args) => {
@@ -243,7 +259,14 @@ export const resolvers: Resolvers = {
         },
         playback: {}
       })
-    }
+    },
+    // PlaybackSource: async (...args) => {
+    //   const [_, { id: _id, origin: _origin }, { fetch }] = args
+    //   if (_origin !== origin || !_id) return undefined
+    //   const res = await searchPlaybackSources(_id, { fetch })
+    //   console.log('AnimeTosho PlaybackSource', args, _id, _origin, res)
+    //   return res
+    // }
   },
   Episode: {
     playback: async (parent, args, context) => {
