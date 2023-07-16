@@ -24,6 +24,50 @@ export type Scalars = {
   Uri: any;
 };
 
+export type Episode = {
+  __typename?: 'Episode';
+  /** The time the episode airs at */
+  airingAt?: Maybe<Scalars['Float']>;
+  /** The description of the episode */
+  description?: Maybe<Scalars['String']>;
+  handler: Scalars['String'];
+  handles: EpisodeConnection;
+  id: Scalars['String'];
+  /** The associate media of the episode */
+  media?: Maybe<Media>;
+  /** The associate media uri of the episode */
+  mediaUri: Scalars['String'];
+  /** The episode number */
+  number: Scalars['Float'];
+  origin: Scalars['String'];
+  /** The playback information for the episode */
+  playback?: Maybe<PlaybackSourceConnection>;
+  /** The url for the thumbnail image of the video */
+  thumbnail?: Maybe<Scalars['String']>;
+  /** Seconds until episode starts airing */
+  timeUntilAiring?: Maybe<Scalars['Float']>;
+  /** The title of the episode */
+  title?: Maybe<MediaTitle>;
+  uri: Scalars['Uri'];
+  url?: Maybe<Scalars['String']>;
+};
+
+export type EpisodeConnection = {
+  __typename?: 'EpisodeConnection';
+  edges?: Maybe<Array<Maybe<EpisodeEdge>>>;
+  nodes?: Maybe<Array<Maybe<Episode>>>;
+  /** The pagination information */
+  pageInfo?: Maybe<PageInfo>;
+};
+
+/** Episode connection edge */
+export type EpisodeEdge = {
+  __typename?: 'EpisodeEdge';
+  node?: Maybe<Episode>;
+  /** The uri of the connection */
+  uri?: Maybe<Scalars['Int']>;
+};
+
 export enum ExternalLinkMediaType {
   Anime = 'ANIME',
   Manga = 'MANGA',
@@ -157,7 +201,7 @@ export type MediaDescriptionArgs = {
  * Media is a type of handle that represents a media.
  * It generally represents a Movie, TV Show, Game, Package, ect...
  */
-export type EpisodesArgs = {
+export type MediaEpisodesArgs = {
   notYetAired?: InputMaybe<Scalars['Boolean']>;
   page?: InputMaybe<Scalars['Int']>;
   perPage?: InputMaybe<Scalars['Int']>;
@@ -246,107 +290,6 @@ export type MediaEdge = HandleEdge & {
   handleRelationType: HandleRelation;
   node: Media;
 };
-
-export type Episode = {
-  __typename?: 'Episode';
-  /** The time the episode airs at */
-  airingAt?: Maybe<Scalars['Float']>;
-  /** The description of the episode */
-  description?: Maybe<Scalars['String']>;
-  handler: Scalars['String'];
-  handles: EpisodeConnection;
-  id: Scalars['String'];
-  /** The associate media of the episode */
-  media?: Maybe<Media>;
-  /** The associate media uri of the episode */
-  mediaUri: Scalars['String'];
-  /** The episode number */
-  number: Scalars['Float'];
-  origin: Scalars['String'];
-  /** The playback information for the episode */
-  playback?: Maybe<PlaybackSourceConnection>;
-  /** The url for the thumbnail image of the video */
-  thumbnail?: Maybe<Scalars['String']>;
-  /** Seconds until episode starts airing */
-  timeUntilAiring?: Maybe<Scalars['Float']>;
-  /** The title of the episode */
-  title?: Maybe<MediaTitle>;
-  uri: Scalars['Uri'];
-  url?: Maybe<Scalars['String']>;
-};
-
-export type EpisodeConnection = {
-  __typename?: 'EpisodeConnection';
-  edges?: Maybe<Array<Maybe<EpisodeEdge>>>;
-  nodes?: Maybe<Array<Maybe<Episode>>>;
-  /** The pagination information */
-  pageInfo?: Maybe<PageInfo>;
-};
-
-/** Episode connection edge */
-export type EpisodeEdge = {
-  __typename?: 'EpisodeEdge';
-  node?: Maybe<Episode>;
-  /** The uri of the connection */
-  uri?: Maybe<Scalars['Int']>;
-};
-
-export type PlaybackSource = Handle & {
-  __typename?: 'PlaybackSource';
-  bytes?: Maybe<Scalars['Int']>;
-  /** Stringified (json?) data for the playback, useful for custom players */
-  data?: Maybe<Scalars['String']>;
-  episodeRange?: Maybe<Scalars['String']>;
-  filename?: Maybe<Scalars['String']>;
-  filesCount?: Maybe<Scalars['Int']>;
-  format?: Maybe<Scalars['String']>;
-  handler: Scalars['String'];
-  handles: HandleConnection;
-  hash?: Maybe<Scalars['String']>;
-  id: Scalars['String'];
-  media?: Maybe<Media>;
-  Episode?: Maybe<Episode>;
-  origin: Scalars['String'];
-  resolution?: Maybe<Scalars['String']>;
-  structure?: Maybe<PlaybackSourceFileStructure>;
-  team?: Maybe<Scalars['String']>;
-  thumbnails?: Maybe<Array<Maybe<Scalars['String']>>>;
-  title?: Maybe<MediaTitle>;
-  /** The type of playback */
-  type?: Maybe<PlaybackSourceType>;
-  uploadDate?: Maybe<Scalars['Int']>;
-  uri: Scalars['Uri'];
-  url?: Maybe<Scalars['String']>;
-};
-
-/** Media connection edge */
-export type PlaybackSourceConnection = {
-  __typename?: 'PlaybackSourceConnection';
-  edges?: Maybe<Array<Maybe<PlaybackSourceEdge>>>;
-  nodes?: Maybe<Array<Maybe<PlaybackSource>>>;
-  /** The pagination information */
-  pageInfo?: Maybe<PageInfo>;
-};
-
-/** PlaybackSource connection edge */
-export type PlaybackSourceEdge = {
-  __typename?: 'PlaybackSourceEdge';
-  node?: Maybe<PlaybackSource>;
-  /** The uri of the connection */
-  uri?: Maybe<Scalars['Int']>;
-};
-
-export enum PlaybackSourceFileStructure {
-  Multi = 'MULTI',
-  Single = 'SINGLE'
-}
-
-export enum PlaybackSourceType {
-  Custom = 'CUSTOM',
-  Iframe = 'IFRAME',
-  Other = 'OTHER',
-  Torrent = 'TORRENT'
-}
 
 /** An external link to another site related to the media or its properties */
 export type MediaExternalLink = Handle & {
@@ -616,6 +559,7 @@ export type Page = {
   media: Array<Media>;
   origin: Array<Origin>;
   pageInfo: PageInfo;
+  playbackSource: Array<PlaybackSource>;
 };
 
 
@@ -658,6 +602,21 @@ export type PageOriginArgs = {
   official?: InputMaybe<Scalars['Boolean']>;
 };
 
+
+export type PagePlaybackSourceArgs = {
+  id?: InputMaybe<Scalars['String']>;
+  name?: InputMaybe<Scalars['String']>;
+  names?: InputMaybe<Array<Scalars['String']>>;
+  number?: InputMaybe<Scalars['Float']>;
+  origin?: InputMaybe<Scalars['String']>;
+  quality?: InputMaybe<Scalars['String']>;
+  resolution?: InputMaybe<Scalars['String']>;
+  search?: InputMaybe<Scalars['String']>;
+  season?: InputMaybe<Scalars['Int']>;
+  trusted?: InputMaybe<Scalars['Boolean']>;
+  uri?: InputMaybe<Scalars['String']>;
+};
+
 export type PageInfo = {
   __typename?: 'PageInfo';
   /** The current page */
@@ -680,12 +639,70 @@ export type PageInfo = {
   totalBefore?: Maybe<Scalars['Int']>;
 };
 
+export type PlaybackSource = Handle & {
+  __typename?: 'PlaybackSource';
+  Episode?: Maybe<Episode>;
+  bytes?: Maybe<Scalars['Int']>;
+  /** Stringified (json?) data for the playback, useful for custom players */
+  data?: Maybe<Scalars['String']>;
+  episodeRange?: Maybe<Scalars['String']>;
+  filename?: Maybe<Scalars['String']>;
+  filesCount?: Maybe<Scalars['Int']>;
+  format?: Maybe<Scalars['String']>;
+  handler: Scalars['String'];
+  handles: HandleConnection;
+  hash?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  media?: Maybe<Media>;
+  origin: Scalars['String'];
+  resolution?: Maybe<Scalars['String']>;
+  structure?: Maybe<PlaybackSourceFileStructure>;
+  team?: Maybe<Scalars['String']>;
+  thumbnails?: Maybe<Array<Maybe<Scalars['String']>>>;
+  title?: Maybe<MediaTitle>;
+  /** The type of playback */
+  type?: Maybe<PlaybackSourceType>;
+  uploadDate?: Maybe<Scalars['Int']>;
+  uri: Scalars['Uri'];
+  url?: Maybe<Scalars['String']>;
+};
+
+/** Media connection edge */
+export type PlaybackSourceConnection = {
+  __typename?: 'PlaybackSourceConnection';
+  edges?: Maybe<Array<Maybe<PlaybackSourceEdge>>>;
+  nodes?: Maybe<Array<Maybe<PlaybackSource>>>;
+  /** The pagination information */
+  pageInfo?: Maybe<PageInfo>;
+};
+
+/** PlaybackSource connection edge */
+export type PlaybackSourceEdge = {
+  __typename?: 'PlaybackSourceEdge';
+  node?: Maybe<PlaybackSource>;
+  /** The uri of the connection */
+  uri?: Maybe<Scalars['Int']>;
+};
+
+export enum PlaybackSourceFileStructure {
+  Multi = 'MULTI',
+  Single = 'SINGLE'
+}
+
+export enum PlaybackSourceType {
+  Custom = 'CUSTOM',
+  Iframe = 'IFRAME',
+  Other = 'OTHER',
+  Torrent = 'TORRENT'
+}
+
 export type Query = {
   __typename?: 'Query';
   Episode?: Maybe<Episode>;
   Media?: Maybe<Media>;
   Origin?: Maybe<Origin>;
   Page: Page;
+  PlaybackSource?: Maybe<PlaybackSource>;
   dummy?: Maybe<Scalars['String']>;
 };
 
@@ -734,6 +751,21 @@ export type QueryPageArgs = {
   after?: InputMaybe<Scalars['Int']>;
   at?: InputMaybe<Scalars['String']>;
   before?: InputMaybe<Scalars['Int']>;
+};
+
+
+export type QueryPlaybackSourceArgs = {
+  id?: InputMaybe<Scalars['String']>;
+  name?: InputMaybe<Scalars['String']>;
+  names?: InputMaybe<Array<Scalars['String']>>;
+  number?: InputMaybe<Scalars['Float']>;
+  origin?: InputMaybe<Scalars['String']>;
+  quality?: InputMaybe<Scalars['String']>;
+  resolution?: InputMaybe<Scalars['String']>;
+  search?: InputMaybe<Scalars['String']>;
+  season?: InputMaybe<Scalars['Int']>;
+  trusted?: InputMaybe<Scalars['Boolean']>;
+  uri?: InputMaybe<Scalars['String']>;
 };
 
 export type Resource = Handle & {

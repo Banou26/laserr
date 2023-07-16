@@ -30,14 +30,14 @@ export const fromRelatedHandle = (handle: Handle) => {
 }
 
 // https://animetosho.org/search?filter%5B0%5D%5Bt%5D=nyaa_class&filter%5B0%5D%5Bv%5D=trusted&order=&q=1080&aid=14758
-const searchAnime = ({ id, search }: { id: string, search: string }) =>
+const searchAnime = (options: { id: string } | { search: string } | { id: string, search: string }) =>
   new URLSearchParams({
     "filter[0][t]": "nyaa_class",
     "filter[0][v]": "trusted",
     "order": "",
-    "q": search,
-    "aid": id.toString()
-  })
+    ...'search' in options ? { "q": options.search } : {},
+    ...'id' in options ? { "aid": options.id } : {}
+  }).toString()
 
 // https://animetosho.org/series/mushoku-tensei-isekai-ittara-honki-dasu.14758
 const parseSeriesUrlId = (url: string) => url.split('.')[2]
@@ -59,8 +59,11 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   if (!timeElement) throw new Error('Animetosho, no time element found')
   const timeString = timeElement.getAttribute('title')?.replace('Date/time submitted: ', '')
   if (!timeString) throw new Error('Animetosho, no title attribute on the time element found')
-  const uploadDate = new Date(timeString).getTime()
-
+  const [day, month, year, hour, minute] = timeString.split(/\W/).filter(Boolean).map(Number)
+  if (day === undefined || month === undefined || year === undefined || hour === undefined || minute === undefined) {
+    throw new Error('Animetosho, invalid time string')
+  }
+  const uploadDate = Date.UTC(year, month, day, hour, minute)
   const bytesElement = elem.querySelector('.size')
   if (!bytesElement) throw new Error('Animetosho, no bytes element found')
   const bytesString =
@@ -72,7 +75,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   if (!bytesString) throw new Error('Animetosho, no title attribute on the bytes element found')
   const bytes = Number(bytesString)
 
-  const name = elem.querySelector('.serieslink')?.textContent
+  const name = elem.querySelector('.serieslink')?.textContent ?? elem.ownerDocument.querySelector('#title')?.textContent
   if (!name) throw new Error('Animetosho, no torrent name found on the torrent page link element')
 
   return populateUri({
@@ -95,8 +98,8 @@ const getListRowsAsPlaybackSource = (doc: Document) =>
   getListRows(doc)
     .map(rowToPlaybackSource)
 
-const searchPlaybackSources = async (id: string, search: string) =>
-  fetch(`https://animetosho.org/search?${searchAnime({ id, search })}`)
+const searchPlaybackSources = async (options: { search: string, id?: string }, { fetch = window.fetch }) =>
+  fetch(`https://animetosho.org/search?${searchAnime(options)}`)
     .then(res => res.text())
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
     .then(getListRowsAsPlaybackSource)
@@ -151,11 +154,18 @@ const seriesPageToMedia = (doc: Document): Media => {
 //   return seriesPageToMedia(doc)
 // }
 
-const fetchSeriesPageMedia = (url: string, { fetch = window.fetch }) =>
-  fetch(url)
+// const fetchSeriesPageMedia = (url: string, { fetch = window.fetch }) =>
+//   fetch(url)
+//     .then(res => res.text())
+//     .then(text => new DOMParser().parseFromString(text, 'text/html'))
+//     .then(seriesPageToMedia)
+
+const fetchSeriesPageMedia = (id: number, { fetch = window.fetch }) =>
+  fetch(`https://animetosho.org/series/_.${id}`)
     .then(res => res.text())
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
     .then(seriesPageToMedia)
+
 
 const torrentToPlaybackSource = (doc: Document): PlaybackSource => {
   const urlElement = doc.body.querySelector<HTMLAnchorElement>('#newcomment')
@@ -227,14 +237,22 @@ const fetchTorrentPage = (url: string, { fetch = window.fetch }) =>
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
     .then(torrentToPlaybackSource)
 
+const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =>
+  fetch(`https://animetosho.org/series/_.${id}`)
+    .then(res => res.text())
+    .then(text => new DOMParser().parseFromString(text, 'text/html'))
+    .then(getListRowsAsPlaybackSource)
+
 export const resolvers: Resolvers = {
   Page: {
     playbackSource: async (...args) => {
-      console.log('AnimeTosho playbackSource', args)
       const [_, { id: _id, origin: _origin }, { fetch }] = args
+      console.log('AnimeTosho playbackSource', args)
       if (_origin !== origin || !_id) return []
-      const res = await searchPlaybackSources(_id, { fetch })
-      console.log('AnimeTosho playbackSource', args, _id, _origin, res)
+      console.log('AnimeTosho playbackSource CHECK PASSED')
+      // const res = await searchPlaybackSources({ id: _id }, { fetch })
+      const res = await fetchTorrentPagePlaybackSources(_id, { fetch })
+      console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
       return res ?? []
     }
   },
