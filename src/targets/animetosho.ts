@@ -78,6 +78,12 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   const name = elem.querySelector('.serieslink')?.textContent ?? elem.ownerDocument.querySelector('#title')?.textContent
   if (!name) throw new Error('Animetosho, no torrent name found on the torrent page link element')
 
+  const magnetUri = elem.querySelector<HTMLAnchorElement>('div.links > a:nth-child(3)')?.href
+  if (!magnetUri) throw new Error('Animetosho, no magnet uri found on the torrent page link element')
+
+  const torrentUrl = elem.querySelector<HTMLAnchorElement>('div.links > a.dllink')?.href
+  if (!torrentUrl) throw new Error('Animetosho, no torrent url found on the torrent page link element')
+
   return populateUri({
     id: parseTorrentUrlId(url),
     origin,
@@ -88,7 +94,11 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
     filename,
     name,
     uploadDate,
-    bytes
+    bytes,
+    data: JSON.stringify({
+      magnetUri,
+      torrentUrl
+    })
   })
 }
 

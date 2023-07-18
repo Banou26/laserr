@@ -642,7 +642,7 @@ export type PageInfo = {
 export type PlaybackSource = Handle & {
   __typename?: 'PlaybackSource';
   Episode?: Maybe<Episode>;
-  bytes?: Maybe<Scalars['Int']>;
+  bytes?: Maybe<Scalars['Float']>;
   /** Stringified (json?) data for the playback, useful for custom players */
   data?: Maybe<Scalars['String']>;
   episodeRange?: Maybe<Scalars['String']>;
@@ -662,7 +662,7 @@ export type PlaybackSource = Handle & {
   title?: Maybe<MediaTitle>;
   /** The type of playback */
   type?: Maybe<PlaybackSourceType>;
-  uploadDate?: Maybe<Scalars['Int']>;
+  uploadDate?: Maybe<Scalars['Float']>;
   uri: Scalars['Uri'];
   url?: Maybe<Scalars['String']>;
 };
