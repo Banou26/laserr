@@ -35,7 +35,8 @@ const searchAnime = (options: { id: string } | { search: string } | { id: string
     "filter[0][t]": "nyaa_class",
     "filter[0][v]": "trusted",
     "order": "",
-    ...'search' in options ? { "q": options.search } : {},
+    "qx": "1",
+    ...'search' in options ? { "q": `${options.search}<<(1080|720|480)` } : {},
     ...'id' in options ? { "aid": options.id } : {}
   }).toString()
 
