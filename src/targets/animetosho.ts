@@ -84,6 +84,8 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   const torrentUrl = elem.querySelector<HTMLAnchorElement>('div.links > a.dllink')?.href
   if (!torrentUrl) throw new Error('Animetosho, no torrent url found on the torrent page link element')
 
+  const teamWebsite = elem.querySelector<HTMLAnchorElement>('div.links > .links_right > .misclinks > a')?.href
+
   return populateUri({
     id: parseTorrentUrlId(url),
     origin,
@@ -91,6 +93,14 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
     handles: {
       edges: []
     },
+    team:
+      teamWebsite
+        ? populateUri({
+          id: `${parseTorrentUrlId(url)}-website`,
+          origin,
+          url: teamWebsite
+        })
+        : undefined,
     filename,
     name,
     uploadDate,
