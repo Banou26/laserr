@@ -650,14 +650,14 @@ export type PlaybackSource = Handle & {
   filesCount?: Maybe<Scalars['Int']>;
   format?: Maybe<Scalars['String']>;
   handler: Scalars['String'];
-  handles: HandleConnection;
+  handles: PlaybackSourceConnection;
   hash?: Maybe<Scalars['String']>;
   id: Scalars['String'];
   media?: Maybe<Media>;
   origin: Scalars['String'];
   resolution?: Maybe<Scalars['String']>;
   structure?: Maybe<PlaybackSourceFileStructure>;
-  team?: Maybe<Scalars['String']>;
+  team?: Maybe<Team>;
   thumbnails?: Maybe<Array<Maybe<Scalars['String']>>>;
   title?: Maybe<MediaTitle>;
   /** The type of playback */
@@ -667,19 +667,20 @@ export type PlaybackSource = Handle & {
   url?: Maybe<Scalars['String']>;
 };
 
-/** Media connection edge */
-export type PlaybackSourceConnection = {
+export type PlaybackSourceConnection = HandleConnection & {
   __typename?: 'PlaybackSourceConnection';
-  edges?: Maybe<Array<Maybe<PlaybackSourceEdge>>>;
-  nodes?: Maybe<Array<Maybe<PlaybackSource>>>;
+  edges: Array<PlaybackSourceEdge>;
+  nodes: Array<PlaybackSource>;
   /** The pagination information */
   pageInfo?: Maybe<PageInfo>;
 };
 
 /** PlaybackSource connection edge */
-export type PlaybackSourceEdge = {
+export type PlaybackSourceEdge = HandleEdge & {
   __typename?: 'PlaybackSourceEdge';
-  node?: Maybe<PlaybackSource>;
+  /** The relation between the two handles */
+  handleRelationType: HandleRelation;
+  node: PlaybackSource;
   /** The uri of the connection */
   uri?: Maybe<Scalars['Int']>;
 };
@@ -793,6 +794,17 @@ export type ResourceEdge = HandleEdge & {
   /** The relation between the two handles */
   handleRelationType: HandleRelation;
   node: Resource;
+};
+
+export type Team = Handle & {
+  __typename?: 'Team';
+  handler: Scalars['String'];
+  handles: HandleConnection;
+  id: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
+  origin: Scalars['String'];
+  uri: Scalars['Uri'];
+  url?: Maybe<Scalars['String']>;
 };
 
 export type SearchCrunchyrollHandleQueryVariables = Exact<{

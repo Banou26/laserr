@@ -78,7 +78,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   const name = elem.querySelector('.serieslink')?.textContent ?? elem.ownerDocument.querySelector('#title')?.textContent
   if (!name) throw new Error('Animetosho, no torrent name found on the torrent page link element')
 
-  const magnetUri = elem.querySelector<HTMLAnchorElement>('div.links > a:nth-child(3)')?.href
+  const magnetUri = elem.querySelector<HTMLAnchorElement>('a[href^="magnet"]')?.href
   if (!magnetUri) throw new Error('Animetosho, no magnet uri found on the torrent page link element')
 
   const torrentUrl = elem.querySelector<HTMLAnchorElement>('div.links > a.dllink')?.href
@@ -266,12 +266,15 @@ const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =
 export const resolvers: Resolvers = {
   Page: {
     playbackSource: async (...args) => {
-      const [_, { id: _id, origin: _origin }, { fetch }] = args
+      const [_, { id: _id, origin: _origin, number }, { fetch }] = args
       console.log('AnimeTosho playbackSource', args)
       if (_origin !== origin || !_id) return []
       console.log('AnimeTosho playbackSource CHECK PASSED')
       // const res = await searchPlaybackSources({ id: _id }, { fetch })
-      const res = await fetchTorrentPagePlaybackSources(_id, { fetch })
+      const res =
+        number !== undefined
+          ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
+          : await fetchTorrentPagePlaybackSources(_id, { fetch })
       console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
       return res ?? []
     }
