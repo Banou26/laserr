@@ -481,6 +481,9 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
         number: airingSchedule.episode
       }))
       : undefined,
+  startDate: media.startDate,
+  endDate: media.endDate,
+  episodeCount: media.episodes,
   categories,
   ...populateUri({
     origin,
@@ -706,7 +709,10 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     native: media.title?.native,
     english: media.title?.english
   },
+  startDate: media.startDate,
+  endDate: media.endDate,
   popularity: media.popularity,
+  episodeCount: media.episodes,
   episodes: {
     edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
       node: {
