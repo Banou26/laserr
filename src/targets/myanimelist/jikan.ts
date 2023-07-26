@@ -7,6 +7,7 @@ import pThrottle from 'p-throttle'
 import { Episode } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
+import { swAlign } from 'seal-wasm'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
@@ -205,6 +206,11 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
         url
         uri
         handler
+        title {
+          english
+          romanized
+          native
+        }
         handles {
           edges {
             node {
@@ -213,6 +219,11 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
               url
               uri
               handler
+              title {
+                english
+                romanized
+                native
+              }
               handles {
                 edges {
                   node {
@@ -240,7 +251,13 @@ const findCrunchyrollAnime = async (context, title: string) => {
       search: title
     }
   })
-  return data.Page.media[0].handles.edges[0].node
+  const bestResult = data.Page.media[0].handles.edges[0].node
+  const left = title.length > bestResult.title.english.length ? title : bestResult.title.english
+  const right = title.length > bestResult.title.english.length ? bestResult.title.english : title
+  const alignment = await swAlign(left, right, { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 })
+  const inputScore = left.length * 2
+  const score = alignment.score / inputScore
+  return score > 0.9 ? bestResult : undefined
 }
 
 const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
