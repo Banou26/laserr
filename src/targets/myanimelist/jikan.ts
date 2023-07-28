@@ -254,7 +254,7 @@ const findCrunchyrollAnime = async (context, title: string) => {
   const bestResult = data.Page.media[0].handles.edges[0].node
   const left = title.length > bestResult.title.english.length ? title : bestResult.title.english
   const right = title.length > bestResult.title.english.length ? bestResult.title.english : title
-  const alignment = await swAlign(left, right, { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 })
+  const alignment = await swAlign(left.toLowerCase(), right.toLowerCase(), { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 })
   const inputScore = left.length * 2
   const score = alignment.score / inputScore
   return score > 0.9 ? bestResult : undefined
