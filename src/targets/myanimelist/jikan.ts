@@ -261,9 +261,10 @@ const findCrunchyrollAnime = async (context, title: string) => {
 }
 
 const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
+  const searchTitle = data.title_english ?? data.title
   const crunchyrollHandle =
-    context.client && data.streaming?.find(site => site.name === 'Crunchyroll')
-      ? await findCrunchyrollAnime(context, data.title_english)
+    context.client && data.streaming?.find(site => site.name === 'Crunchyroll') && searchTitle
+      ? await findCrunchyrollAnime(context, searchTitle)
       : undefined
 
   const aniDBSource =
