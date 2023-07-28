@@ -286,7 +286,7 @@ export const resolvers: Resolvers = {
       const [_, { id: _id, origin: _origin }, { fetch }] = args
       if (_origin !== origin || !_id) return undefined
       // if (!(_origin === origin || _origin === anidb.origin) || !_id) return undefined
-      return fetchSeriesPageMedia(`https://animetosho.org/series/_.${_id}`, { fetch })
+      return fetchSeriesPageMedia(_id, { fetch })
     },
     Episode: async (...args) => {
       const [_, { id: _id, origin: _origin }] = args
