@@ -561,6 +561,7 @@ const crunchyrollEpisodeToScannarrEpisode = (mediaId: string, episode: Crunchyro
   }),
   number: Number(episode.episode),
   mediaUri: toUri({ origin, id: mediaId }),
+  airingAt: new Date(episode.episode_air_date).getTime(),
   description:
     episode.description.length
       ? episode.description
