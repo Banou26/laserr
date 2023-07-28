@@ -724,11 +724,11 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
             edges: []
           }
         }),
-        airingAt: edge.node.airingAt,
+        airingAt: edge.node.airingAt * 1000,
         number: edge.node.episode,
         media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
         mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
-        timeUntilAiring: edge.node.timeUntilAiring,
+        timeUntilAiring: edge.node.timeUntilAiring * 1000,
       }
     }))
   }

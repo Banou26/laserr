@@ -409,7 +409,7 @@ const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<E
       }
     }),
     mediaUri: toUri({ origin, id }),
-    timeUntilAiring: (airingTime - Date.now()) / 1000,
+    timeUntilAiring: airingTime - Date.now(),
     // thumbnail: String
     title: {
       english: data.title,
