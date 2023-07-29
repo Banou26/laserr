@@ -23,21 +23,21 @@ export const name = 'AniDB'
 export const official = true
 export const metadataOnly = true
 
-export const fromRelatedHandle = (handle: Handle) => {
-  if (handle.origin === AT.origin) {
-    return populateUri({
-      origin: AT.origin,
-      id: handle.id,
-      url:
-        handle.url?.includes('https://animetosho.org/series/') ? `https://anidb.net/anime/${handle.id}`
-        : handle.url?.includes('https://animetosho.org/episode/') ? `https://anidb.net/episode/${handle.id}`
-        : undefined,
-      handles: {
-        edges: []
-      }
-    })
-  }
-}
+// export const fromRelatedHandle = (handle: Handle) => {
+//   if (handle.origin === AT.origin) {
+//     return populateUri({
+//       origin: AT.origin,
+//       id: handle.id,
+//       url:
+//         handle.url?.includes('https://animetosho.org/series/') ? `https://anidb.net/anime/${handle.id}`
+//         : handle.url?.includes('https://animetosho.org/episode/') ? `https://anidb.net/episode/${handle.id}`
+//         : undefined,
+//       handles: {
+//         edges: []
+//       }
+//     })
+//   }
+// }
 
 
 export const resolvers: Resolvers = {

@@ -301,6 +301,18 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         }
       })
       : undefined
+
+  const anizipHandle =
+    aniDBSource
+      ? populateUri({
+        origin: 'anizip',
+        id: aniDBId,
+        url: `https://api.ani.zip/mappings?anidb_id=${aniDBId}`,
+        handles: {
+          edges: []
+        }
+      })
+      : undefined
   // console.log('crunchyrollHandle', crunchyrollHandle)
 
   return ({
@@ -320,6 +332,10 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
           }] : [],
           ...animetoshoHandle ? [{
             node: animetoshoHandle,
+            handleRelationType: HandleRelation.Identical
+          }] : [],
+          ...anizipHandle ? [{
+            node: anizipHandle,
             handleRelationType: HandleRelation.Identical
           }] : []
         ]

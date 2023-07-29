@@ -6,6 +6,7 @@ import * as Anilist from './anilist'
 import * as AniDB from './anidb'
 import * as Crunchyroll from './crunchyroll'
 import * as AnimeTosho from './animetosho'
+import * as AniZip from './anizip'
 
 export const targets: Target[] = [
   MAL,
@@ -13,5 +14,6 @@ export const targets: Target[] = [
   Anilist,
   AniDB,
   Crunchyroll,
-  AnimeTosho
+  AnimeTosho,
+  AniZip
 ]
