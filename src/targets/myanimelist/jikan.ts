@@ -8,6 +8,8 @@ import { Episode } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
+import { RecentEpisodes } from './jikan-types'
+import { EpisodeSort } from '../../generated/graphql'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
@@ -466,6 +468,52 @@ const getSeasonNow = (page = 1, context: MediaParams[2]): Promise<Root> =>
     .fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}`)
     .then(res => res.json())
 
+const getRecentEpisodesJson = (page = 1, context: MediaParams[2]): Promise<RecentEpisodes> =>
+  context
+    .fetch(`https://api.jikan.moe/v4/watch/episodes?page=${page}`)
+    .then(res => res.json())
+
+const getRecentEpisodes = (page = 1, context: MediaParams[2]): Promise<Episode[]> =>
+  getRecentEpisodesJson(page, context)
+    .then(({ data }) =>
+      data.map(item =>
+        item
+          .episodes
+          .map(episode => ({
+            ...populateUri({
+              origin,
+              id: `${item.entry.mal_id}-${episode.mal_id}`,
+              url: episode.url,
+              handles: {
+                edges: []
+              }
+            }),
+            number: episode.mal_id,
+            media: populateUri({
+              origin,
+              id: item.entry.mal_id.toString(),
+              url: item.entry.url,
+              handles: {
+                edges: []
+              },
+              title: {
+                romanized: item.entry.title
+              }
+            }),
+            mediaUri: toUri({ origin, id: item.entry.mal_id.toString() }),
+            // thumbnail: item.thumbnail,
+            title: {
+              romanized:
+                episode.title.startsWith('Episode')
+                  ? undefined
+                  : episode.title
+            }
+          }))
+          .at(0)
+      )
+      .filter(episode => episode.number !== undefined && episode.number !== null)
+    )
+
 const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], context: MediaParams[2], __) => {
   const { data, pagination } = await getSeasonNow(1, context)
   const getRest = async (page = 1) => {
@@ -481,6 +529,16 @@ const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], conte
 
 export const resolvers: Resolvers = {
   Page: {
+    episode: async (...args) => {
+      const [, { sort, page }] = args
+      const res = (
+        sort?.includes(EpisodeSort.Latest)
+          ? await getRecentEpisodes(page, args[2])
+          : []
+      )
+      console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
+      return res
+    },
     media: async (...args) => {
       const [, { search, season }] = args
       return (
@@ -492,8 +550,10 @@ export const resolvers: Resolvers = {
   },
   Query: {
     Media: async (...args) => {
-      const [_, { id, uri, origin: _origin }] = args
-      if (_origin !== origin) return undefined
+      // console.log('Jikan Query.Media', args)
+      const [_, { id: _id, uri, origin: _origin }] = args
+      if (_origin !== origin || !_id) return undefined
+      const [id] = _id.split('-').map(Number)
       const res = await fetchMedia({ id }, args[2])
       // console.log('Jikan Media', args, res)
       return res
@@ -505,7 +565,7 @@ export const resolvers: Resolvers = {
       const [id, episodeNumber] = _id.split('-').map(Number)
       if (!id) return undefined
       const res = await fetchEpisodes({ id }, args[2])
-      console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
+      // console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
       return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
     },
     Page: () => ({})
