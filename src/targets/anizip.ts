@@ -6,6 +6,8 @@ import type { Handle, Resolvers } from 'scannarr'
 import { populateUri } from 'scannarr'
 
 import * as anidb from './anidb'
+import * as mal from './myanimelist'
+import * as anilist from './anilist'
 import { Episode, HandleRelation, Media, PlaybackSource } from '../generated/graphql'
 
 export const originUrl = 'https://api.ani.zip/' as const
@@ -247,7 +249,9 @@ const AniZipToLaserrSource = {
   'anisearch': 'anisearch'
 }
 
-const mappingToScannarrMedia = (res: MappingRoot): Media => {
+const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
+  if (!res?.mappings) return undefined
+
   const handles =
     Object
       .entries(res.mappings)
@@ -327,13 +331,35 @@ const mappingToScannarrMedia = (res: MappingRoot): Media => {
   })
 }
 
-const fetchAnidbMappings = (id: string, { fetch = window.fetch }) =>
-  fetch(`https://api.ani.zip/mappings?anidb_id=${id}&specials=1`)
+const fetchAnizipJsonMappings = (providerId: 'anilist' | 'mal' | 'anidb', id: string, { fetch = window.fetch }) =>
+  fetch(`https://api.ani.zip/mappings?${providerId}_id=${id}&specials=1`)
     .then(res => res.json())
+
+const fetchAnizipMappings = (providerId: 'anilist' | 'mal' | 'anidb', id: string, { fetch = window.fetch }) =>
+  fetchAnizipJsonMappings(providerId, id, { fetch })
     .then(mappingToScannarrMedia)
+
+const fetchMALMappings = (id: string, { fetch = window.fetch }) => fetchAnizipMappings('mal', id, { fetch })
+const fetchAnidbMappings = (id: string, { fetch = window.fetch }) => fetchAnizipMappings('anidb', id, { fetch })
+const fetchAnilistMappings = (id: string, { fetch = window.fetch }) => fetchAnizipMappings('anilist', id, { fetch })
 
 export const resolvers: Resolvers = {
   Page: {
+    episode: async (...args) => {
+      const [_, { id: _id, origin: _origin }] = args
+      // if (_origin !== origin || !_id) return []
+
+      if (_origin === anidb.origin) {
+        const res = await fetchAnidbMappings(_id, {})
+        // console.log('Page.episode res', res)
+        return res ? res.episodes?.nodes : []
+      }
+
+      if (_origin !== origin || !_id) return []
+      const res = await fetchAnidbMappings(_id, {})
+      // console.log('Page.episode res', res)
+      return res ? res.episodes?.nodes : []
+    },
     media: async (...args) => {
       const [_, { id: _id, origin: _origin }] = args
       if (_origin !== origin || !_id) return []
@@ -346,6 +372,14 @@ export const resolvers: Resolvers = {
     Page: () => ({}),
     Media: async (...args) => {
       const [_, { id: _id, origin: _origin }] = args
+
+      if (_origin === mal.origin) {
+        const [id, episodeNumber] = _id.split('-').map(Number)
+        const res = await fetchMALMappings(id, {})
+        // console.log('Anizip MAL Query.Media res', res)
+        return res ? res : undefined
+      }
+
       if (_origin !== origin || !_id) return undefined
       const res = await fetchAnidbMappings(_id, {})
       // console.log('Media res', res)

@@ -536,7 +536,7 @@ export const resolvers: Resolvers = {
           ? await getRecentEpisodes(page, args[2])
           : []
       )
-      console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
+      // console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
       return res
     },
     media: async (...args) => {
