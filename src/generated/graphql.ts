@@ -68,6 +68,34 @@ export type EpisodeEdge = {
   uri?: Maybe<Scalars['Int']>;
 };
 
+export enum EpisodeSort {
+  EndDate = 'END_DATE',
+  EndDateDesc = 'END_DATE_DESC',
+  Format = 'FORMAT',
+  FormatDesc = 'FORMAT_DESC',
+  Id = 'ID',
+  IdDesc = 'ID_DESC',
+  Latest = 'LATEST',
+  Oldest = 'OLDEST',
+  Popularity = 'POPULARITY',
+  PopularityDesc = 'POPULARITY_DESC',
+  Score = 'SCORE',
+  ScoreDesc = 'SCORE_DESC',
+  SearchMatch = 'SEARCH_MATCH',
+  StartDate = 'START_DATE',
+  StartDateDesc = 'START_DATE_DESC',
+  Status = 'STATUS',
+  StatusDesc = 'STATUS_DESC',
+  TitleEnglish = 'TITLE_ENGLISH',
+  TitleEnglishDesc = 'TITLE_ENGLISH_DESC',
+  TitleNative = 'TITLE_NATIVE',
+  TitleNativeDesc = 'TITLE_NATIVE_DESC',
+  TitleRomanized = 'TITLE_ROMANIZED',
+  TitleRomanizedDesc = 'TITLE_ROMANIZED_DESC',
+  Type = 'TYPE',
+  TypeDesc = 'TYPE_DESC'
+}
+
 export enum ExternalLinkMediaType {
   Anime = 'ANIME',
   Manga = 'MANGA',
@@ -568,6 +596,7 @@ export type PageEpisodeArgs = {
   id?: InputMaybe<Scalars['String']>;
   origin?: InputMaybe<Scalars['String']>;
   search?: InputMaybe<Scalars['String']>;
+  sort?: InputMaybe<Array<InputMaybe<EpisodeSort>>>;
   uri?: InputMaybe<Scalars['String']>;
 };
 
@@ -713,6 +742,7 @@ export type QueryEpisodeArgs = {
   id?: InputMaybe<Scalars['String']>;
   origin?: InputMaybe<Scalars['String']>;
   search?: InputMaybe<Scalars['String']>;
+  sort?: InputMaybe<Array<InputMaybe<EpisodeSort>>>;
   uri?: InputMaybe<Scalars['String']>;
 };
 
