@@ -691,7 +691,7 @@ export const resolvers: Resolvers = {
       const result = await searchAnime(search, { fetch })
       // console.log('Crunchyroll Page Media result ', result)
 
-      return [result]
+      return [result].filter(Boolean)
     }
   },
   Query: {
