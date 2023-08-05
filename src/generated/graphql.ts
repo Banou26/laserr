@@ -24,7 +24,7 @@ export type Scalars = {
   Uri: any;
 };
 
-export type Episode = {
+export type Episode = Handle & {
   __typename?: 'Episode';
   /** The time the episode airs at */
   airingAt?: Maybe<Scalars['Float']>;
@@ -36,9 +36,9 @@ export type Episode = {
   /** The associate media of the episode */
   media?: Maybe<Media>;
   /** The associate media uri of the episode */
-  mediaUri: Scalars['String'];
+  mediaUri?: Maybe<Scalars['String']>;
   /** The episode number */
-  number: Scalars['Float'];
+  number?: Maybe<Scalars['Float']>;
   origin: Scalars['String'];
   /** The playback information for the episode */
   playback?: Maybe<PlaybackSourceConnection>;
@@ -52,18 +52,20 @@ export type Episode = {
   url?: Maybe<Scalars['String']>;
 };
 
-export type EpisodeConnection = {
+export type EpisodeConnection = HandleConnection & {
   __typename?: 'EpisodeConnection';
-  edges?: Maybe<Array<Maybe<EpisodeEdge>>>;
-  nodes?: Maybe<Array<Maybe<Episode>>>;
+  edges: Array<EpisodeEdge>;
+  nodes: Array<Episode>;
   /** The pagination information */
   pageInfo?: Maybe<PageInfo>;
 };
 
 /** Episode connection edge */
-export type EpisodeEdge = {
+export type EpisodeEdge = HandleEdge & {
   __typename?: 'EpisodeEdge';
-  node?: Maybe<Episode>;
+  /** The relation between the two handles */
+  handleRelationType: HandleRelation;
+  node: Episode;
   /** The uri of the connection */
   uri?: Maybe<Scalars['Int']>;
 };
