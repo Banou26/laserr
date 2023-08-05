@@ -253,6 +253,8 @@ const findCrunchyrollAnime = async (context, title: string) => {
       search: title
     }
   })
+
+  if (!data.Page.media.length) return undefined
   const bestResult = data.Page.media[0].handles.edges[0].node
   const left = title.length > bestResult.title.english.length ? title : bestResult.title.english
   const right = title.length > bestResult.title.english.length ? bestResult.title.english : title
@@ -498,7 +500,13 @@ const getRecentEpisodes = (page = 1, context: MediaParams[2]): Promise<Episode[]
               },
               title: {
                 romanized: item.entry.title
-              }
+              },
+              coverImage: [{
+                extraLarge: item.entry.images.webp.large_image_url,
+                large: item.entry.images.webp.large_image_url,
+                medium: item.entry.images.webp.large_image_url,
+                color: ''
+              }]
             }),
             mediaUri: toUri({ origin, id: item.entry.mal_id.toString() }),
             // thumbnail: item.thumbnail,
