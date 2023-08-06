@@ -20,6 +20,11 @@ export const scheme = 'nyaa'
 export const official = false
 export const metadataOnly = false
 
+export const parseUrlId = (url: string) => {
+  const id = url.split('/').at(-1)
+  return id ? Number(id) : undefined
+}
+
 export const resolvers: Resolvers = {
   // Page: {
   //   media: async (...args) => {

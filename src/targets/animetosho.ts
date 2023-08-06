@@ -4,6 +4,8 @@ import { populateUri } from 'scannarr'
 
 import * as anidb from './anidb'
 import { Media, PlaybackSource } from '../generated/graphql'
+import * as nyaa from './nyaasi'
+import { parseUrlId as parseNyaaUrlId } from './nyaasi'
 
 export const icon = 'https://animetosho.org/inc/favicon.ico'
 export const originUrl = 'https://animetosho.org/'
@@ -87,12 +89,60 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
 
   const teamWebsite = elem.querySelector<HTMLAnchorElement>('div.links > .links_right > .misclinks > a')?.href
 
+  const sourceElem = elem.querySelector<HTMLAnchorElement>('div.links > span.links_right > span.misclinks > span.numcomments > a[title^="Nyaa"]')
+  const sourceUrl = sourceElem?.href
+  const sourceName = sourceElem?.textContent
+
+  const sourceHandle =
+    sourceElem &&
+    sourceUrl &&
+    parseNyaaUrlId(sourceUrl) &&
+    {
+      ...populateUri({
+        id: parseNyaaUrlId(sourceUrl)!.toString(),
+        origin: nyaa.origin,
+        url: sourceUrl,
+        handles: {
+          edges: []
+        }
+      }),
+      title: {
+        romanized: undefined,
+        english: undefined,
+        native: undefined
+      },
+      team:
+        teamWebsite
+          ? populateUri({
+            id: `${parseTorrentUrlId(url)}-website`,
+            origin,
+            url: teamWebsite
+          })
+          : undefined,
+      filename,
+      name,
+      uploadDate,
+      bytes,
+      data: JSON.stringify({
+        magnetUri,
+        torrentUrl
+      })
+    }
+
   return populateUri({
     id: parseTorrentUrlId(url),
     origin,
     url,
     handles: {
-      edges: []
+      edges:
+        sourceHandle
+          ? [{ node: sourceHandle }]
+          : []
+    },
+    title: {
+      romanized: undefined,
+      english: undefined,
+      native: undefined
     },
     team:
       teamWebsite
