@@ -14,6 +14,7 @@ export const categories = ['ANIME']
 export const name = 'AnimeTosho'
 export const official = false
 export const metadataOnly = false
+export const supportedUris = ['animetosho']
 
 export const fromRelatedHandle = (handle: Handle) => {
   if (handle.origin === anidb.origin) {

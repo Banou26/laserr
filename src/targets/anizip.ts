@@ -17,6 +17,7 @@ export const categories = ['ANIME'] as const
 export const name = 'AniZip' as const
 export const official = false as const
 export const metadataOnly = true as const
+export const supportedUris = ['anidb', 'mal']
 
 export interface MappingRoot {
   titles: Titles

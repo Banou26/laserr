@@ -580,6 +580,7 @@ export type Origin = {
   name: Scalars['String'];
   /** If the origin is official, e.g a legal redistributor or platform */
   official?: Maybe<Scalars['Boolean']>;
+  supportedUris?: Maybe<Array<Scalars['String']>>;
   /** The origin's URL, e.g "https://www.netflix.com/""  */
   url?: Maybe<Scalars['String']>;
 };

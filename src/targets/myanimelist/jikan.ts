@@ -18,6 +18,7 @@ export const categories = ['ANIME']
 export const name = 'MyAnimeList'
 export const official = true
 export const metadataOnly = true
+export const supportedUris = ['mal']
 
 export interface Root {
   pagination: Pagination

@@ -25,6 +25,8 @@ export const name = 'Crunchyroll'
 export const origin = 'cr'
 export const official = true
 export const metadataOnly = false
+export const supportedUris = ['cr']
+
 
 export interface GetEpisodeResponse {
   total: number

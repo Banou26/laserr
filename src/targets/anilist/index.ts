@@ -20,6 +20,7 @@ export const name = 'Anilist'
 export const origin = 'anilist'
 export const official = true
 export const metadataOnly = true
+export const supportedUris = ['anilist']
 
 const searchQuery = `
 query (
