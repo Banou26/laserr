@@ -30,7 +30,6 @@ export type Episode = Handle & {
   airingAt?: Maybe<Scalars['Float']>;
   /** The description of the episode */
   description?: Maybe<Scalars['String']>;
-  handler: Scalars['String'];
   handles: EpisodeConnection;
   id: Scalars['String'];
   /** The associate media of the episode */
@@ -172,7 +171,7 @@ export enum HandleRelation {
 export type Media = Handle & {
   __typename?: 'Media';
   /** The average score of the media */
-  averageScore?: Maybe<Scalars['Int']>;
+  averageScore?: Maybe<Scalars['Float']>;
   /** The banner image of the media */
   bannerImage?: Maybe<Array<Maybe<Scalars['String']>>>;
   /** The cover images of the media */
@@ -186,7 +185,6 @@ export type Media = Handle & {
   /** External links to another site related to the media */
   externalLinks?: Maybe<Array<Maybe<MediaExternalLink>>>;
   format?: Maybe<MediaFormat>;
-  handler: Scalars['String'];
   handles: MediaConnection;
   id: Scalars['String'];
   /** If the media is intended only for 18+ adult audiences */
@@ -249,12 +247,11 @@ export type MediaShortDescriptionArgs = {
 export type MediaAiringSchedule = Handle & {
   __typename?: 'MediaAiringSchedule';
   /** The time the episode airs at */
-  airingAt: Scalars['Float'];
+  airingAt?: Maybe<Scalars['Float']>;
   /** The description of the episode */
   description?: Maybe<Scalars['String']>;
   /** The airing episode number */
   episodeNumber: Scalars['Int'];
-  handler: Scalars['String'];
   handles: HandleConnection;
   id: Scalars['String'];
   /** The associate media of the airing episode */
@@ -265,7 +262,7 @@ export type MediaAiringSchedule = Handle & {
   /** The url for the thumbnail image of the video */
   thumbnail?: Maybe<Scalars['String']>;
   /** Seconds until episode starts airing */
-  timeUntilAiring: Scalars['Float'];
+  timeUntilAiring?: Maybe<Scalars['Float']>;
   /** The title of the episode */
   title?: Maybe<MediaTitle>;
   uri: Scalars['Uri'];
@@ -324,7 +321,6 @@ export type MediaEdge = HandleEdge & {
 export type MediaExternalLink = Handle & {
   __typename?: 'MediaExternalLink';
   color?: Maybe<Scalars['String']>;
-  handler: Scalars['String'];
   handles: HandleConnection;
   /** The icon image url of the site. Not available for all links */
   icon?: Maybe<Scalars['String']>;
@@ -489,7 +485,6 @@ export type MediaTitleLanguageArgs = {
 /** Media trailer or advertisement */
 export type MediaTrailer = Handle & {
   __typename?: 'MediaTrailer';
-  handler: Scalars['String'];
   handles: HandleConnection;
   id: Scalars['String'];
   origin: Scalars['String'];
@@ -680,7 +675,6 @@ export type PlaybackSource = Handle & {
   filename?: Maybe<Scalars['String']>;
   filesCount?: Maybe<Scalars['Int']>;
   format?: Maybe<Scalars['String']>;
-  handler: Scalars['String'];
   handles: PlaybackSourceConnection;
   hash?: Maybe<Scalars['String']>;
   id: Scalars['String'];
@@ -804,7 +798,6 @@ export type QueryPlaybackSourceArgs = {
 export type Resource = Handle & {
   __typename?: 'Resource';
   batchResources: Array<ResourceConnection>;
-  handler: Scalars['String'];
   handles: ResourceConnection;
   id: Scalars['String'];
   isBatch?: Maybe<Scalars['Boolean']>;
@@ -830,7 +823,6 @@ export type ResourceEdge = HandleEdge & {
 
 export type Team = Handle & {
   __typename?: 'Team';
-  handler: Scalars['String'];
   handles: HandleConnection;
   id: Scalars['String'];
   name?: Maybe<Scalars['String']>;
@@ -845,7 +837,7 @@ export type SearchCrunchyrollHandleQueryVariables = Exact<{
 }>;
 
 
-export type SearchCrunchyrollHandleQuery = { __typename?: 'Query', Page: { __typename?: 'Page', media: Array<{ __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, handler: string, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, handler: string, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, handler: string } }> } } }> } }> } };
+export type SearchCrunchyrollHandleQuery = { __typename?: 'Query', Page: { __typename?: 'Page', media: Array<{ __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any } }> } } }> } }> } };
 
 
-export const SearchCrunchyrollHandleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchCrunchyrollHandle"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"origin"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Page"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"media"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"origin"},"value":{"kind":"Variable","name":{"kind":"Name","value":"origin"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"handler"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"handler"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"handler"}}]}}]}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchCrunchyrollHandleQuery, SearchCrunchyrollHandleQueryVariables>;
+export const SearchCrunchyrollHandleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchCrunchyrollHandle"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"origin"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"Page"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"media"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"origin"},"value":{"kind":"Variable","name":{"kind":"Name","value":"origin"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}}]}}]}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchCrunchyrollHandleQuery, SearchCrunchyrollHandleQueryVariables>;

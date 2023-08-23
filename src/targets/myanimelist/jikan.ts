@@ -208,7 +208,6 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
         id
         url
         uri
-        handler
         title {
           english
           romanized
@@ -221,7 +220,6 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
               id
               url
               uri
-              handler
               title {
                 english
                 romanized
@@ -234,7 +232,6 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
                     id
                     url
                     uri
-                    handler
                   }
                 }
               }
