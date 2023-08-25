@@ -54,7 +54,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   const torrentPageElement = elem?.querySelector<HTMLAnchorElement>('.link a')
   if (!torrentPageElement) throw new Error('Animetosho, no torrent page link element found')
 
-  const url = torrentPageElement?.href
+  const url = torrentPageElement?.getAttribute('href')
   if (!url) throw new Error('Animetosho, no torrent link url found on the torrent page link element')
 
   const filename = torrentPageElement?.textContent
@@ -80,19 +80,19 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   if (!bytesString) throw new Error('Animetosho, no title attribute on the bytes element found')
   const bytes = Number(bytesString)
 
-  const name = elem.querySelector('.serieslink')?.textContent ?? elem.ownerHTMLElement.querySelector('#title')?.textContent
+  const name = elem.querySelector('.serieslink')?.textContent // ?? elem.ownerHTMLElement.querySelector('#title')?.textContent
   if (!name) throw new Error('Animetosho, no torrent name found on the torrent page link element')
 
-  const magnetUri = elem.querySelector<HTMLAnchorElement>('a[href^="magnet"]')?.href
+  const magnetUri = elem.querySelector<HTMLAnchorElement>('a[href^="magnet"]')?.getAttribute('href')
   if (!magnetUri) throw new Error('Animetosho, no magnet uri found on the torrent page link element')
 
-  const torrentUrl = elem.querySelector<HTMLAnchorElement>('div.links > a.dllink')?.href
+  const torrentUrl = elem.querySelector<HTMLAnchorElement>('div.links > a.dllink')?.getAttribute('href')
   if (!torrentUrl) throw new Error('Animetosho, no torrent url found on the torrent page link element')
 
-  const teamWebsite = elem.querySelector<HTMLAnchorElement>('div.links > .links_right > .misclinks > a')?.href
+  const teamWebsite = elem.querySelector<HTMLAnchorElement>('div.links > .links_right > .misclinks > a')?.getAttribute('href')
 
   const sourceElem = elem.querySelector<HTMLAnchorElement>('div.links > span.links_right > span.misclinks > span.numcomments > a[title^="Nyaa"]')
-  const sourceUrl = sourceElem?.href
+  const sourceUrl = sourceElem?.getAttribute('href')
   const sourceName = sourceElem?.textContent
 
   const sourceHandle =
@@ -174,7 +174,7 @@ const getListRowsAsPlaybackSource = (doc: HTMLElement) =>
 const searchPlaybackSources = async (options: { search: string, id?: string }, { fetch = window.fetch }) =>
   fetch(`https://animetosho.org/search?${searchAnime(options)}`)
     .then(res => res.text())
-    .then(text => new DOMParser().parseFromString(text, 'text/html'))
+    .then(text => parse(text))
     .then(getListRowsAsPlaybackSource)
 
 const seriesPageToMedia = (doc: HTMLElement): Media => {
@@ -325,7 +325,7 @@ export const resolvers: Resolvers = {
       console.log('AnimeTosho playbackSource CHECK PASSED')
       // const res = await searchPlaybackSources({ id: _id }, { fetch })
       const res =
-        number !== undefined
+        number !== undefined && number !== null
           ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
           : await fetchTorrentPagePlaybackSources(_id, { fetch })
       console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
