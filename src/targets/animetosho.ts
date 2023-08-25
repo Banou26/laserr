@@ -1,6 +1,7 @@
 import type { Handle, Resolvers } from 'scannarr'
 
 import { populateUri } from 'scannarr'
+import { parse } from 'node-html-parser'
 
 import * as anidb from './anidb'
 import { Media, PlaybackSource } from '../generated/graphql'
@@ -79,7 +80,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   if (!bytesString) throw new Error('Animetosho, no title attribute on the bytes element found')
   const bytes = Number(bytesString)
 
-  const name = elem.querySelector('.serieslink')?.textContent ?? elem.ownerDocument.querySelector('#title')?.textContent
+  const name = elem.querySelector('.serieslink')?.textContent ?? elem.ownerHTMLElement.querySelector('#title')?.textContent
   if (!name) throw new Error('Animetosho, no torrent name found on the torrent page link element')
 
   const magnetUri = elem.querySelector<HTMLAnchorElement>('a[href^="magnet"]')?.href
@@ -164,9 +165,9 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   })
 }
 
-const getListRows = (doc: Document) => [...doc.body.querySelectorAll('.home_list_entry')]
+const getListRows = (doc: HTMLElement) => [...doc.querySelectorAll('.home_list_entry')]
 
-const getListRowsAsPlaybackSource = (doc: Document) =>
+const getListRowsAsPlaybackSource = (doc: HTMLElement) =>
   getListRows(doc)
     .map(rowToPlaybackSource)
 
@@ -176,24 +177,24 @@ const searchPlaybackSources = async (options: { search: string, id?: string }, {
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
     .then(getListRowsAsPlaybackSource)
 
-const seriesPageToMedia = (doc: Document): Media => {
-  const urlElement = doc.body.querySelector<HTMLAnchorElement>('#content > div:nth-child(3) > a')
+const seriesPageToMedia = (doc: HTMLElement): Media => {
+  const urlElement = doc.querySelector<HTMLAnchorElement>('#content > div:nth-child(3) > a')
   if (!urlElement) throw new Error('Animetosho, no url element found')
-  const url = urlElement?.href.replace(new URL(urlElement?.href).search, '')
+  const url = urlElement.getAttribute('href')?.replace(new URL(urlElement.getAttribute('href')!).search, '')
 
-  const titleElement = doc.body.querySelector<HTMLHeadingElement>('#title')
+  const titleElement = doc.querySelector<HTMLHeadingElement>('#title')
   if (!titleElement) throw new Error('Animetosho, no title element found')
   const title = titleElement?.textContent
   if (!title) throw new Error('Animetosho, no title textContent found')
 
-  const descriptionElement = doc.body.querySelector<HTMLDivElement>('#content > table > tbody > tr > td > div:nth-child(2)')
+  const descriptionElement = doc.querySelector<HTMLDivElement>('#content > table > tbody > tr > td > div:nth-child(2)')
   if (!descriptionElement) throw new Error('Animetosho, no description element found')
   const description = descriptionElement?.innerHTML
   if (!description) throw new Error('Animetosho, no description textContent found')
 
-  const imageElement = doc.body.querySelector<HTMLImageElement>('#content > table > tbody > tr > td > a > img')
+  const imageElement = doc.querySelector<HTMLImageElement>('#content > table > tbody > tr > td > a > img')
   if (!imageElement) throw new Error('Animetosho, no image element found')
-  const image = imageElement?.src
+  const image = imageElement?.getAttribute('src')
   if (!image) throw new Error('Animetosho, no image src found')
 
   return populateUri({
@@ -235,12 +236,12 @@ const seriesPageToMedia = (doc: Document): Media => {
 const fetchSeriesPageMedia = (id: number, { fetch = window.fetch }) =>
   fetch(`https://animetosho.org/series/_.${id}`)
     .then(res => res.text())
-    .then(text => new DOMParser().parseFromString(text, 'text/html'))
+    .then(text => parse(text))
     .then(seriesPageToMedia)
 
 
-const torrentToPlaybackSource = (doc: Document): PlaybackSource => {
-  const urlElement = doc.body.querySelector<HTMLAnchorElement>('#newcomment')
+const torrentToPlaybackSource = (doc: HTMLElement): PlaybackSource => {
+  const urlElement = doc.querySelector<HTMLAnchorElement>('#newcomment')
   if (!urlElement) throw new Error('Animetosho, no url element found')
   const url =
     urlElement
@@ -248,26 +249,26 @@ const torrentToPlaybackSource = (doc: Document): PlaybackSource => {
       ?.replace(new URL(urlElement?.href).hash, '')
   if (!url) throw new Error('Animetosho, no url href found')
 
-  const titleElement = doc.body.querySelector<HTMLAnchorElement>('#nav_bc > a:nth-child(2)')
+  const titleElement = doc.querySelector<HTMLAnchorElement>('#nav_bc > a:nth-child(2)')
   if (!titleElement) throw new Error('Animetosho, no title element found')
   const title = titleElement?.textContent
   if (!title) throw new Error('Animetosho, no title textContent found')
 
-  const filenameElement = doc.body.querySelector<HTMLAnchorElement>('.title')
+  const filenameElement = doc.querySelector<HTMLAnchorElement>('.title')
   if (!filenameElement) throw new Error('Animetosho, no filename element found')
   const filename = filenameElement?.textContent
   if (!filename) throw new Error('Animetosho, no filename textContent found')
 
-  const timeElement = doc.body.querySelector<HTMLDivElement>('#content > table:nth-child(3) > tbody > tr:nth-child(2) > td')
+  const timeElement = doc.querySelector<HTMLDivElement>('#content > table:nth-child(3) > tbody > tr:nth-child(2) > td')
   if (!timeElement) throw new Error('Animetosho, no time element found')
   const timeString = timeElement?.textContent
   if (!timeString) throw new Error('Animetosho, no time textContent found')
 
   const thumbnails =
-    [...doc.body.querySelectorAll<HTMLAnchorElement>('.screenthumb')]
+    [...doc.querySelectorAll<HTMLAnchorElement>('.screenthumb')]
       .map(img => img.href)
 
-  const bytesElement = doc.body.querySelector<HTMLDivElement>('#content > table:nth-child(4) > tbody > tr:nth-child(1) > td > span')
+  const bytesElement = doc.querySelector<HTMLDivElement>('#content > table:nth-child(4) > tbody > tr:nth-child(1) > td > span')
   if (!bytesElement) throw new Error('Animetosho, no bytes element found')
   const bytesString =
     bytesElement
@@ -278,7 +279,7 @@ const torrentToPlaybackSource = (doc: Document): PlaybackSource => {
   if (!bytesString) throw new Error('Animetosho, no bytes textContent found')
   const bytes = Number(bytesString)
 
-  const dateElement = doc.body.querySelector<HTMLDivElement>('#content > table:nth-child(3) > tbody > tr:nth-child(2) > td')
+  const dateElement = doc.querySelector<HTMLDivElement>('#content > table:nth-child(3) > tbody > tr:nth-child(2) > td')
   if (!dateElement) throw new Error('Animetosho, no date element found')
   const dateString = dateElement?.textContent
   if (!dateString) throw new Error('Animetosho, no date textContent found')
