@@ -6,10 +6,19 @@ import type { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, Searc
 import pThrottle from 'p-throttle'
 import { populateUri } from 'scannarr'
 import { swAlign } from 'seal-wasm'
+import { openDB } from 'idb'
 
 import { NoExtraProperties } from '../../utils/type'
 import { toUri } from 'scannarr'
 import { PlaybackSourceType } from 'scannarr'
+
+
+const store =
+  openDB('laserr-crunchyroll', 1, {
+    upgrade(db) {
+      db.createObjectStore('crunchyroll')
+    }
+  })
 
 // todo: impl using https://github.com/crunchy-labs/crunchy-cli/blob/master/crunchyroll.go as ref
 
@@ -367,7 +376,7 @@ export const fetchToken = async ({ fetch = window.fetch }) =>
     credentials: 'include'
   })
     .then(res => res.json())
-    .then(res => {
+    .then(async res => {
       const token = ({
         timestamp: Date.now(),
         access_token: res.access_token as string,
@@ -377,12 +386,12 @@ export const fetchToken = async ({ fetch = window.fetch }) =>
         country: 'US' as string
       }) as const
       _token = token
-      localStorage.setItem('crunchyroll-token', JSON.stringify(token))
+      await (await store).put('crunchyroll', JSON.stringify(token), 'crunchyroll-token')
       return token
     })
 
-const getToken = ({ fetch = window.fetch }) => {
-  const savedToken: CrunchyrollAuthToken | undefined = JSON.parse(localStorage.getItem('crunchyroll-token') || 'null') ?? _token ?? undefined
+const getToken = async ({ fetch = window.fetch }) => {
+  const savedToken: CrunchyrollAuthToken | undefined = JSON.parse(await (await store).get('crunchyroll', 'crunchyroll-token') || 'null') ?? _token ?? undefined
   if (savedToken && Date.now() - savedToken.timestamp < savedToken.expires_in * 1000) return savedToken
   return fetchToken({ fetch })
 }
