@@ -12,6 +12,7 @@ import pThrottle from 'p-throttle'
 import { MediaParams, NoExtraProperties } from '../../utils/type'
 import { HandleRelation } from 'scannarr'
 import { toUri } from 'scannarr'
+import { urlToHandle } from '../..'
 
 export const icon = 'https://anilist.co/img/icons/favicon-32x32.png'
 export const originUrl = 'https://anilist.co'
@@ -661,8 +662,8 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     id: media.id.toString(),
     url: media.siteUrl,
     handles: {
-      edges:
-        media.idMal
+      edges: [
+        ...media.idMal
           ? [{
             node: populateHandle({
               origin: 'mal',
@@ -672,7 +673,19 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
             }),
             handleRelationType: HandleRelation.Identical
           }]
-          : []
+          : [],
+        ...(
+          media
+            .externalLinks
+            ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
+            .filter(Boolean)
+            .map(handle => ({
+              node: handle!,
+              handleRelationType: HandleRelation.Alternative
+            }))
+          ?? []
+        )
+      ]
     }
   }),
   averageScore:
@@ -758,7 +771,7 @@ export const resolvers: Resolvers = {
       // console.log('args', args)
       // const malId = fromUri(uri)
       const res = await fetchMedia({ id: Number(id) }, ctx)
-      // console.log('Anilist Media', res)
+      console.log('Anilist Media', res)
       return res
     },
     Page: () => ({})

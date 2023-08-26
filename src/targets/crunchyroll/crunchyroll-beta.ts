@@ -11,6 +11,7 @@ import { openDB } from 'idb'
 import { NoExtraProperties } from '../../utils/type'
 import { toUri } from 'scannarr'
 import { PlaybackSourceType } from 'scannarr'
+import { Handle } from 'src/generated/graphql'
 
 
 const store =
@@ -35,6 +36,16 @@ export const origin = 'cr'
 export const official = true
 export const metadataOnly = false
 export const supportedUris = ['cr']
+
+
+export const urlToHandle = (url: string) => {
+  const match = url.match(/https:\/\/www\.crunchyroll\.com\/(series|watch)\/(\w+)/)
+  if (!match) return null
+
+  return populateHandle({ origin, id: match[2], url })
+}
+
+export const handleToUrl = (handle: Handle) => `https://www.crunchyroll.com/series/${handle.id}`
 
 
 export interface GetEpisodeResponse {
