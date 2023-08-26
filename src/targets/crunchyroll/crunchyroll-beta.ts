@@ -727,7 +727,7 @@ export const resolvers: Resolvers = {
       const season =
         seasonId
           ? seasons.data.find(({ id }) => id === seasonId)
-          : seasons.data[0]
+          : undefined
       // console.log('Crunchyroll Media called with ', args, id, _origin, season)
       if (!season) return undefined
       return crunchyrollSeasonToScannarrMedia(season)
@@ -755,11 +755,11 @@ export const resolvers: Resolvers = {
       if (_origin !== origin ) return undefined
       const { seasonId } = getMediaIdParts(id)
       const seasons = await getSeasons(id, { fetch })
-      // console.log('Crunchyroll Media seasons ', seasonId, seasons)
+      // console.log('Crunchyroll Media seasons ', id, seasonId, seasons)
       const season =
         seasonId
           ? seasons.data.find(({ id }) => id === seasonId)
-          : seasons.data[0]
+          : undefined
       if (!season) return undefined
       const res = await getEpisodes(season.id, { fetch })
       // console.log('Crunchyroll Media.Episode called with ', args, id, _origin, season.data[0]?.id, res)
