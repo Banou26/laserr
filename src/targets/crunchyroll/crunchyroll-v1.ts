@@ -4,7 +4,7 @@ import pThrottle from 'p-throttle'
 import { from } from 'rxjs'
 
 import { LanguageTag } from '../../utils'
-import { populateUri } from 'scannarr'
+import { populateHandle } from 'scannarr'
 
 const throttle = pThrottle({
 	limit: 4,
@@ -143,7 +143,7 @@ const getSeasonCardInfo = async (elem: HTMLElement, { fetch }: ExtraOptions): Se
 
 
   return (
-    populateUri({
+    populateHandle({
       scheme,
       categories,
       id,

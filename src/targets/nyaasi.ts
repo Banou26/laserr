@@ -8,7 +8,7 @@
 // import pThrottle from 'p-throttle'
 // import anitomy from 'anitomyscript/dist/anitomyscript.bundle'
 // import { getBytesFromBiByteString } from '../utils/bytes'
-// import { fromUri, populateUri } from 'scannarr'
+// import { fromUri, populateHandle } from 'scannarr'
 // import toObservable from '../utils/async-observable'
 // import { of } from 'fp-ts-std/Lazy'
 import { Resolvers } from 'scannarr'
@@ -327,7 +327,7 @@ export const resolvers: Resolvers = {
 //   console.log('BRUH', await anitomy('[Erai-raws] Cyberpunk - Edgerunners - 01 + 10 [1080p][Multiple Subtitle] [ENG][POR-BR][SPA-LA][SPA][ARA][FRE][GER][ITA][JPN][POR][POL][DUT][NOB][FIN][TUR][SWE][GRE][HEB][RUM][IND][THA][KOR][DAN][CHI][VIE][UKR][HUN][CES][HRV][MAY][FIL]'))
 //   console.log('BRUH2', await anitomy('[Coalgirls]_White_Album_1-13_(1280×720_Blu-Ray_FLAC)'))
 //   console.log('anitomy', anitomy)
-//   const makeTitle = ({ teamEpisode, team }: { teamEpisode?: TeamEpisode, team?: Team } = {}): TitleHandle => populateUri({
+//   const makeTitle = ({ teamEpisode, team }: { teamEpisode?: TeamEpisode, team?: Team } = {}): TitleHandle => populateHandle({
 //     id: row.link.split('/').at(4)!,
 //     scheme: 'nyaa',
 //     categories: row.category === 'anime' ? ['ANIME' as const] : [],
@@ -557,7 +557,7 @@ export const resolvers: Resolvers = {
 
 //   if (Array.isArray(episode_number)) throw new Error(`Nyaa ${nyaaIdToPageUrl(id)} is batch, non supported for now`)
 
-//   const makeTitleHandle = (): TitleHandle => populateUri({
+//   const makeTitleHandle = (): TitleHandle => populateHandle({
 //     id,
 //     scheme: 'nyaa',
 //     batch: release_information?.toLowerCase() === 'batch',

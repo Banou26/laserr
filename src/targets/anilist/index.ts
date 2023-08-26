@@ -5,7 +5,7 @@ import { from, combineLatest, startWith, map, tap } from 'rxjs'
 import * as A from 'fp-ts/lib/Array'
 import { pipe } from 'fp-ts/lib/function'
 
-import { fromUri, fromUris, populateUri } from 'scannarr'
+import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
 import pThrottle from 'p-throttle'
@@ -482,7 +482,7 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
   endDate: media.endDate,
   episodeCount: media.episodes,
   categories,
-  ...populateUri({
+  ...populateHandle({
     origin,
     id: media.id.toString(),
     url: media.siteUrl ?? undefined,
@@ -493,7 +493,7 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
   genres:
     media.genres?.length
       ? (
-        media.genres.map((genre: string) => populateUri({
+        media.genres.map((genre: string) => populateHandle({
           origin,
           id: genre,
           url: `https://anilist.co/search/anime?genres=${genre}`,
@@ -546,7 +546,7 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
   handles: {
     edges:
       media.idMal ? [{
-        node: populateUri({
+        node: populateHandle({
           id: media.idMal.toString(),
           origin: 'mal',
           handles: {
@@ -656,7 +656,7 @@ export const getSeries: GetSeries = (options, context: MediaParams[2]) => {
 }
 
 const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Media> => ({
-  ...populateUri({
+  ...populateHandle({
     origin,
     id: media.id.toString(),
     url: media.siteUrl,
@@ -664,7 +664,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
       edges:
         media.idMal
           ? [{
-            node: populateUri({
+            node: populateHandle({
               origin: 'mal',
               id: media.idMal.toString(),
               url: `https://myanimelist.net/anime/${media.idMal}`,
@@ -688,7 +688,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   trailers:
     media.trailer?.site === 'youtube'
       ? [{
-        ...populateUri({
+        ...populateHandle({
           origin: 'yt',
           id: media.trailer.id?.toString(),
           url: `https://www.youtube.com/watch?v=${media.trailer.id}`,
@@ -710,7 +710,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   episodes: {
     edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
       node: {
-        ...populateUri({
+        ...populateHandle({
           origin,
           id: `${edge.node.id.toString()}-${edge.node.episode}`,
           url: `https://anilist.co/anime/${media.id}`,

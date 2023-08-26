@@ -9,7 +9,7 @@ import { schema } from 'scannarr'
 
 import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries, Relation } from 'scannarr'
 
-import { fromUri, fromUris, populateUri } from 'scannarr'
+import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { languageToTag, LanguageTag } from '../../utils'
 import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr'
 import { MediaFormat } from '../anilist/types'
@@ -60,7 +60,7 @@ const getAnimePageId = (doc: Document) =>
 //         )
 //     )
 
-// const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+// const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateHandle({
 //   averageScore:
 //     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
 //       ? undefined
@@ -90,7 +90,7 @@ const getAnimePageId = (doc: Document) =>
 //   }],
 //   genres:
 //     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
-//       .map(({ textContent, href, parentElement }) => populateUri({
+//       .map(({ textContent, href, parentElement }) => populateHandle({
 //         origin,
 //         id: href!.split('/').at(5)!,
 //         adult: parentElement?.classList.contains('explicit'),
@@ -121,7 +121,7 @@ const getAnimePageId = (doc: Document) =>
 //         .map(getSeasonCardInfo)
 //     )
 
-const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateHandle({
   averageScore:
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
       ? undefined
@@ -151,7 +151,7 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   related: [],
   titles:
     [...elem.querySelectorAll<HTMLAnchorElement>('.title a')]
-      .map(elem => populateUri({
+      .map(elem => populateHandle({
         origin,
         categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
@@ -249,7 +249,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       .querySelector<HTMLImageElement>('#content > table > tbody > tr > td:nth-child(2) > div.js-scrollfix-bottom-rel > div:nth-child(3) > div:nth-child(1) > table > tbody > tr:nth-child(1) > td > div.contents-video-embed > div.video-embed.clearfix > a > img')
       ?.getAttribute('data-src')
 
-  return populateUri({
+  return populateHandle({
     origin,
     categories,
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
@@ -367,7 +367,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
           withDetails: false
         })
       })
-      .map(populateUri)
+      .map(populateHandle)
 
   return episodes
 }
@@ -423,7 +423,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
       ?.querySelectorAll('#content > table > tbody > tr > td.borderClass > div > h2')]
       .find(elem => elem.textContent === title)
 
-  return populateUri({
+  return populateHandle({
     // todo: infer airingSchedule from "Broadcast: Wednesdays at 23:00 (JST)" data on the side data
     averageScore:
       elem.querySelector<HTMLDivElement>('.score .score-label')?.textContent?.trim() === 'N/A'
@@ -507,7 +507,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
                   : titleText === 'Sequel:' ? 'SEQUEL'
                   : titleText === 'Other:' ? 'OTHER'
                   : 'OTHER',
-                reference: populateUri({
+                reference: populateHandle({
                   origin,
                   id: fixOrigin(elem.href).split('/').at(4)!,
                   url: fixOrigin(elem.href),
@@ -853,7 +853,7 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
   const endDateValue = elem.querySelector('td:nth-child(7)')?.textContent?.trim().split('-')
 
   return {
-    ...populateUri({
+    ...populateHandle({
       origin,
       id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
       url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
@@ -910,7 +910,7 @@ export const searchAnime = (_, { search }: MediaParams[1], { fetch }: MediaParam
     )
 
 const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
-  ...populateUri({
+  ...populateHandle({
     origin,
     id: elem.querySelector<HTMLAnchorElement>('.genres.js-genre')!.id.trim().replace('sinfo', ''),
     url: elem.querySelector<HTMLAnchorElement>('.h2_anime_title .link-title')!.href,

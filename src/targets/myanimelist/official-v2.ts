@@ -7,7 +7,7 @@ import pThrottle from 'p-throttle'
 
 import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from 'scannarr'
 
-import { fromUri, fromUris, populateUri } from 'scannarr'
+import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { languageToTag, LanguageTag } from '../../utils'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
@@ -55,7 +55,7 @@ const getAnimePageId = (doc: Document) =>
 //         )
 //     )
 
-const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateHandle({
   averageScore:
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
       ? undefined
@@ -85,7 +85,7 @@ const getSeasonCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   }],
   genres:
     [...elem.querySelectorAll<HTMLAnchorElement>('.genre a')]
-      .map(({ textContent, href, parentElement }) => populateUri({
+      .map(({ textContent, href, parentElement }) => populateHandle({
         scheme,
         id: href!.split('/').at(5)!,
         adult: parentElement?.classList.contains('explicit'),
@@ -118,7 +118,7 @@ export const getAnimeSeason = ({ fetch }: ExtraOptions) =>
         .map(getSeasonCardInfo)
     )
 
-const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+const getSearchCardInfo = (elem: HTMLElement): SeriesHandle => populateHandle({
   scheme,
   categories,
   id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
@@ -155,7 +155,7 @@ export const searchAnime = ({ search }: { search: string }, { fetch }: ExtraOpti
         .map(getSearchCardInfo)
     )
 
-const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
+const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateHandle({
   averageScore:
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'
       ? undefined
@@ -185,7 +185,7 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateUri({
   related: [],
   titles:
     [...elem.querySelectorAll<HTMLAnchorElement>('.title a')]
-      .map(elem => populateUri({
+      .map(elem => populateHandle({
         scheme,
         categories,
         id: `${elem.href.split('/')[4]}-${elem.href.split('/')[7]}`,
@@ -283,7 +283,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       .querySelector<HTMLImageElement>('#content > table > tbody > tr > td:nth-child(2) > div.js-scrollfix-bottom-rel > div:nth-child(3) > div:nth-child(1) > table > tbody > tr:nth-child(1) > td > div.contents-video-embed > div.video-embed.clearfix > a > img')
       ?.getAttribute('data-src')
 
-  return populateUri({
+  return populateHandle({
     scheme,
     categories,
     id: `${url.split('/')[4]!}-${url.split('/')[7]!}`,
@@ -401,7 +401,7 @@ const getSeriesTitlesInfo = (elem: Document): TitleHandle[] => {
           withDetails: false
         })
       })
-      .map(populateUri)
+      .map(populateHandle)
 
   return episodes
 }
@@ -452,7 +452,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
   //         )
   //     )
 
-  return populateUri({
+  return populateHandle({
     // todo: infer airingSchedule from "Broadcast: Wednesdays at 23:00 (JST)" data on the side data
     averageScore:
       elem.querySelector<HTMLDivElement>('.score .score-label')?.textContent?.trim() === 'N/A'

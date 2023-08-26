@@ -11,7 +11,7 @@
 
 import type { Handle, Resolvers } from 'scannarr'
 
-import { populateUri } from 'scannarr'
+import { populateHandle } from 'scannarr'
 
 import * as AT from './animetosho'
 
@@ -25,7 +25,7 @@ export const metadataOnly = true
 
 // export const fromRelatedHandle = (handle: Handle) => {
 //   if (handle.origin === AT.origin) {
-//     return populateUri({
+//     return populateHandle({
 //       origin: AT.origin,
 //       id: handle.id,
 //       url:

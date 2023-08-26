@@ -1,6 +1,6 @@
 import type { Handle, Resolvers } from 'scannarr'
 
-import { populateUri } from 'scannarr'
+import { populateHandle } from 'scannarr'
 import { parse } from 'node-html-parser'
 
 import * as anidb from './anidb'
@@ -19,7 +19,7 @@ export const supportedUris = ['animetosho']
 
 export const fromRelatedHandle = (handle: Handle) => {
   if (handle.origin === anidb.origin) {
-    return populateUri({
+    return populateHandle({
       origin: anidb.origin,
       id: handle.id,
       url:
@@ -100,7 +100,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
     sourceUrl &&
     parseNyaaUrlId(sourceUrl) &&
     {
-      ...populateUri({
+      ...populateHandle({
         id: parseNyaaUrlId(sourceUrl)!.toString(),
         origin: nyaa.origin,
         url: sourceUrl,
@@ -115,7 +115,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
       },
       team:
         teamWebsite
-          ? populateUri({
+          ? populateHandle({
             id: `${parseTorrentUrlId(url)}-website`,
             origin,
             url: teamWebsite
@@ -131,7 +131,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
       })
     }
 
-  return populateUri({
+  return populateHandle({
     id: parseTorrentUrlId(url),
     origin,
     url,
@@ -148,7 +148,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
     },
     team:
       teamWebsite
-        ? populateUri({
+        ? populateHandle({
           id: `${parseTorrentUrlId(url)}-website`,
           origin,
           url: teamWebsite
@@ -197,7 +197,7 @@ const seriesPageToMedia = (doc: HTMLElement): Media => {
   const image = imageElement?.getAttribute('src')
   if (!image) throw new Error('Animetosho, no image src found')
 
-  return populateUri({
+  return populateHandle({
     origin,
     id: parseSeriesUrlId(url),
     url,
@@ -285,7 +285,7 @@ const torrentToPlaybackSource = (doc: HTMLElement): PlaybackSource => {
   if (!dateString) throw new Error('Animetosho, no date textContent found')
   const uploadDate = new Date(dateString)
 
-  return populateUri({
+  return populateHandle({
     id: parseTorrentUrlId(url),
     origin,
     url: url,
@@ -344,7 +344,7 @@ export const resolvers: Resolvers = {
       const [_, { id: _id, origin: _origin }] = args
       if (_origin !== origin || !_id) return undefined
       console.log('AnimeTosho Episode', args, _id, _origin)
-      return populateUri({
+      return populateHandle({
         origin: origin,
         id: _id,
         url: `https://animetosho.org/episode/_.${_id}`,

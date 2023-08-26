@@ -2,7 +2,7 @@ import { HandleRelation, Media, Resolvers } from 'scannarr'
 
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { MediaStatus, populateUri, toUri } from 'scannarr'
+import { MediaStatus, populateHandle, toUri } from 'scannarr'
 import pThrottle from 'p-throttle'
 import { Episode } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
@@ -282,7 +282,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
   // todo: make a system to automatically create handle lists that are using same ids
   const aniDBHandle =
     aniDBSource
-      ? populateUri({
+      ? populateHandle({
         origin: 'anidb',
         id: aniDBId,
         url: aniDBSource?.url,
@@ -294,7 +294,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
 
   const animetoshoHandle =
     aniDBSource
-      ? populateUri({
+      ? populateHandle({
         origin: 'animetosho',
         id: aniDBId,
         url: `https://animetosho.org/series/_.${aniDBId}`,
@@ -306,7 +306,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
 
   const anizipHandle =
     aniDBSource
-      ? populateUri({
+      ? populateHandle({
         origin: 'anizip',
         id: aniDBId,
         url: `https://api.ani.zip/mappings?anidb_id=${aniDBId}`,
@@ -318,7 +318,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
   // console.log('crunchyrollHandle', crunchyrollHandle)
 
   return ({
-    ...populateUri({
+    ...populateHandle({
       origin,
       id: data.mal_id.toString(),
       url: data.url,
@@ -376,7 +376,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
     trailers:
       data.trailer?.youtube_id
         ? [{
-          ...populateUri({
+          ...populateHandle({
             origin: 'yt',
             id: data.trailer.youtube_id,
             url: `https://www.youtube.com/watch?v=${data.trailer.youtube_id}`,
@@ -408,7 +408,7 @@ const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<E
   const airingTime = new Date(data.aired).getTime()
 
   return ({
-    ...populateUri({
+    ...populateHandle({
       origin,
       id: `${id}-${episodeNumber}`,
       url: data.url,
@@ -418,7 +418,7 @@ const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<E
     }),
     airingAt: airingTime,
     number: episodeNumber,
-    media: populateUri({
+    media: populateHandle({
       origin,
       id,
       url: data.url?.split('/').slice(0, 4).join('/') ?? `https://myanimelist.net/anime/${id}/`,
@@ -480,7 +480,7 @@ const getRecentEpisodes = (page = 1, context: MediaParams[2]): Promise<Episode[]
         item
           .episodes
           .map(episode => ({
-            ...populateUri({
+            ...populateHandle({
               origin,
               id: `${item.entry.mal_id}-${episode.mal_id}`,
               url: episode.url,
@@ -489,7 +489,7 @@ const getRecentEpisodes = (page = 1, context: MediaParams[2]): Promise<Episode[]
               }
             }),
             number: episode.mal_id,
-            media: populateUri({
+            media: populateHandle({
               origin,
               id: item.entry.mal_id.toString(),
               url: item.entry.url,

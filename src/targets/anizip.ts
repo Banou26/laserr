@@ -4,7 +4,7 @@
 import type { Handle, Resolvers } from 'scannarr'
 import type { MediaParams } from '../utils/type'
 
-import { populateUri } from 'scannarr'
+import { populateHandle } from 'scannarr'
 
 import * as anidb from './anidb'
 import * as mal from './myanimelist'
@@ -257,7 +257,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
   const handles =
     Object
       .entries(res.mappings)
-      .map(([source, mapping]) => populateUri({
+      .map(([source, mapping]) => populateHandle({
         id: mapping,
         origin: AniZipToLaserrSource[source],
         handles: {
@@ -267,7 +267,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
       }))
       .filter(handle => handle.origin && handle.id)
 
-  const handleProps = populateUri({
+  const handleProps = populateHandle({
     origin,
     id: res.mappings.anidb_id,
     url: `https://api.ani.zip/mappings?anidb_id=${res.mappings.anidb_id}`,
@@ -281,7 +281,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
     Object
       .entries(res.episodes)
       .map(([key, episode]) => {
-        const anidbEpisodeHandle = populateUri({
+        const anidbEpisodeHandle = populateHandle({
           origin,
           id: episode.anidbEid,
           url: `https://anidb.net/episode/${episode.anidbEid}`,
@@ -294,7 +294,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
         })
 
         return ({
-          ...populateUri({
+          ...populateHandle({
             origin,
             id: `${res.mappings.anidb_id}-${episode.anidbEid}`,
             url: `https://anidb.net/episode/${episode.anidbEid}`,

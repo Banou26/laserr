@@ -4,7 +4,7 @@ import type { Media, Episode, Resolvers } from 'scannarr'
 import type { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
 
 import pThrottle from 'p-throttle'
-import { populateUri } from 'scannarr'
+import { populateHandle } from 'scannarr'
 import { swAlign } from 'seal-wasm'
 import { openDB } from 'idb'
 
@@ -518,7 +518,7 @@ const makeSearchParams = (
 
 
 const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProperties<Media> => ({
-  ...populateUri({
+  ...populateHandle({
     origin,
     id: serie.id,
     url: `https://www.crunchyroll.com/series/${serie.id}`,
@@ -542,7 +542,7 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
 })
 
 const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProperties<Media> => ({
-  ...populateUri({
+  ...populateHandle({
     origin,
     id: `${serie.series_id}-${serie.id}`,
     url: `https://www.crunchyroll.com/series/${serie.id}`,
@@ -561,7 +561,7 @@ const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraPrope
 })
 
 const crunchyrollEpisodeToScannarrEpisode = (mediaId: string, episode: CrunchyrollEpisode): NoExtraProperties<Episode> => ({
-  ...populateUri({
+  ...populateHandle({
     origin,
     id: `${mediaId}-${episode.id}`,
     url: `https://www.crunchyroll.com/watch/${episode.id}`,
