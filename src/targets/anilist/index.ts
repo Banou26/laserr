@@ -674,17 +674,17 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
             handleRelationType: HandleRelation.Identical
           }]
           : [],
-        ...(
-          media
-            .externalLinks
-            ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
-            .filter(Boolean)
-            .map(handle => ({
-              node: handle!,
-              handleRelationType: HandleRelation.Alternative
-            }))
-          ?? []
-        )
+        // ...(
+        //   media
+        //     .externalLinks
+        //     ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
+        //     .filter(Boolean)
+        //     .map(handle => ({
+        //       node: handle!,
+        //       handleRelationType: HandleRelation.Alternative
+        //     }))
+        //   ?? []
+        // )
       ]
     }
   }),
