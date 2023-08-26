@@ -71,6 +71,8 @@ query (
         month
         day
       }
+      season
+      seasonYear
       status
       season
       format
@@ -160,6 +162,8 @@ query GetMedia ($id: Int, $idMal: Int, $type: MediaType) {
       month
       day
     }
+    season
+    seasonYear
     status
     season
     format
@@ -481,6 +485,8 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
       : undefined,
   startDate: media.startDate,
   endDate: media.endDate,
+  season: media.season,
+  seasonYear: media.seasonYear,
   episodeCount: media.episodes,
   categories,
   ...populateHandle({
@@ -674,17 +680,17 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
             handleRelationType: HandleRelation.Identical
           }]
           : [],
-        // ...(
-        //   media
-        //     .externalLinks
-        //     ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
-        //     .filter(Boolean)
-        //     .map(handle => ({
-        //       node: handle!,
-        //       handleRelationType: HandleRelation.Alternative
-        //     }))
-        //   ?? []
-        // )
+        ...(
+          media
+            .externalLinks
+            ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
+            .filter(Boolean)
+            .map(handle => ({
+              node: handle!,
+              handleRelationType: HandleRelation.Alternative
+            }))
+          ?? []
+        )
       ]
     }
   }),
@@ -718,6 +724,8 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   },
   startDate: media.startDate,
   endDate: media.endDate,
+  season: media.season,
+  seasonYear: media.seasonYear,
   popularity: media.popularity,
   episodeCount: media.episodes,
   episodes: {
@@ -771,7 +779,7 @@ export const resolvers: Resolvers = {
       // console.log('args', args)
       // const malId = fromUri(uri)
       const res = await fetchMedia({ id: Number(id) }, ctx)
-      console.log('Anilist Media', res)
+      // console.log('Anilist Media', res)
       return res
     },
     Page: () => ({})
