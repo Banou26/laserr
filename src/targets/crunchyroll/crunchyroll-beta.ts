@@ -11,7 +11,7 @@ import { openDB } from 'idb'
 import { NoExtraProperties } from '../../utils/type'
 import { toUri } from 'scannarr'
 import { PlaybackSourceType } from 'scannarr'
-import { Handle } from 'src/generated/graphql'
+import { Handle, Origin } from 'src/generated/graphql'
 
 
 const store =
@@ -702,6 +702,16 @@ const searchAnime = async (title: string, { fetch = window.fetch }) =>
 //   // fetch(`https://beta-api.crunchyroll.com/content/v1/search?session_id=${sessionId}&q=the devil`)
 // }
 
+const getFirstMatchingResult = async (resultPromises: { origin: Origin, data: Promise<{ Media: Media | null }> }[], func: (data: { Media: Media | null }) => boolean) => {
+  const promiseList = [...resultPromises]
+  while (promiseList.length > 0) {
+    // console.log('Crunchyroll getFirstMatchingResult ', promiseList, promiseList.map((p, i) => p.data.then(() => i)))
+    const [value, index] = await Promise.race(promiseList.map((p, i) => p.data.then((val) => [val, i] as const)))
+    if (func(await value)) return value
+    promiseList.splice(index, 1)
+  }
+}
+
 export const resolvers: Resolvers = {
   Page: {
     media: async (...args) => {
@@ -718,17 +728,28 @@ export const resolvers: Resolvers = {
   },
   Query: {
     Media: async (...args) => {
-      const [_, { id, uri, origin: _origin }, { fetch }] = args
+      const [_, { id, uri, origin: _origin }, { fetch, results }] = args
       if (_origin !== origin) return undefined
 
-      const { seasonId } = getMediaIdParts(id)
+      const { seasonId: _seasonId } = getMediaIdParts(id)
       const seasons = await getSeasons(id, { fetch })
-      // console.log('Crunchyroll Media seasons ', seasonId, seasons)
+
+      console.log('Crunchyroll Media results ', results)
+      const [resultSeason, resultSeasonYear] =
+        (await getFirstMatchingResult(results, ({ Media }) => Media?.season && Media?.seasonYear)
+          .then((res) => [
+            res?.Media?.season,
+            res?.Media?.seasonYear
+          ])) ?? []
+      console.log('Crunchyroll Media resultSeason, resultSeasonYear ', resultSeason, resultSeasonYear)
+
+      const seasonId = await _seasonId
+      console.log('Crunchyroll Media seasons ', seasonId, seasons)
       const season =
         seasonId
           ? seasons.data.find(({ id }) => id === seasonId)
-          : undefined
-      // console.log('Crunchyroll Media called with ', args, id, _origin, season)
+          : seasons.data.find(({ season_tags }) => season_tags[0] === `${resultSeason.toLowerCase()}-${resultSeasonYear}`)
+      console.log('Crunchyroll Media called with ', args, id, _origin, season)
       if (!season) return undefined
       return crunchyrollSeasonToScannarrMedia(season)
     },
