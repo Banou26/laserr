@@ -452,15 +452,26 @@ const fetchEpisodes = ({ id }: { id: number }, context: MediaParams[2]) =>
           : undefined
       )
 
+const fetchSearchAnime = ({ search }: { search: string }, context: MediaParams[2]) =>
+  context
+    .fetch(`https://api.jikan.moe/v4/anime?q=${search}`)
+    .then(response => response.json())
+    .then(json =>
+      console.log('json', json) ||
+      json.data
+        ? json.data.map(media => normalizeToMedia(media, context))
+        : undefined
+    )
+
 const fetchMedia = ({ id }: { id: number }, context: MediaParams[2]) =>
   context
     .fetch(`https://api.jikan.moe/v4/anime/${id}/full`)
     .then(response => response.json())
     .then(json =>
-        json.data
-          ? normalizeToMedia(json.data, context)
-          : undefined
-      )
+      json.data
+        ? normalizeToMedia(json.data, context)
+        : undefined
+    )
 
 
 const getSeasonNow = (page = 1, context: MediaParams[2]): Promise<Root> =>
@@ -533,6 +544,9 @@ const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], conte
   )
 }
 
+const searchAnime = async (_, { search }: MediaParams[1], context: MediaParams[2], __) =>
+  fetchSearchAnime({ search: search! }, context)
+
 export const resolvers: Resolvers = {
   Page: {
     episode: async (...args) => {
@@ -542,15 +556,16 @@ export const resolvers: Resolvers = {
           ? await getRecentEpisodes(page, args[2])
           : []
       )
-      // console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
+      console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
       return res
     },
     media: async (...args) => {
       const [, { search, season }] = args
+      console.log('media jikan', args)
       return (
-        season
-          ? await getFullSeasonNow(...args)
-          : []
+        search ? await searchAnime(...args) :
+        season ? await getFullSeasonNow(...args)
+        : []
       )
     }
   },
