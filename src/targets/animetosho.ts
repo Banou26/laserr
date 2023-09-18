@@ -64,7 +64,16 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
   if (!timeElement) throw new Error('Animetosho, no time element found')
   const timeString = timeElement.getAttribute('title')?.replace('Date/time submitted: ', '')
   if (!timeString) throw new Error('Animetosho, no title attribute on the time element found')
-  const [day, month, year, hour, minute] = timeString.split(/\W/).filter(Boolean).map(Number)
+  let [day, month, year, hour, minute] = timeString.split(/\W/).filter(Boolean).map(Number)
+  if (timeString.includes('Today') || timeString.includes('Yesterday')) {
+    const now = new Date(timeString.includes('Yesterday') ? Date.now() - 1000 * 60 * 60 * 24 : Date.now())
+    day = now.getDate()
+    month = now.getMonth()
+    year = now.getFullYear()
+    const [hourStr, minStr] = timeString.split(' ')[1]?.split(':') ?? [0, 0]
+    hour = Number(hourStr)
+    minute = Number(minStr)
+  }
   if (day === undefined || month === undefined || year === undefined || hour === undefined || minute === undefined) {
     throw new Error('Animetosho, invalid time string')
   }
