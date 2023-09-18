@@ -423,7 +423,8 @@ const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<E
       id,
       url: data.url?.split('/').slice(0, 4).join('/') ?? `https://myanimelist.net/anime/${id}/`,
       handles: {
-        edges: []
+        edges: [],
+        nodes: []
       }
     }),
     mediaUri: toUri({ origin, id }),
@@ -549,19 +550,19 @@ const searchAnime = async (_, { search }: MediaParams[1], context: MediaParams[2
 
 export const resolvers: Resolvers = {
   Page: {
-    episode: async (...args) => {
-      const [, { sort, page }] = args
-      const res = (
-        sort?.includes(EpisodeSort.Latest)
-          ? await getRecentEpisodes(page, args[2])
-          : []
-      )
-      console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
-      return res
-    },
+    // episode: async (...args) => {
+    //   const [, { sort, page }] = args
+    //   const res = (
+    //     sort?.includes(EpisodeSort.Latest)
+    //       ? await getRecentEpisodes(page, args[2])
+    //       : []
+    //   )
+    //   // console.log('Jikan Page.episode res', res, sort, EpisodeSort.Latest, sort?.includes(EpisodeSort.Latest))
+    //   return res
+    // },
     media: async (...args) => {
       const [, { search, season }] = args
-      console.log('media jikan', args)
+      // console.log('media jikan', args)
       return (
         search ? await searchAnime(...args) :
         season ? await getFullSeasonNow(...args)
@@ -591,14 +592,14 @@ export const resolvers: Resolvers = {
     },
     Page: () => ({})
   },
-  Media: {
-    episodes: async (...args) => {
-      const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
-      // console.log('Jikan episodes called with ', args, id, __origin)
-      if (__origin !== origin) return undefined
-      const res = await fetchEpisodes({ id }, args[2])
-      // console.log('Jikan episodes', res)
-      return res
-    }
-  }
+  // Media: {
+  //   episodes: async (...args) => {
+  //     const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args
+  //     // console.log('Jikan episodes called with ', args, id, __origin)
+  //     if (__origin !== origin) return undefined
+  //     const res = await fetchEpisodes({ id }, args[2])
+  //     // console.log('Jikan episodes', res)
+  //     return res
+  //   }
+  // }
 } satisfies Resolvers
