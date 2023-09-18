@@ -132,9 +132,18 @@ query (
       }
 
       airingSchedule(perPage: 25) {
-        nodes {
-          episode
-          airingAt
+        edges {
+          node {
+            airingAt
+            episode
+            id
+            media {
+              id
+              idMal
+            }
+            mediaId
+            timeUntilAiring
+          }
         }
       }
     }
@@ -476,13 +485,25 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
     media.averageScore
       ? media.averageScore / 100
       : undefined,
-  episodes:
-    media.airingSchedule?.nodes
-      ? media.airingSchedule.nodes?.map((airingSchedule: AiringSchedule) => ({
-        date: new Date(airingSchedule.airingAt * 1000),
-        number: airingSchedule.episode
-      }))
-      : undefined,
+  episodes: {
+    edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
+      node: {
+        ...populateHandle({
+          origin,
+          id: `${edge.node.id.toString()}-${edge.node.episode}`,
+          url: `https://anilist.co/anime/${media.id}`,
+          handles: {
+            edges: []
+          }
+        }),
+        airingAt: edge.node.airingAt * 1000,
+        number: edge.node.episode,
+        media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
+        mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
+        timeUntilAiring: edge.node.timeUntilAiring * 1000,
+      }
+    })) ?? []
+  },
   startDate: media.startDate,
   endDate: media.endDate,
   season: media.season,
@@ -745,7 +766,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
         mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
         timeUntilAiring: edge.node.timeUntilAiring * 1000,
       }
-    }))
+    })) ?? []
   }
 })
 
