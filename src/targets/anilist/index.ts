@@ -1,4 +1,3 @@
-import type { Category, ExtraOptions, GetSeries, Media, Resolvers, SearchSeries, SeriesHandle } from 'scannarr'
 import { MediaSeason, MediaFormat, Media as AnilistMedia, MediaExternalLink, MediaStatus, PageInfo, Page } from './types'
 
 import { from, combineLatest, startWith, map, tap } from 'rxjs'
@@ -10,13 +9,13 @@ import { LanguageTag } from '../../utils'
 import { AiringSchedule } from './types'
 import pThrottle from 'p-throttle'
 import { MediaParams, NoExtraProperties } from '../../utils/type'
-import { HandleRelation } from 'scannarr'
 import { toUri } from 'scannarr'
 import { urlToHandle } from '../..'
+import { HandleRelation } from '../../generated/graphql'
 
 export const icon = 'https://anilist.co/img/icons/favicon-32x32.png'
 export const originUrl = 'https://anilist.co'
-export const categories: Category[] = ['ANIME']
+export const categories = ['ANIME'] as const
 export const name = 'Anilist'
 export const origin = 'anilist'
 export const official = true

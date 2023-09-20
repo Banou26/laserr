@@ -1,24 +1,16 @@
-// import Category from '../category'
-// import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
-// import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
-import { from, Observable } from 'rxjs'
+import { from } from 'rxjs'
 import pThrottle from 'p-throttle'
 
-import { schema } from 'scannarr'
-
-
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries, Relation } from 'scannarr'
 
 import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { languageToTag, LanguageTag } from '../../utils'
-import { Media, MediaSynonym, MediaType, QueryResolvers, Resolver, Resolvers } from 'scannarr'
 import { MediaFormat } from '../anilist/types'
 import { MediaParams, NoExtraProperties } from '../../utils/type'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
 export const origin = 'mal'
-export const categories: Category[] = ['ANIME']
+export const categories = ['ANIME']
 export const name = 'MyAnimeList'
 
 const throttle = pThrottle({

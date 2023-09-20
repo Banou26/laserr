@@ -1,7 +1,7 @@
 // https://api.ani.zip/mappings?anilist_id=139274&specials=1
+import { Episode, HandleRelation, Media, PlaybackSource } from '../generated/graphql'
 
-
-import type { Handle, Resolvers } from 'scannarr'
+import type { Handle, GraphQLTypes } from 'scannarr'
 import type { MediaParams } from '../utils/type'
 
 import { populateHandle } from 'scannarr'
@@ -9,7 +9,6 @@ import { populateHandle } from 'scannarr'
 import * as anidb from './anidb'
 import * as mal from './myanimelist'
 import * as anilist from './anilist'
-import { Episode, HandleRelation, Media, PlaybackSource } from '../generated/graphql'
 
 export const originUrl = 'https://api.ani.zip/' as const
 export const origin = 'anizip' as const
@@ -345,7 +344,7 @@ const fetchMALMappings = (id: string, context: MediaParams[2]) => fetchAnizipMap
 const fetchAnidbMappings = (id: string, context: MediaParams[2]) => fetchAnizipMappings('anidb', id, context)
 const fetchAnilistMappings = (id: string, context: MediaParams[2]) => fetchAnizipMappings('anilist', id, context)
 
-export const resolvers: Resolvers = {
+export const resolvers: GraphQLTypes.Resolvers = {
   Page: {
     episode: async (...args) => {
       const [_, { id: _id, origin: _origin }, context] = args
@@ -388,4 +387,4 @@ export const resolvers: Resolvers = {
       return res
     }
   }
-} satisfies Resolvers
+} satisfies GraphQLTypes.Resolvers

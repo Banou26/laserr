@@ -1,4 +1,4 @@
-import type { Target } from 'scannarr'
+import type { GraphQLTypes } from 'scannarr'
 
 import * as MAL from './myanimelist'
 import * as Nyaasi from './nyaasi'
@@ -8,7 +8,7 @@ import * as Crunchyroll from './crunchyroll'
 import * as AnimeTosho from './animetosho'
 import * as AniZip from './anizip'
 
-export const targets: Target[] = [
+export const targets = [
   MAL,
   Nyaasi,
   Anilist,

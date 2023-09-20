@@ -3,7 +3,7 @@ import { populateHandle } from 'scannarr'
 
 export const icon = 'https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.png'
 export const originUrl = 'https://www.netflix.com'
-export const categories: Category[] = ['ANIME']
+export const categories = ['ANIME'] as const
 export const name = 'Netflix'
 export const origin = 'nflx'
 export const official = true

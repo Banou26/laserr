@@ -1,18 +1,12 @@
-// import Category from '../category'
-// import { GetGenres, GenreHandle, TitleHandle, Impl } from '../types'
-// import { SearchTitle, GetTitle, ReleaseDate, EpisodeHandle, GetEpisode } from '..'
 import { from, Observable } from 'rxjs'
 import pThrottle from 'p-throttle'
-
-
-import type { TitleHandle, ImageData, FetchType, DateData, Category, SeriesHandle, SearchSeries, SearchTitles, ExtraOptions, GetSeries } from 'scannarr'
 
 import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { languageToTag, LanguageTag } from '../../utils'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const origin = 'https://myanimelist.net'
-export const categories: Category[] = ['ANIME']
+export const categories = ['ANIME'] as const
 export const name = 'MyAnimeList'
 export const scheme = 'mal'
 

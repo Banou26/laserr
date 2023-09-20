@@ -1,4 +1,5 @@
-import { QueryResolvers } from 'scannarr';
+// import { QueryResolvers } from 'scannarr';
+type QueryResolvers = any
 
 export type Impossible<K extends keyof any> = {
   [P in K]: never;

@@ -11,7 +11,7 @@
 // import { fromUri, populateHandle } from 'scannarr'
 // import toObservable from '../utils/async-observable'
 // import { of } from 'fp-ts-std/Lazy'
-import { Resolvers } from 'scannarr'
+import { GraphQLTypes } from 'scannarr'
 
 export const origin = 'https://nyaa.si'
 export const categories = ['ANIME']
@@ -25,7 +25,7 @@ export const parseUrlId = (url: string) => {
   return id ? Number(id) : undefined
 }
 
-export const resolvers: Resolvers = {
+export const resolvers: GraphQLTypes.Resolvers = {
   // Page: {
   //   media: async (...args) => {
   //     const [, { search, season }] = args
@@ -66,7 +66,7 @@ export const resolvers: Resolvers = {
   //     return res
   //   }
   // }
-} satisfies Resolvers
+} satisfies GraphQLTypes.Resolvers
 
 
 // const throttle = pThrottle({

@@ -1,16 +1,11 @@
-
-import type { Media, Episode, Resolvers } from 'scannarr'
-
 import type { GetEpisodesData, GetEpisodesMeta, GetSeriesData, SearchData, SearchMeta } from './types'
 
 import pThrottle from 'p-throttle'
-import { populateHandle } from 'scannarr'
+import { populateHandle, toUri } from 'scannarr'
 import { swAlign } from 'seal-wasm'
 import { openDB } from 'idb'
 
 import { NoExtraProperties } from '../../utils/type'
-import { toUri } from 'scannarr'
-import { PlaybackSourceType } from 'scannarr'
 import { Handle, Origin } from 'src/generated/graphql'
 
 
@@ -597,7 +592,7 @@ const crunchyrollEpisodeToScannarrEpisode = (mediaId: string, episode: Crunchyro
   playback:
     episode.external_id
       ? {
-        type: PlaybackSourceType.Iframe,
+        type: 'IFRAME',
         origin,
         url: `https://www.crunchyroll.com/affiliate_iframeplayer?${
           new URLSearchParams({

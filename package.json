@@ -14,7 +14,7 @@
     "test-watch": "epk -w",
     "_dev": "vite build --watch",
     "build": "vite build",
-    "types": "tsc || true"
+    "types": "tsc"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^3.3.1",

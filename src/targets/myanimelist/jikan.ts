@@ -1,15 +1,11 @@
-import { HandleRelation, Media, Resolvers } from 'scannarr'
-
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { MediaStatus, populateHandle, toUri } from 'scannarr'
-import pThrottle from 'p-throttle'
-import { Episode } from 'scannarr'
+import { populateHandle, toUri, GraphQLTypes } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
 import { RecentEpisodes } from './jikan-types'
-import { EpisodeSort } from '../../generated/graphql'
+import { HandleRelation } from '../../generated/graphql'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
@@ -359,9 +355,9 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
     }],
     popularity: data.popularity,
     status:
-      data.status === 'Not yet aired' ? MediaStatus.NotYetReleased
-      : data.status === 'Currently Airing' ? MediaStatus.Releasing
-      : data.status === 'Finished Airing' ? MediaStatus.Finished
+      data.status === 'Not yet aired' ? GraphQLTypes.MediaStatus.NotYetReleased
+      : data.status === 'Currently Airing' ? GraphQLTypes.MediaStatus.Releasing
+      : data.status === 'Finished Airing' ? GraphQLTypes.MediaStatus.Finished
       : undefined,
     startDate: {
       year: data.aired.prop.from.year,

@@ -1,5 +1,3 @@
-import type { Category, ExtraOptions, FetchType, SearchSeries, SeriesHandle } from 'scannarr'
-
 import pThrottle from 'p-throttle'
 import { from } from 'rxjs'
 
@@ -40,7 +38,7 @@ const throttle = pThrottle({
 // https://www.crunchyroll.com/favicons/favicon-32x32.png
 export const icon = 'https://www.crunchyroll.com/favicons/apple-touch-icon.png'
 export const origin = 'https://www.crunchyroll.com/'
-export const categories: Category[] = ['ANIME']
+export const categories = ['ANIME']
 export const name = 'Crunchyroll'
 // export const scheme = 'crunchyroll'
 export const scheme = 'cr'
