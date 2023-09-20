@@ -30,7 +30,7 @@ const throttle = pThrottle({
 
 export const icon = 'https://static.crunchyroll.com/cxweb/assets/img/favicons/favicon-96x96.png'
 export const originUrl = 'https://www.crunchyroll.com'
-export const categories: Category[] = ['ANIME']
+export const categories = ['ANIME'] as const
 export const name = 'Crunchyroll'
 export const origin = 'cr'
 export const official = true
@@ -40,9 +40,9 @@ export const supportedUris = ['cr']
 
 export const urlToHandle = (url: string) => {
   const match = url.match(/https:\/\/www\.crunchyroll\.com\/(series|watch)\/(\w+)/)
-  if (!match) return null
+  if (!match?.[2]) return null
 
-  return populateHandle({ origin, id: match[2], url })
+  return populateHandle({ origin, id: match[2]!, url })
 }
 
 export const handleToUrl = (handle: Handle) => `https://www.crunchyroll.com/series/${handle.id}`
@@ -377,6 +377,7 @@ export const fetchToken = async ({ fetch = window.fetch }) =>
       authorization: `Basic ${btoa('cr_web:')}`,
       'content-type': 'application/x-www-form-urlencoded',
     },
+    // @ts-expect-error
     hostname: "www.crunchyroll.com",
     pathname: "/auth/v1/token",
     protocol: "https:",
@@ -422,7 +423,7 @@ const getSeries = async (mediaId: string, { fetch = window.fetch }) =>
     // const episodes = 
     // console.log('CR EPISODES', await getEpisodes(mediaId, { fetch }))
 
-    return res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!)
+    // return res.data[0] && crunchyrollSerieToScannarrMedia(res.data[0]!)
   })
 
 const _getSeason = async (mediaId: string, { fetch = window.fetch }) =>

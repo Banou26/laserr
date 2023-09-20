@@ -16,5 +16,15 @@
     "baseUrl": "."
   },
   "include": ["src"],
-  "exclude": ["node_modules"],
+  "exclude": [
+    "node_modules",
+    "src/targets/myanimelist/unofficial.ts",
+    "src/targets/myanimelist/official-v2.ts",
+    "src/targets/livechart.ts",
+    "src/targets/google.ts",
+    "src/targets/gogoanime.ts",
+    "src/targets/crunchyroll/crunchyroll-v1.ts",
+    "src/targets/_index.ts",
+    "src/targets/netflix.ts",
+  ],
 }

@@ -9,7 +9,7 @@
 // * A single banned response will switch the AniDB client into offline mode for the remaining process life-time and all subsequent requests that cannot be served by the cache will fail immediately
 
 
-import type { Handle, Resolvers } from 'scannarr'
+import type { Handle, GraphQLTypes } from 'scannarr'
 
 import { populateHandle } from 'scannarr'
 
@@ -40,6 +40,6 @@ export const metadataOnly = true
 // }
 
 
-export const resolvers: Resolvers = {
+export const resolvers: GraphQLTypes.Resolvers = {
 
-} satisfies Resolvers
+} satisfies GraphQLTypes.Resolvers

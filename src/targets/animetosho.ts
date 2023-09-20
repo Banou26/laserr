@@ -1,4 +1,4 @@
-import type { Handle, Resolvers } from 'scannarr'
+import type { Handle, GraphQLTypes } from 'scannarr'
 
 import { populateHandle } from 'scannarr'
 import { parse } from 'node-html-parser'
@@ -141,10 +141,11 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
     }
 
   return populateHandle({
-    id: parseTorrentUrlId(url),
+    id: parseTorrentUrlId(url)!,
     origin,
     url,
     handles: {
+      // @ts-ignore
       edges:
         sourceHandle
           ? [{ node: sourceHandle }]
@@ -183,7 +184,7 @@ const getListRowsAsPlaybackSource = (doc: HTMLElement) =>
 const searchPlaybackSources = async (options: { search: string, id?: string }, { fetch = window.fetch }) =>
   fetch(`https://animetosho.org/search?${searchAnime(options)}`)
     .then(res => res.text())
-    .then(text => parse(text))
+    .then(text => parse(text) as unknown as HTMLElement)
     .then(getListRowsAsPlaybackSource)
 
 const seriesPageToMedia = (doc: HTMLElement): Media => {
@@ -206,9 +207,13 @@ const seriesPageToMedia = (doc: HTMLElement): Media => {
   const image = imageElement?.getAttribute('src')
   if (!image) throw new Error('Animetosho, no image src found')
 
+  const id = url && parseSeriesUrlId(url)
+
+  if (!id) throw new Error('Animetosho, no id found')
+
   return populateHandle({
     origin,
-    id: parseSeriesUrlId(url),
+    id,
     url,
     // todo: add related handles
     handles: {
@@ -325,7 +330,7 @@ const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =
     .then(text => new DOMParser().parseFromString(text, 'text/html'))
     .then(getListRowsAsPlaybackSource)
 
-export const resolvers: Resolvers = {
+export const resolvers: GraphQLTypes.Resolvers = {
   Page: {
     playbackSource: async (...args) => {
       const [_, { id: _id, origin: _origin, number }, { fetch }] = args
@@ -393,4 +398,4 @@ export const resolvers: Resolvers = {
       return undefined
     }
   }
-} satisfies Resolvers
+} satisfies GraphQLTypes.Resolvers
