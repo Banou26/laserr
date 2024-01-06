@@ -2,15 +2,11 @@
 // import type { AnitomyResult } from 'anitomyscript'
 
 // import { from, Observable, map, mergeMap, combineLatest, startWith, catchError } from 'rxjs'
-// import { pipe } from 'fp-ts/lib/function'
-// import * as A from 'fp-ts/lib/Array'
-// import { join } from 'fp-ts-std/Array'
 // import pThrottle from 'p-throttle'
 // import anitomy from 'anitomyscript/dist/anitomyscript.bundle'
 // import { getBytesFromBiByteString } from '../utils/bytes'
 // import { fromUri, populateHandle } from 'scannarr'
 // import toObservable from '../utils/async-observable'
-// import { of } from 'fp-ts-std/Lazy'
 import { GraphQLTypes } from 'scannarr'
 
 export const origin = 'https://nyaa.si'

@@ -1,4 +1,3 @@
-import * as A from 'fp-ts/lib/Array'
 import { swAlign } from 'seal-wasm'
 
 import { targets } from './targets'
@@ -10,7 +9,6 @@ import './myanimelist'
 import './nyaasi'
 import { findMostCommon, fromUri, getAlignedStringParts, populateHandle } from '../utils'
 import { Name } from '../types'
-import { pipe } from 'fp-ts/lib/function'
 
 export * from './targets'
 
@@ -458,7 +456,7 @@ export const getEpisode: GetEpisode['function'] = async (args) => {
   const searchNames =
     pipe(
       title.names,
-      A.filter(({ search }) => Boolean(search))
+      filter(({ search }) => Boolean(search))
     )
 
   // console.log('names', title.names)
@@ -492,8 +490,8 @@ export const getEpisode: GetEpisode['function'] = async (args) => {
   const names =
     pipe(
       title.names,
-      A.uniq(Name.EqByName),
-      A.filter(({ language }) => language !== 'ja')
+      uniq(Name.EqByName),
+      filter(({ language }) => language !== 'ja')
     )
   // [
   //   {name: 'Mushoku Tensei: Isekai Ittara Honki Dasu Part 2'}

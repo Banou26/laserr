@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import typescript2 from "rollup-plugin-typescript2"
+import typescript2 from 'rollup-plugin-typescript2'
 
 import pkg from './package.json'
 
@@ -12,7 +12,6 @@ export default defineConfig({
       name: 'index',
       fileName: 'index'
     },
-    minify: false,
     sourcemap: true,
     outDir: 'build',
     rollupOptions: {

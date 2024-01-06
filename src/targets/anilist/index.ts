@@ -1,8 +1,6 @@
 import { MediaSeason, MediaFormat, Media as AnilistMedia, MediaExternalLink, MediaStatus, PageInfo, Page } from './types'
 
 import { from, combineLatest, startWith, map, tap } from 'rxjs'
-import * as A from 'fp-ts/lib/Array'
-import { pipe } from 'fp-ts/lib/function'
 
 import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { LanguageTag } from '../../utils'
@@ -643,10 +641,11 @@ export const searchSeries: SearchSeries = ({ ...rest }, context: MediaParams[2])
     ]).pipe(
       startWith([]),
       map(seriesHandles =>
-          pipe(
-            seriesHandles.flat(),
-            A.uniq(EqByUri),
-          ) as SeriesHandle[]
+        seriesHandles.flat()
+          // pipe(
+          //   seriesHandles.flat(),
+          //   uniq(EqByUri),
+          // ) as SeriesHandle[]
       ),
       // tap(val => console.log('val', val))
     )
