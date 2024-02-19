@@ -780,19 +780,9 @@ export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], contex
 }
 
 export const resolvers: Resolvers = {
-  Page: {
-    media: async (...args) => {
-      // console.log('Anilist Page media', args)
-      const [, { search, season }] = args
-      return (
-        season ? getAnimeSeason(...args) :
-        []
-      )
-    }
-  },
   Query: {
     // todo: potentially add query to return data for MAL uris
-    Media: async (...args) => {
+    media: async (...args) => {
       const [_, { id, uri, origin: _origin }, ctx] = args
       if (_origin !== origin) return undefined
       // console.log('args', args)
@@ -801,6 +791,13 @@ export const resolvers: Resolvers = {
       // console.log('Anilist Media', res)
       return res
     },
-    Page: () => ({})
+    mediaPage: async (...args) => {
+      // console.log('Anilist Page media', args)
+      const [, { search, season }] = args
+      return (
+        season ? getAnimeSeason(...args) :
+        []
+      )
+    }
   }
 }
