@@ -331,30 +331,14 @@ const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =
     .then(getListRowsAsPlaybackSource)
 
 export const resolvers: GraphQLTypes.Resolvers = {
-  Page: {
-    playbackSource: async (...args) => {
-      const [_, { id: _id, origin: _origin, number }, { fetch }] = args
-      console.log('AnimeTosho playbackSource', args)
-      if (_origin !== origin || !_id) return []
-      console.log('AnimeTosho playbackSource CHECK PASSED')
-      // const res = await searchPlaybackSources({ id: _id }, { fetch })
-      const res =
-        number !== undefined && number !== null
-          ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
-          : await fetchTorrentPagePlaybackSources(_id, { fetch })
-      console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
-      return res ?? []
-    }
-  },
   Query: {
-    Page: () => ({}),
-    Media: async (...args) => {
+    media: async (...args) => {
       const [_, { id: _id, origin: _origin }, { fetch }] = args
       if (_origin !== origin || !_id) return undefined
       // if (!(_origin === origin || _origin === anidb.origin) || !_id) return undefined
       return fetchSeriesPageMedia(_id, { fetch })
     },
-    Episode: async (...args) => {
+    episode: async (...args) => {
       const [_, { id: _id, origin: _origin }] = args
       if (_origin !== origin || !_id) return undefined
       console.log('AnimeTosho Episode', args, _id, _origin)
@@ -368,6 +352,19 @@ export const resolvers: GraphQLTypes.Resolvers = {
         playback: {}
       })
     },
+    playbackSourcePage: async (...args) => {
+      const [_, { id: _id, origin: _origin, number }, { fetch }] = args
+      console.log('AnimeTosho playbackSource', args)
+      if (_origin !== origin || !_id) return []
+      console.log('AnimeTosho playbackSource CHECK PASSED')
+      // const res = await searchPlaybackSources({ id: _id }, { fetch })
+      const res =
+        number !== undefined && number !== null
+          ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
+          : await fetchTorrentPagePlaybackSources(_id, { fetch })
+      console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
+      return res ?? []
+    }
     // PlaybackSource: async (...args) => {
     //   const [_, { id: _id, origin: _origin }, { fetch }] = args
     //   if (_origin !== origin || !_id) return undefined
