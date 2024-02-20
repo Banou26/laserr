@@ -794,10 +794,12 @@ export const resolvers: Resolvers = {
     mediaPage: async (...args) => {
       // console.log('Anilist Page media', args)
       const [, { search, season }] = args
-      return (
-        season ? getAnimeSeason(...args) :
-        []
-      )
+      return {
+        nodes: (
+          season ? getAnimeSeason(...args) :
+          []
+        )
+      }
     }
   }
 }

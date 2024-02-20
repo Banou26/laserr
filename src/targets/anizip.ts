@@ -348,10 +348,16 @@ export const resolvers: GraphQLTypes.Resolvers = {
   Query: {
     mediaPage: async (...args) => {
       const [_, { id: _id, origin: _origin }, context] = args
-      if (_origin !== origin || !_id) return []
+      if (_origin !== origin || !_id) {
+        return {
+          nodes: []
+        }
+      }
       const res = await fetchAnidbMappings(_id, context)
       // console.log('Page.media res', res)
-      return res ? [res] : []
+      return {
+        nodes: res ? [res] : []
+      }
     },
     media: async (...args) => {
       const [_, { id: _id, origin: _origin }, context] = args
@@ -375,13 +381,21 @@ export const resolvers: GraphQLTypes.Resolvers = {
       if (_origin === anidb.origin) {
         const res = await fetchAnidbMappings(_id, context)
         // console.log('Page.episode res', res)
-        return res ? res.episodes?.nodes : []
+        return {
+          nodes: res ? res.episodes?.nodes : []
+        }
       }
 
-      if (_origin !== origin || !_id) return []
+      if (_origin !== origin || !_id) {
+        return {
+          nodes: []
+        }
+      }
       const res = await fetchAnidbMappings(_id, context)
       // console.log('Page.episode res', res)
-      return res ? res.episodes?.nodes : []
+      return {
+        nodes: res ? res.episodes?.nodes : []
+      }
     }
   }
 } satisfies GraphQLTypes.Resolvers

@@ -45,5 +45,6 @@
     "rxjs": "^7.5.5",
     "scannarr": "file:../scannarr",
     "seal-wasm": "^0.0.3"
-  }
+  },
+  "type": "module"
 }

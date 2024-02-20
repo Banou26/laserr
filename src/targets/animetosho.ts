@@ -363,7 +363,9 @@ export const resolvers: GraphQLTypes.Resolvers = {
           ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
           : await fetchTorrentPagePlaybackSources(_id, { fetch })
       console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
-      return res ?? []
+      return {
+        nodes: res ?? []
+      }
     }
     // PlaybackSource: async (...args) => {
     //   const [_, { id: _id, origin: _origin }, { fetch }] = args

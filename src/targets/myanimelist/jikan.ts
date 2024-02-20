@@ -197,9 +197,9 @@ export interface Demographic {
 }
 
 const SEARCH_CRUNCHYROLL_ANIME = gql(`
-  query SearchCrunchyrollHandle($origin: String!, $search: String!) {
-    Page {
-      media(origin: $origin, search: $search) {
+  query SearchCrunchyrollHandle($input: MediaPageInput!) {
+    mediaPage(input: $input) {
+      nodes {
         origin
         id
         url
@@ -243,13 +243,15 @@ const findCrunchyrollAnime = async (context, title: string) => {
   const { data } = await context.client.query({
     query: SEARCH_CRUNCHYROLL_ANIME,
     variables: {
-      origin: crynchyrollOrigin,
-      search: title
+      input: {
+        origin: crynchyrollOrigin,
+        search: title
+      }
     }
   })
 
-  if (!data.Page.media.length) return undefined
-  const bestResult = data.Page.media[0].handles.edges[0].node
+  if (!data.mediaPage?.nodes.length) return undefined
+  const bestResult = data.mediaPage?.nodes[0].handles.edges[0].node
   const left = title.length > bestResult.title.english.length ? title : bestResult.title.english
   const right = title.length > bestResult.title.english.length ? bestResult.title.english : title
   const alignment = await swAlign(left.toLowerCase(), right.toLowerCase(), { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 })
@@ -558,11 +560,13 @@ export const resolvers: Resolvers = {
     mediaPage: async (...args) => {
       const [, { search, season }] = args
       // console.log('media jikan', args)
-      return (
-        search ? await searchAnime(...args) :
-        season ? await getFullSeasonNow(...args)
-        : []
-      )
+      return {
+        nodes: (
+          search ? await searchAnime(...args) :
+          season ? await getFullSeasonNow(...args)
+          : []
+        )
+      }
     },
     episode: async (...args) => {
       const [_, { id: _id, origin: _origin }] = args
