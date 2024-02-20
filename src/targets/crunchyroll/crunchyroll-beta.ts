@@ -711,7 +711,7 @@ const getFirstMatchingResult = async (resultPromises: { origin: Origin, data: Pr
 export const resolvers: Resolvers = {
   Query: {
     media: async (...args) => {
-      const [_, { id, uri, origin: _origin }, { fetch, results }] = args
+      const [_, { input: { id, uri, origin: _origin } = {} }, { fetch, results }] = args
       if (_origin !== origin) return undefined
 
       const { seasonId } = getMediaIdParts(id)
@@ -742,7 +742,7 @@ export const resolvers: Resolvers = {
       return crunchyrollSeasonToScannarrMedia(season)
     },
     mediaPage: async (...args) => {
-      const [_, { id, uri, origin: _origin, search }, { fetch }] = args
+      const [_, { input: { id, uri, origin: _origin, search } = {} }, { fetch }] = args
       // console.log('Crunchyroll Page Media called with ', args, id, _origin)
 
       if (_origin !== origin) return { nodes: [] }
@@ -755,7 +755,7 @@ export const resolvers: Resolvers = {
       }
     },
     episode: async (...args) => {
-      const [_, { id, uri, origin: _origin }, { fetch }] = args
+      const [_, { input: { id, uri, origin: _origin } = {} }, { fetch }] = args
       const [mediaId, episodeId] = id?.split('-')
       if (_origin !== origin || !episodeId || !episodeId) return undefined
 
@@ -767,7 +767,7 @@ export const resolvers: Resolvers = {
   },
   Media: {
     episodes: async (...args) => {
-      const [{ id, uri, origin: _origin }, _, { fetch }] = args
+      const [{ input: { id, uri, origin: _origin } = {} }, _, { fetch }] = args
       // console.log('Crunchyroll Media.Episode called with ', args, id, _origin)
       if (_origin !== origin ) return undefined
       const { seasonId } = getMediaIdParts(id)

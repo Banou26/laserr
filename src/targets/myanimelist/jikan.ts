@@ -550,7 +550,7 @@ export const resolvers: Resolvers = {
   Query: {
     media: async (...args) => {
       // console.log('Jikan Query.Media', args)
-      const [_, { id: _id, uri, origin: _origin }] = args
+      const [_, { input: { id: _id, uri, origin: _origin } = {} }] = args
       if (_origin !== origin || !_id) return undefined
       const [id] = _id.split('-').map(Number)
       const res = await fetchMedia({ id }, args[2])
@@ -558,7 +558,7 @@ export const resolvers: Resolvers = {
       return res
     },
     mediaPage: async (...args) => {
-      const [, { search, season }] = args
+      const [, { input: { search, season } = {} }] = args
       // console.log('media jikan', args)
       return {
         nodes: (
@@ -569,7 +569,7 @@ export const resolvers: Resolvers = {
       }
     },
     episode: async (...args) => {
-      const [_, { id: _id, origin: _origin }] = args
+      const [_, { input: { id: _id, origin: _origin } = {} }] = args
       // console.log('Jikan Episode', args, id, __origin)
       if (_origin !== origin || !_id) return undefined
       const [id, episodeNumber] = _id.split('-').map(Number)
