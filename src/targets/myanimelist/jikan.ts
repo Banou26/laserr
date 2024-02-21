@@ -456,7 +456,6 @@ const fetchSearchAnime = ({ search }: { search: string }, context: MediaParams[2
     .fetch(`https://api.jikan.moe/v4/anime?q=${search}`)
     .then(response => response.json())
     .then(json =>
-      console.log('json', json) ||
       json.data
         ? json.data.map(media => normalizeToMedia(media, context))
         : undefined

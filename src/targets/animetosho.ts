@@ -341,7 +341,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
     episode: async (...args) => {
       const [_, { input: { id: _id, origin: _origin } = {} }] = args
       if (_origin !== origin || !_id) return undefined
-      console.log('AnimeTosho Episode', args, _id, _origin)
+      // console.log('AnimeTosho Episode', args, _id, _origin)
       return populateHandle({
         origin: origin,
         id: _id,
@@ -354,15 +354,15 @@ export const resolvers: GraphQLTypes.Resolvers = {
     },
     playbackSourcePage: async (...args) => {
       const [_, { input: { id: _id, origin: _origin, number } = {} }, { fetch }] = args
-      console.log('AnimeTosho playbackSource', args)
+      // console.log('AnimeTosho playbackSource', args)
       if (_origin !== origin || !_id) return []
-      console.log('AnimeTosho playbackSource CHECK PASSED')
+      // console.log('AnimeTosho playbackSource CHECK PASSED')
       // const res = await searchPlaybackSources({ id: _id }, { fetch })
       const res =
         number !== undefined && number !== null
           ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
           : await fetchTorrentPagePlaybackSources(_id, { fetch })
-      console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
+      // console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
       return {
         nodes: res ?? []
       }
@@ -379,7 +379,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
     playback: async (parent, args, context) => {
       const { input: { id: _id, origin: _origin } = {} } = parent
       if (_origin !== origin || !_id) return undefined
-      console.log('AnimeTosho Episode playback')
+      // console.log('AnimeTosho Episode playback')
 
       const res = await context.fetch(
         `https://animetosho.org/search?${
@@ -392,7 +392,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
           })
       }`)
 
-      console.log('res', res)
+      // console.log('res', res)
 
       return undefined
     }

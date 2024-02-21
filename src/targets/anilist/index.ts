@@ -784,6 +784,7 @@ export const resolvers: Resolvers = {
     // todo: potentially add query to return data for MAL uris
     media: async (...args) => {
       const [_, { input: { id, uri, origin: _origin } = {} }, ctx] = args
+      // console.log('anilist media args', args)
       if (_origin !== origin) return undefined
       // console.log('args', args)
       // const malId = fromUri(uri)
