@@ -331,33 +331,17 @@ const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =
     .then(getListRowsAsPlaybackSource)
 
 export const resolvers: GraphQLTypes.Resolvers = {
-  Page: {
-    playbackSource: async (...args) => {
-      const [_, { id: _id, origin: _origin, number }, { fetch }] = args
-      console.log('AnimeTosho playbackSource', args)
-      if (_origin !== origin || !_id) return []
-      console.log('AnimeTosho playbackSource CHECK PASSED')
-      // const res = await searchPlaybackSources({ id: _id }, { fetch })
-      const res =
-        number !== undefined && number !== null
-          ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
-          : await fetchTorrentPagePlaybackSources(_id, { fetch })
-      console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
-      return res ?? []
-    }
-  },
   Query: {
-    Page: () => ({}),
-    Media: async (...args) => {
-      const [_, { id: _id, origin: _origin }, { fetch }] = args
+    media: async (...args) => {
+      const [_, { input: { id: _id, origin: _origin } = {} }, { fetch }] = args
       if (_origin !== origin || !_id) return undefined
       // if (!(_origin === origin || _origin === anidb.origin) || !_id) return undefined
       return fetchSeriesPageMedia(_id, { fetch })
     },
-    Episode: async (...args) => {
-      const [_, { id: _id, origin: _origin }] = args
+    episode: async (...args) => {
+      const [_, { input: { id: _id, origin: _origin } = {} }] = args
       if (_origin !== origin || !_id) return undefined
-      console.log('AnimeTosho Episode', args, _id, _origin)
+      // console.log('AnimeTosho Episode', args, _id, _origin)
       return populateHandle({
         origin: origin,
         id: _id,
@@ -368,8 +352,27 @@ export const resolvers: GraphQLTypes.Resolvers = {
         playback: {}
       })
     },
+    playbackSourcePage: async (...args) => {
+      const [_, { input: { id: _id, origin: _origin, number } = {} }, { fetch }] = args
+      // console.log('AnimeTosho playbackSource', args)
+      if (_origin !== origin || !_id) {
+        return {
+          nodes: []
+        }
+      }
+      // console.log('AnimeTosho playbackSource CHECK PASSED')
+      // const res = await searchPlaybackSources({ id: _id }, { fetch })
+      const res =
+        number !== undefined && number !== null
+          ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
+          : await fetchTorrentPagePlaybackSources(_id, { fetch })
+      // console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
+      return {
+        nodes: res ?? []
+      }
+    }
     // PlaybackSource: async (...args) => {
-    //   const [_, { id: _id, origin: _origin }, { fetch }] = args
+    //   const [_, { input: { id: _id, origin: _origin } = {} }, { fetch }] = args
     //   if (_origin !== origin || !_id) return undefined
     //   const res = await searchPlaybackSources(_id, { fetch })
     //   console.log('AnimeTosho PlaybackSource', args, _id, _origin, res)
@@ -378,9 +381,9 @@ export const resolvers: GraphQLTypes.Resolvers = {
   },
   Episode: {
     playback: async (parent, args, context) => {
-      const { id: _id, origin: _origin } = parent
+      const { input: { id: _id, origin: _origin } = {} } = parent
       if (_origin !== origin || !_id) return undefined
-      console.log('AnimeTosho Episode playback')
+      // console.log('AnimeTosho Episode playback')
 
       const res = await context.fetch(
         `https://animetosho.org/search?${
@@ -393,7 +396,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
           })
       }`)
 
-      console.log('res', res)
+      // console.log('res', res)
 
       return undefined
     }

@@ -941,18 +941,16 @@ export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], { fetc
     )
 
 export const resolvers: Resolvers = {
-  Page: {
-    media: async (...args) => {
+  Query: {
+    mediaPage: async (...args) => {
       const [, { search, season }] = args
       return (
         search ? await searchAnime(...args) :
         season ? await getAnimeSeason(...args) :
         []
       )
-    }
-  },
-  Query: {
-    Media: async (_, { id }) => {
+    },
+    media: async (_, { id }) => {
       
     }
   }

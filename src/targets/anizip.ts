@@ -345,34 +345,22 @@ const fetchAnidbMappings = (id: string, context: MediaParams[2]) => fetchAnizipM
 const fetchAnilistMappings = (id: string, context: MediaParams[2]) => fetchAnizipMappings('anilist', id, context)
 
 export const resolvers: GraphQLTypes.Resolvers = {
-  Page: {
-    episode: async (...args) => {
-      const [_, { id: _id, origin: _origin }, context] = args
-      // if (_origin !== origin || !_id) return []
-
-      if (_origin === anidb.origin) {
-        const res = await fetchAnidbMappings(_id, context)
-        // console.log('Page.episode res', res)
-        return res ? res.episodes?.nodes : []
+  Query: {
+    mediaPage: async (...args) => {
+      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+      if (_origin !== origin || !_id) {
+        return {
+          nodes: []
+        }
       }
-
-      if (_origin !== origin || !_id) return []
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Page.episode res', res)
-      return res ? res.episodes?.nodes : []
-    },
-    media: async (...args) => {
-      const [_, { id: _id, origin: _origin }, context] = args
-      if (_origin !== origin || !_id) return []
       const res = await fetchAnidbMappings(_id, context)
       // console.log('Page.media res', res)
-      return res ? [res] : []
-    }
-  },
-  Query: {
-    Page: () => ({}),
-    Media: async (...args) => {
-      const [_, { id: _id, origin: _origin }, context] = args
+      return {
+        nodes: res ? [res] : []
+      }
+    },
+    media: async (...args) => {
+      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
 
       if (_origin === mal.origin) {
         const [id, episodeNumber] = _id.split('-').map(Number)
@@ -385,6 +373,29 @@ export const resolvers: GraphQLTypes.Resolvers = {
       const res = await fetchAnidbMappings(_id, context)
       // console.log('Media res', res)
       return res
+    },
+    episodePage: async (...args) => {
+      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+      // if (_origin !== origin || !_id) return []
+
+      if (_origin === anidb.origin) {
+        const res = await fetchAnidbMappings(_id, context)
+        // console.log('Page.episode res', res)
+        return {
+          nodes: res ? res.episodes?.nodes : []
+        }
+      }
+
+      if (_origin !== origin || !_id) {
+        return {
+          nodes: []
+        }
+      }
+      const res = await fetchAnidbMappings(_id, context)
+      // console.log('Page.episode res', res)
+      return {
+        nodes: res ? res.episodes?.nodes : []
+      }
     }
   }
 } satisfies GraphQLTypes.Resolvers
