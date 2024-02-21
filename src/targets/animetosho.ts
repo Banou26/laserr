@@ -333,13 +333,13 @@ const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =
 export const resolvers: GraphQLTypes.Resolvers = {
   Query: {
     media: async (...args) => {
-      const [_, { id: _id, origin: _origin }, { fetch }] = args
+      const [_, { input: { id: _id, origin: _origin } = {} }, { fetch }] = args
       if (_origin !== origin || !_id) return undefined
       // if (!(_origin === origin || _origin === anidb.origin) || !_id) return undefined
       return fetchSeriesPageMedia(_id, { fetch })
     },
     episode: async (...args) => {
-      const [_, { id: _id, origin: _origin }] = args
+      const [_, { input: { id: _id, origin: _origin } = {} }] = args
       if (_origin !== origin || !_id) return undefined
       console.log('AnimeTosho Episode', args, _id, _origin)
       return populateHandle({
@@ -353,7 +353,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
       })
     },
     playbackSourcePage: async (...args) => {
-      const [_, { id: _id, origin: _origin, number }, { fetch }] = args
+      const [_, { input: { id: _id, origin: _origin, number } = {} }, { fetch }] = args
       console.log('AnimeTosho playbackSource', args)
       if (_origin !== origin || !_id) return []
       console.log('AnimeTosho playbackSource CHECK PASSED')
@@ -368,7 +368,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
       }
     }
     // PlaybackSource: async (...args) => {
-    //   const [_, { id: _id, origin: _origin }, { fetch }] = args
+    //   const [_, { input: { id: _id, origin: _origin } = {} }, { fetch }] = args
     //   if (_origin !== origin || !_id) return undefined
     //   const res = await searchPlaybackSources(_id, { fetch })
     //   console.log('AnimeTosho PlaybackSource', args, _id, _origin, res)
@@ -377,7 +377,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
   },
   Episode: {
     playback: async (parent, args, context) => {
-      const { id: _id, origin: _origin } = parent
+      const { input: { id: _id, origin: _origin } = {} } = parent
       if (_origin !== origin || !_id) return undefined
       console.log('AnimeTosho Episode playback')
 

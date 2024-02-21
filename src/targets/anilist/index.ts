@@ -768,7 +768,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   }
 })
 
-export const getAnimeSeason = (_, { season, seasonYear }: MediaParams[1], context: MediaParams[2], ___) => {
+export const getAnimeSeason = (_, { input: { season, seasonYear } = {} }: MediaParams[1], context: MediaParams[2], ___) => {
   if (!seasonYear) throw new Error('Anilist getAnimeSeason `seasonYear` is required')
 
   const res = fetchFullMediaSeasonMedias({ season: season, year: seasonYear, page: 1 }, context)
@@ -783,7 +783,7 @@ export const resolvers: Resolvers = {
   Query: {
     // todo: potentially add query to return data for MAL uris
     media: async (...args) => {
-      const [_, { id, uri, origin: _origin }, ctx] = args
+      const [_, { input: { id, uri, origin: _origin } = {} }, ctx] = args
       if (_origin !== origin) return undefined
       // console.log('args', args)
       // const malId = fromUri(uri)
@@ -793,7 +793,7 @@ export const resolvers: Resolvers = {
     },
     mediaPage: async (...args) => {
       // console.log('Anilist Page media', args)
-      const [, { search, season }] = args
+      const [, { input: { search, season } = {} }] = args
       return {
         nodes: (
           season ? getAnimeSeason(...args) :

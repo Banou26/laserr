@@ -347,7 +347,7 @@ const fetchAnilistMappings = (id: string, context: MediaParams[2]) => fetchAnizi
 export const resolvers: GraphQLTypes.Resolvers = {
   Query: {
     mediaPage: async (...args) => {
-      const [_, { id: _id, origin: _origin }, context] = args
+      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
       if (_origin !== origin || !_id) {
         return {
           nodes: []
@@ -360,7 +360,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
       }
     },
     media: async (...args) => {
-      const [_, { id: _id, origin: _origin }, context] = args
+      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
 
       if (_origin === mal.origin) {
         const [id, episodeNumber] = _id.split('-').map(Number)
@@ -375,7 +375,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
       return res
     },
     episodePage: async (...args) => {
-      const [_, { id: _id, origin: _origin }, context] = args
+      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
       // if (_origin !== origin || !_id) return []
 
       if (_origin === anidb.origin) {
