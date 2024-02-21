@@ -355,7 +355,11 @@ export const resolvers: GraphQLTypes.Resolvers = {
     playbackSourcePage: async (...args) => {
       const [_, { input: { id: _id, origin: _origin, number } = {} }, { fetch }] = args
       // console.log('AnimeTosho playbackSource', args)
-      if (_origin !== origin || !_id) return []
+      if (_origin !== origin || !_id) {
+        return {
+          nodes: []
+        }
+      }
       // console.log('AnimeTosho playbackSource CHECK PASSED')
       // const res = await searchPlaybackSources({ id: _id }, { fetch })
       const res =
