@@ -1,6 +1,6 @@
 {
   "name": "laserr",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "",
   "main": "build/index.js",
   "author": "Banou26",
@@ -43,7 +43,7 @@
     "node-html-parser": "^6.1.6",
     "p-throttle": "^5.0.0",
     "rxjs": "^7.5.5",
-    "scannarr": "file:../scannarr",
+    "scannarr": "^0.1.4",
     "seal-wasm": "^0.0.3"
   },
   "type": "module"
