@@ -591,6 +591,20 @@ export const resolvers: Resolvers = {
           }
         ]
       }]
+    },
+    originUser: async (...args) => {
+      const [_, { input: { origin: _origin, type, oauth2 } = {} }, { fetch }] = args
+      if (_origin !== origin || !oauth2) return undefined
+      const response = await (await fetch(
+        `https://api.myanimelist.net/v2/users/@me`,
+        { headers: { 'Authorization': `Bearer ${oauth2.accessToken}` } }
+      )).json()
+      return {
+        id: response.id,
+        username: response.name,
+        email: null,
+        avatar: response.picture
+      }
     }
   },
   Mutation: {
