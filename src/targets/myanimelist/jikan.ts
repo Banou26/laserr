@@ -6,6 +6,7 @@ import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
 import { RecentEpisodes } from './jikan-types'
 import { HandleRelation } from '../../generated/graphql'
+import { normalizeToMedia as MALNormalizeToMedia } from './official-v2'
 
 export const icon = 'https://cdn.myanimelist.net/images/favicon.ico'
 export const originUrl = 'https://myanimelist.net'
@@ -263,6 +264,7 @@ const findCrunchyrollAnime = async (context, title: string) => {
 const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
   const searchTitle = data.title_english ?? data.title
   const crunchyrollHandle =
+    // querying crunchyroll for all normalize is fine since streaming is only present when querying details
     context.client && data.streaming?.find(site => site.name === 'Crunchyroll') && searchTitle
       ? await findCrunchyrollAnime(context, searchTitle)
       : undefined
@@ -604,6 +606,37 @@ export const resolvers: Resolvers = {
         username: response.name,
         email: null,
         avatar: response.picture
+      }
+    },
+    originUserMediaPage: async (...args) => {
+      const [_, { input: { status, authentications } = {} }, { fetch }] = args
+      const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
+      if (!oauthAuthentication) return undefined
+      const response = await (await fetch(
+        `https://api.myanimelist.net/v2/users/@me/animelist?${
+          new URLSearchParams({
+            // https://github.com/SuperMarcus/myanimelist-api-specification?tab=readme-ov-file#animeobject
+            fields: [
+              'list_status',
+              'title',
+              'alternative_titles',
+              'main_picture',
+              'synopsis',
+              'mean',
+              'popularity',
+              'status',
+              'start_date',
+              'end_date'
+            ].join(','),
+            limit: '1000',
+            status: status.map(s => s.toLowerCase()).join(','),
+          }).toString()
+        }`,
+        { headers: { 'Authorization': `Bearer ${oauthAuthentication.oauth2.accessToken}` } }
+      )).json()
+
+      return {
+        nodes: response.data.map(({ node }) => MALNormalizeToMedia(node))
       }
     }
   },
