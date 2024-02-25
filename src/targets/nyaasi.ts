@@ -9,7 +9,7 @@
 // import toObservable from '../utils/async-observable'
 import { GraphQLTypes } from 'scannarr'
 
-export const origin = 'https://nyaa.si'
+export const origin = 'nyaa'
 export const categories = ['ANIME']
 export const name = 'Nyaa'
 export const scheme = 'nyaa'

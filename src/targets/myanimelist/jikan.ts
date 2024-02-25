@@ -576,6 +576,51 @@ export const resolvers: Resolvers = {
       const res = await fetchEpisodes({ id }, args[2])
       // console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
       return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
+    },
+    originAuthentication: async (...args) => {
+      const [_, __, { origin }] = args
+      return [{
+        origin,
+        authentication: true,
+        methods: [
+          {
+            type: 'OAUTH2',
+            url: `https://myanimelist.net/v1/oauth2/authorize`,
+            headers: [],
+            body: ''
+          }
+        ]
+      }]
+    }
+  },
+  Mutation: {
+    originAuthenticate: async (...args) => {
+      const [_, { input: { origin, type, oauth2: { clientId, authorizationCode, codeVerifier, grantType, redirectUri } } }, { fetch }] = args
+      if (origin !== 'mal' || type !== 'OAUTH2') return undefined
+      const params = new URLSearchParams({
+        client_id: clientId,
+        code: authorizationCode,
+        code_verifier: codeVerifier,
+        grant_type: grantType,
+        redirect_uri: redirectUri
+      }).toString()
+  
+      return fetch(`https://myanimelist.net/v1/oauth2/token`, {
+        method: 'POST',
+        headers:{ 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+      }).then(async res => {
+        const response = await res.json()
+        if (response.error) throw new Error(`Error from MAL: ${response.error}, ${response.message}, ${response.hint}`)
+        return {
+          oauth2: {
+            accessToken: response.access_token,
+            refreshToken: response.refresh_token,
+            expiresIn: response.expires_in,
+            tokenType: response.token_type,
+          }
+        }
+      })
     }
   }
 } satisfies Resolvers
