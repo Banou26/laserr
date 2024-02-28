@@ -280,6 +280,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
     Object
       .entries(res.episodes)
       .map(([key, episode]) => {
+        if (Number.isNaN(episode.episode)) return undefined
         const anidbEpisodeHandle = populateHandle({
           origin,
           id: episode.anidbEid,
@@ -289,7 +290,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
             nodes: []
           },
           mediaUri: handleProps.uri,
-          number: episode.episodeNumber
+          number: Number(episode.episode)
         })
 
         return ({
@@ -306,7 +307,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
             }
           }),
           mediaUri: handleProps.uri,
-          number: episode.episodeNumber,
+          number: Number(episode.episode),
           title: {
             english: episode.title.en,
             native: episode.title.ja,
@@ -316,7 +317,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
           timeUntilAiring: new Date(episode.airdate).getTime() - Date.now()
         }) as Episode
       })
-      .filter(episode => episode.number !== undefined && episode.number !== null)
+      .filter(episode => episode && episode.number !== undefined && episode.number !== null)
 
   return ({
     ...handleProps,
