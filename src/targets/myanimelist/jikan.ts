@@ -357,7 +357,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       medium: data.images.webp.large_image_url,
       color: ''
     }],
-    popularity: data.popularity,
+    popularity: data.members,
     status:
       data.status === 'Not yet aired' ? GraphQLTypes.MediaStatus.NotYetReleased
       : data.status === 'Currently Airing' ? GraphQLTypes.MediaStatus.Releasing
