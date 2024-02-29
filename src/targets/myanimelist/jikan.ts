@@ -544,7 +544,7 @@ const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], conte
   )
 }
 
-const searchAnime = async (_, { search }: MediaParams[1], context: MediaParams[2], __) =>
+const searchAnime = async (_, { input: { search } }: MediaParams[1], context: MediaParams[2], __) =>
   fetchSearchAnime({ search: search! }, context)
 
 export const resolvers: Resolvers = {
