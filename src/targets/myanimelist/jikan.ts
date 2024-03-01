@@ -579,7 +579,7 @@ export const resolvers: Resolvers = {
       // console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
       return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
     },
-    originAuthentication: async (...args) => {
+    authentication: async (...args) => {
       const [_, __, { origin }] = args
       return [{
         origin,
@@ -594,7 +594,7 @@ export const resolvers: Resolvers = {
         ]
       }]
     },
-    originUser: async (...args) => {
+    user: async (...args) => {
       const [_, { input: { origin: _origin, type, oauth2 } = {} }, { fetch }] = args
       if (_origin !== origin || !oauth2) return undefined
       const response = await (await fetch(
@@ -608,7 +608,7 @@ export const resolvers: Resolvers = {
         avatar: response.picture
       }
     },
-    originUserMediaPage: async (...args) => {
+    userMediaPage: async (...args) => {
       const [_, { input: { status, authentications } = {} }, { fetch }] = args
       const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
       if (!oauthAuthentication) return undefined
@@ -641,7 +641,7 @@ export const resolvers: Resolvers = {
     }
   },
   Mutation: {
-    originAuthenticate: async (...args) => {
+    authenticate: async (...args) => {
       const [_, { input: { origin, type, oauth2: { clientId, authorizationCode, codeVerifier, grantType, redirectUri } } }, { fetch }] = args
       if (origin !== 'mal' || type !== 'OAUTH2') return undefined
       const params = new URLSearchParams({
