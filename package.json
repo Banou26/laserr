@@ -43,7 +43,7 @@
     "node-html-parser": "^6.1.6",
     "p-throttle": "^5.0.0",
     "rxjs": "^7.5.5",
-    "scannarr": "^0.2.0",
+    "scannarr": "file:../scannarr",
     "seal-wasm": "^0.0.3"
   },
   "type": "module"
