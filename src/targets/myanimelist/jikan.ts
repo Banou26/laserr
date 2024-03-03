@@ -1,6 +1,6 @@
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { populateHandle, toUri, GraphQLTypes } from 'scannarr'
+import { populateHandle, toUri, GraphQLTypes, isScannarrUri, fromScannarrUri, fromUri } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
@@ -668,6 +668,42 @@ export const resolvers: Resolvers = {
           }
         }
       })
+    }
+  },
+  Subscription: {
+    media: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues || uriValues.origin !== origin) return
+        yield {
+          media: await fetchMedia({ id: Number(uriValues.id) }, ctx)
+        }
+      }
+    },
+    mediaPage: {
+      subscribe: async function*(_, { input: { search, seasonYear, season } }, ctx) {
+        if (search) {
+          return yield {
+            mediaPage: {
+              nodes: await fetchSearchAnime({ search }, ctx)
+            }
+          }
+        } else if (season && seasonYear) {
+          return yield {
+            mediaPage: {
+              nodes: await getFullSeasonNow(undefined, { seasonYear, season }, ctx, undefined)
+            }
+          }
+        }
+      }
     }
   }
 } satisfies Resolvers
