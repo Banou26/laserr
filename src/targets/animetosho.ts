@@ -1,10 +1,12 @@
 import type { Handle, GraphQLTypes } from 'scannarr'
 
-import { populateHandle } from 'scannarr'
+import type { Media, PlaybackSource } from '../generated/graphql'
+
 import { parse } from 'node-html-parser'
 
+import { fromScannarrUri, fromUri, populateHandle, isScannarrUri } from 'scannarr'
+
 import * as anidb from './anidb'
-import { Media, PlaybackSource } from '../generated/graphql'
 import * as nyaa from './nyaasi'
 import { parseUrlId as parseNyaaUrlId } from './nyaasi'
 
@@ -331,74 +333,69 @@ const fetchTorrentPagePlaybackSources = (id: number, { fetch = window.fetch }) =
     .then(getListRowsAsPlaybackSource)
 
 export const resolvers: GraphQLTypes.Resolvers = {
-  Query: {
-    media: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, { fetch }] = args
-      if (_origin !== origin || !_id) return undefined
-      // if (!(_origin === origin || _origin === anidb.origin) || !_id) return undefined
-      return fetchSeriesPageMedia(_id, { fetch })
-    },
-    episode: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }] = args
-      if (_origin !== origin || !_id) return undefined
-      // console.log('AnimeTosho Episode', args, _id, _origin)
-      return populateHandle({
-        origin: origin,
-        id: _id,
-        url: `https://animetosho.org/episode/_.${_id}`,
-        handles: {
-          edges: []
-        },
-        playback: {}
-      })
-    },
-    playbackSourcePage: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin, number } = {} }, { fetch }] = args
-      // console.log('AnimeTosho playbackSource', args)
-      if (_origin !== origin || !_id) {
-        return {
-          nodes: []
+  Subscription: {
+    media: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues || uriValues.origin !== origin) return
+        yield {
+          media: await fetchSeriesPageMedia(uriValues.id, ctx)
         }
       }
-      // console.log('AnimeTosho playbackSource CHECK PASSED')
-      // const res = await searchPlaybackSources({ id: _id }, { fetch })
-      const res =
-        number !== undefined && number !== null
-          ? await searchPlaybackSources({ id: _id, search: number.toString().padStart(2, '0') }, { fetch })
-          : await fetchTorrentPagePlaybackSources(_id, { fetch })
-      // console.log('AnimeTosho playbackSource RESSSSS', args, _id, _origin, res)
-      return {
-        nodes: res ?? []
-      }
-    }
-    // PlaybackSource: async (...args) => {
-    //   const [_, { input: { id: _id, origin: _origin } = {} }, { fetch }] = args
-    //   if (_origin !== origin || !_id) return undefined
-    //   const res = await searchPlaybackSources(_id, { fetch })
-    //   console.log('AnimeTosho PlaybackSource', args, _id, _origin, res)
-    //   return res
-    // }
-  },
-  Episode: {
-    playback: async (parent, args, context) => {
-      const { input: { id: _id, origin: _origin } = {} } = parent
-      if (_origin !== origin || !_id) return undefined
-      // console.log('AnimeTosho Episode playback')
-
-      const res = await context.fetch(
-        `https://animetosho.org/search?${
-          new URLSearchParams({
-              "filter[0][t]": "nyaa_class",
-              "filter[0][v]": "trusted",
-              "order": "",
-              "q": "1080",
-              "aid": _id.toString()
+    },
+    episode: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues || uriValues.origin !== origin) return
+        yield {
+          episode: populateHandle({
+            origin: origin,
+            id: uriValues.id,
+            url: `https://animetosho.org/episode/_.${uriValues.id}`,
+            handles: {
+              edges: []
+            },
+            playback: {}
           })
-      }`)
-
-      // console.log('res', res)
-
-      return undefined
+        }
+      }
+    },
+    playbackSourcePage: {
+      subscribe: async function*(_, { input: { uri, number } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues || uriValues.origin !== origin) return
+        yield {
+          playbackSourcePage: {
+            nodes: number !== undefined && number !== null
+              ? await searchPlaybackSources({ id: uriValues.id, search: number.toString().padStart(2, '0') }, ctx)
+              : await fetchTorrentPagePlaybackSources(uriValues.id, ctx)
+          }
+        }
+      }
     }
   }
 } satisfies GraphQLTypes.Resolvers
