@@ -4,7 +4,7 @@ import { Episode, HandleRelation, Media, PlaybackSource } from '../generated/gra
 import type { Handle, GraphQLTypes } from 'scannarr'
 import type { MediaParams } from '../utils/type'
 
-import { populateHandle } from 'scannarr'
+import { fromScannarrUri, toUri, fromUri, fromUris, populateHandle, isScannarrUri } from 'scannarr'
 
 import * as anidb from './anidb'
 import * as mal from './myanimelist'
@@ -317,7 +317,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
           timeUntilAiring: new Date(episode.airdate).getTime() - Date.now()
         }) as Episode
       })
-      .filter(episode => episode && episode.number !== undefined && episode.number !== null)
+      .filter(episode => episode && episode.number !== undefined && episode.number !== null && !isNaN(episode.number))
 
   return ({
     ...handleProps,
@@ -398,5 +398,42 @@ export const resolvers: GraphQLTypes.Resolvers = {
         nodes: res ? res.episodes?.nodes : []
       }
     }
+  },
+  Subscription: {
+    media: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === mal.origin || _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues) return
+        if (uriValues.origin === mal.origin) {
+          const media = await fetchMALMappings(uriValues.id, ctx)
+          return yield {
+            media
+          }
+        } else if (uriValues.origin === origin) {
+          const media = await fetchAnidbMappings(uriValues.id, ctx)
+          return yield {
+            media
+          }
+        }
+      }
+    },
+    // mediaPage: {
+    //   subscribe: async function*(_, { input: { seasonYear, season } }, ctx) {
+    //     if (!season || !seasonYear) return
+    //     yield {
+    //       mediaPage: {
+    //         nodes: await getAnimeSeason({ seasonYear, season }, ctx)
+    //       }
+    //     }
+    //   }
+    // }
   }
 } satisfies GraphQLTypes.Resolvers
