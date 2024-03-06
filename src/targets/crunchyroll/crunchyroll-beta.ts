@@ -709,62 +709,62 @@ const getFirstMatchingResult = async (resultPromises: { origin: Origin, data: Pr
 }
 
 export const resolvers: Resolvers = {
-  Query: {
-    media: async (...args) => {
-      const [_, { input: { id, uri, origin: _origin } = {} }, { fetch, results }] = args
-      if (_origin !== origin) return undefined
+  // Query: {
+  //   media: async (...args) => {
+  //     const [_, { input: { id, uri, origin: _origin } = {} }, { fetch, results }] = args
+  //     if (_origin !== origin) return undefined
 
-      const { seasonId } = getMediaIdParts(id)
-      const seasons = await getSeasons(id, { fetch })
+  //     const { seasonId } = getMediaIdParts(id)
+  //     const seasons = await getSeasons(id, { fetch })
 
-      if (seasons.data.length === 1) return crunchyrollSeasonToScannarrMedia(seasons.data[0])
+  //     if (seasons.data.length === 1) return crunchyrollSeasonToScannarrMedia(seasons.data[0])
 
 
-      // console.log('Crunchyroll Media results ', results)
-      const [resultSeason, resultSeasonYear] =
-        !seasonId
-          ? (
-            (await getFirstMatchingResult(results, ({ Media }) => Media?.season && Media?.seasonYear)
-              .then((res) => [
-                res?.Media?.season,
-                res?.Media?.seasonYear
-              ])) ?? []
-          )
-          : []
-      // console.log('Crunchyroll Media resultSeason, resultSeasonYear ', resultSeason, resultSeasonYear)
-      // console.log('Crunchyroll Media seasons ', seasonId, seasons)
-      const season =
-        seasonId
-          ? seasons.data.find(({ id }) => id === seasonId)
-          : seasons.data.find(({ season_tags }) => season_tags[0] === `${resultSeason.toLowerCase()}-${resultSeasonYear}`)
-      // console.log('Crunchyroll Media called with ', args, id, _origin, season)
-      if (!season) return undefined
-      return crunchyrollSeasonToScannarrMedia(season)
-    },
-    mediaPage: async (...args) => {
-      const [_, { input: { id, uri, origin: _origin, search } = {} }, { fetch }] = args
-      // console.log('Crunchyroll Page Media called with ', args, id, _origin)
+  //     // console.log('Crunchyroll Media results ', results)
+  //     const [resultSeason, resultSeasonYear] =
+  //       !seasonId
+  //         ? (
+  //           (await getFirstMatchingResult(results, ({ Media }) => Media?.season && Media?.seasonYear)
+  //             .then((res) => [
+  //               res?.Media?.season,
+  //               res?.Media?.seasonYear
+  //             ])) ?? []
+  //         )
+  //         : []
+  //     // console.log('Crunchyroll Media resultSeason, resultSeasonYear ', resultSeason, resultSeasonYear)
+  //     // console.log('Crunchyroll Media seasons ', seasonId, seasons)
+  //     const season =
+  //       seasonId
+  //         ? seasons.data.find(({ id }) => id === seasonId)
+  //         : seasons.data.find(({ season_tags }) => season_tags[0] === `${resultSeason.toLowerCase()}-${resultSeasonYear}`)
+  //     // console.log('Crunchyroll Media called with ', args, id, _origin, season)
+  //     if (!season) return undefined
+  //     return crunchyrollSeasonToScannarrMedia(season)
+  //   },
+  //   mediaPage: async (...args) => {
+  //     const [_, { input: { id, uri, origin: _origin, search } = {} }, { fetch }] = args
+  //     // console.log('Crunchyroll Page Media called with ', args, id, _origin)
 
-      if (_origin !== origin) return { nodes: [] }
+  //     if (_origin !== origin) return { nodes: [] }
 
-      const result = await searchAnime(search, { fetch })
-      // console.log('Crunchyroll Page Media result ', result)
+  //     const result = await searchAnime(search, { fetch })
+  //     // console.log('Crunchyroll Page Media result ', result)
 
-      return {
-        nodes: [result].filter(Boolean)
-      }
-    },
-    episode: async (...args) => {
-      const [_, { input: { id, uri, origin: _origin } = {} }, { fetch }] = args
-      const [mediaId, episodeId] = id?.split('-')
-      if (_origin !== origin || !episodeId || !episodeId) return undefined
+  //     return {
+  //       nodes: [result].filter(Boolean)
+  //     }
+  //   },
+  //   episode: async (...args) => {
+  //     const [_, { input: { id, uri, origin: _origin } = {} }, { fetch }] = args
+  //     const [mediaId, episodeId] = id?.split('-')
+  //     if (_origin !== origin || !episodeId || !episodeId) return undefined
 
-      const res = await getEpisode(mediaId, episodeId, { fetch })
-      // console.log('Crunchyroll Episode called with ', args, id, _origin, res)
+  //     const res = await getEpisode(mediaId, episodeId, { fetch })
+  //     // console.log('Crunchyroll Episode called with ', args, id, _origin, res)
 
-      return res
-    }
-  },
+  //     return res
+  //   }
+  // },
   Media: {
     episodes: async (...args) => {
       const [{ input: { id, uri, origin: _origin } = {} }, _, { fetch }] = args

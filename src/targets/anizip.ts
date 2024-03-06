@@ -346,59 +346,59 @@ const fetchAnidbMappings = (id: string, context: MediaParams[2]) => fetchAnizipM
 const fetchAnilistMappings = (id: string, context: MediaParams[2]) => fetchAnizipMappings('anilist', id, context)
 
 export const resolvers: GraphQLTypes.Resolvers = {
-  Query: {
-    mediaPage: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
-      if (_origin !== origin || !_id) {
-        return {
-          nodes: []
-        }
-      }
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Page.media res', res)
-      return {
-        nodes: res ? [res] : []
-      }
-    },
-    media: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+  // Query: {
+  //   mediaPage: async (...args) => {
+  //     const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+  //     if (_origin !== origin || !_id) {
+  //       return {
+  //         nodes: []
+  //       }
+  //     }
+  //     const res = await fetchAnidbMappings(_id, context)
+  //     // console.log('Page.media res', res)
+  //     return {
+  //       nodes: res ? [res] : []
+  //     }
+  //   },
+  //   media: async (...args) => {
+  //     const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
 
-      if (_origin === mal.origin) {
-        const [id, episodeNumber] = _id.split('-').map(Number)
-        const res = await fetchMALMappings(id, context)
-        // console.log('Anizip MAL Query.Media res', res)
-        return res ? res : undefined
-      }
+  //     if (_origin === mal.origin) {
+  //       const [id, episodeNumber] = _id.split('-').map(Number)
+  //       const res = await fetchMALMappings(id, context)
+  //       // console.log('Anizip MAL Query.Media res', res)
+  //       return res ? res : undefined
+  //     }
 
-      if (_origin !== origin || !_id) return undefined
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Media res', res)
-      return res
-    },
-    episodePage: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
-      // if (_origin !== origin || !_id) return []
+  //     if (_origin !== origin || !_id) return undefined
+  //     const res = await fetchAnidbMappings(_id, context)
+  //     // console.log('Media res', res)
+  //     return res
+  //   },
+  //   episodePage: async (...args) => {
+  //     const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+  //     // if (_origin !== origin || !_id) return []
 
-      if (_origin === anidb.origin) {
-        const res = await fetchAnidbMappings(_id, context)
-        // console.log('Page.episode res', res)
-        return {
-          nodes: res ? res.episodes?.nodes : []
-        }
-      }
+  //     if (_origin === anidb.origin) {
+  //       const res = await fetchAnidbMappings(_id, context)
+  //       // console.log('Page.episode res', res)
+  //       return {
+  //         nodes: res ? res.episodes?.nodes : []
+  //       }
+  //     }
 
-      if (_origin !== origin || !_id) {
-        return {
-          nodes: []
-        }
-      }
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Page.episode res', res)
-      return {
-        nodes: res ? res.episodes?.nodes : []
-      }
-    }
-  },
+  //     if (_origin !== origin || !_id) {
+  //       return {
+  //         nodes: []
+  //       }
+  //     }
+  //     const res = await fetchAnidbMappings(_id, context)
+  //     // console.log('Page.episode res', res)
+  //     return {
+  //       nodes: res ? res.episodes?.nodes : []
+  //     }
+  //   }
+  // },
   Subscription: {
     media: {
       subscribe: async function*(_, { input: { uri } }, ctx) {
