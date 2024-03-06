@@ -1,7 +1,7 @@
-import type { GraphQLTypes, ServerContext } from '../../../node_modules/scannarr'
+import type { GraphQLTypes, ServerContext } from 'scannarr'
 
 import { from, combineLatest, startWith, map } from 'rxjs'
-import { fromScannarrUri, toUri, fromUri, fromUris, populateHandle, isScannarrUri } from '../../../node_modules/scannarr'
+import { fromScannarrUri, toUri, fromUri, fromUris, populateHandle, isScannarrUri } from 'scannarr'
 
 import { MediaSeason, MediaFormat, Media as AnilistMedia, MediaExternalLink, MediaStatus, PageInfo, Page } from './types'
 

@@ -704,6 +704,40 @@ export const resolvers: Resolvers = {
           }
         }
       }
+    },
+    userMediaPage: {
+      subscribe: async function*(_, { input: { status, authentications } }, { fetch }) {
+        const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
+        if (!oauthAuthentication) return undefined
+        const response = await (await fetch(
+          `https://api.myanimelist.net/v2/users/@me/animelist?${
+            new URLSearchParams({
+              // https://github.com/SuperMarcus/myanimelist-api-specification?tab=readme-ov-file#animeobject
+              fields: [
+                'list_status',
+                'title',
+                'alternative_titles',
+                'main_picture',
+                'synopsis',
+                'mean',
+                'popularity',
+                'status',
+                'start_date',
+                'end_date'
+              ].join(','),
+              limit: '1000',
+              status: status.map(s => s.toLowerCase()).join(','),
+            }).toString()
+          }`,
+          { headers: { 'Authorization': `Bearer ${oauthAuthentication.oauth2.accessToken}` } }
+        )).json()
+
+        return yield {
+          userMediaPage: {
+            nodes: response.data.map(({ node }) => MALNormalizeToMedia(node))
+          }
+        }
+      }
     }
   }
 } satisfies Resolvers
