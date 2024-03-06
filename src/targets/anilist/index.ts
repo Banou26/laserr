@@ -1,13 +1,12 @@
+import type { GraphQLTypes, ServerContext } from 'scannarr'
+
+import { from, combineLatest, startWith, map } from 'rxjs'
+import { fromScannarrUri, toUri, fromUri, fromUris, populateHandle, isScannarrUri } from 'scannarr'
+
 import { MediaSeason, MediaFormat, Media as AnilistMedia, MediaExternalLink, MediaStatus, PageInfo, Page } from './types'
 
-import { from, combineLatest, startWith, map, tap } from 'rxjs'
-
-import { fromUri, fromUris, populateHandle } from 'scannarr'
 import { LanguageTag } from '../../utils'
-import { AiringSchedule } from './types'
-import pThrottle from 'p-throttle'
 import { MediaParams, NoExtraProperties } from '../../utils/type'
-import { toUri } from 'scannarr'
 import { urlToHandle } from '../..'
 import { HandleRelation } from '../../generated/graphql'
 
@@ -268,31 +267,32 @@ const seasonVariables3 = {season: "SPRING", year: 2022, minEpisodes: 16, page: 1
 const fetchMediaSeason = (
   { season, year, excludeFormat, minEpisodes, status, page = 1 }:
   { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number },
-  context: MediaParams[2]
+  context: ServerContext
 ) =>
-  context.fetch('https://graphql.anilist.co/', {
-    method: 'POST',
-    "headers": {
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      query: searchQuery,
-      variables: {
-        status,
-        season,
-        year,
-        excludeFormat,
-        minEpisodes,
-        page,
-        type: 'ANIME'
-      }
+  context
+    .fetch('https://graphql.anilist.co/', {
+      method: 'POST',
+      "headers": {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        query: searchQuery,
+        variables: {
+          status,
+          season,
+          year,
+          excludeFormat,
+          minEpisodes,
+          page,
+          type: 'ANIME'
+        }
+      })
     })
-  })
 
 const fetchFullMediaSeasonMedias = (
   { season, year, excludeFormat, minEpisodes, status, page = 1 }:
   { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus, page?: number },
-  context: MediaParams[2]
+  context: ServerContext
 ): Promise<AnilistMedia[]> =>
   fetchMediaSeason({ season, year, excludeFormat, minEpisodes, status, page }, context)
     .then(response => response.json())
@@ -309,20 +309,21 @@ const fetchFullMediaSeasonMedias = (
       return medias
     })
 
-const fetchMedia = ({ id }: { id: number }, context: MediaParams[2]) =>
-  context.fetch('https://graphql.anilist.co/', {
-    method: 'POST',
-    "headers": {
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      query: GET_MEDIA,
-      variables: {
-        id,
-        type: 'ANIME'
-      }
+const fetchMedia = ({ id }: { id: number }, context: ServerContext) =>
+  context
+    .fetch('https://graphql.anilist.co/', {
+      method: 'POST',
+      "headers": {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        query: GET_MEDIA,
+        variables: {
+          id,
+          type: 'ANIME'
+        }
+      })
     })
-  })
     .then(response => response.json())
     .then(json =>
         json.data.Media
@@ -331,20 +332,21 @@ const fetchMedia = ({ id }: { id: number }, context: MediaParams[2]) =>
       )
 
 
-const fetchSeries = ({ id, malId }: { id?: number, malId?: number }, context: MediaParams[2]) =>
-  context.fetch('https://graphql.anilist.co/', {
-    method: 'POST',
-    "headers": {
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      query: searchQuery,
-      variables: {
-        id,
-        malId
-      }
+const fetchSeries = ({ id, malId }: { id?: number, malId?: number }, context: ServerContext) =>
+  context
+    .fetch('https://graphql.anilist.co/', {
+      method: 'POST',
+      "headers": {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        query: searchQuery,
+        variables: {
+          id,
+          malId
+        }
+      })
     })
-  })
 
 
 type SeasonObject = {
@@ -616,14 +618,14 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
 const getSeason = (
   { season, year, excludeFormat, minEpisodes, status }:
   { season: MediaSeason, year: number, excludeFormat?: MediaFormat, minEpisodes?: number, status?: MediaStatus },
-  context: MediaParams[2]
+  context: ServerContext
 ): Promise<SeriesHandle[]> =>
   fetchFullMediaSeasonMedias({ season, year, excludeFormat, minEpisodes, status, page: 1 }, context)
     // .then(res => console.log('res', res) || res)
     .then(medias => medias.map(mediaToSeriesHandle))
 
 // todo: improve the previousSeason query
-export const searchSeries: SearchSeries = ({ ...rest }, context: MediaParams[2]) => {
+export const searchSeries: SearchSeries = ({ ...rest }, context: ServerContext) => {
   if ('latest' in rest && rest.latest) {
     const { season, year } = getCurrentSeason(1)
     const { season: previousSeason, year: previousSeasonYear } = getPreviousSeason({ season, year })
@@ -665,7 +667,7 @@ const getIdFromUrl = (url: string): number => 1
 //     })
 
 
-export const getSeries: GetSeries = (options, context: MediaParams[2]) => {
+export const getSeries: GetSeries = (options, context: ServerContext) => {
   return (
     
     from(
@@ -768,39 +770,38 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   }
 })
 
-export const getAnimeSeason = (_, { input: { season, seasonYear } = {} }: MediaParams[1], context: MediaParams[2], ___) => {
-  if (!seasonYear) throw new Error('Anilist getAnimeSeason `seasonYear` is required')
-
-  const res = fetchFullMediaSeasonMedias({ season: season, year: seasonYear, page: 1 }, context)
-    // .then(res => void console.log('res', res) || res)
+export const getAnimeSeason = ({ season, seasonYear }: { season: MediaSeason, seasonYear: number }, context: ServerContext) =>
+  fetchFullMediaSeasonMedias({ season: season, year: seasonYear, page: 1 }, context)
     .then(medias => medias.map(anilistMediaToScannarrMedia))
 
-  // console.log('res2', res)
-  return res
-}
-
-export const resolvers: Resolvers = {
-  Query: {
-    // todo: potentially add query to return data for MAL uris
-    media: async (...args) => {
-      const [_, { input: { id, uri, origin: _origin } = {} }, ctx] = args
-      // console.log('anilist media args', args)
-      if (_origin !== origin) return undefined
-      // console.log('args', args)
-      // const malId = fromUri(uri)
-      const res = await fetchMedia({ id: Number(id) }, ctx)
-      // console.log('Anilist Media', res)
-      return res
+export const resolvers = {
+  Subscription: {
+    media: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues || uriValues.origin !== origin) return
+        yield {
+          media: await fetchMedia({ id: Number(uriValues.id) }, ctx)
+        }
+      }
     },
-    mediaPage: async (...args) => {
-      // console.log('Anilist Page media', args)
-      const [, { input: { search, season } = {} }] = args
-      return {
-        nodes: (
-          season ? getAnimeSeason(...args) :
-          []
-        )
+    mediaPage: {
+      subscribe: async function*(_, { input: { seasonYear, season } }, ctx) {
+        if (!season || !seasonYear) return
+        yield {
+          mediaPage: {
+            nodes: await getAnimeSeason({ seasonYear, season }, ctx)
+          }
+        }
       }
     }
   }
-}
+} satisfies GraphQLTypes.Resolvers

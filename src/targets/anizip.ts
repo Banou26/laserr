@@ -4,7 +4,7 @@ import { Episode, HandleRelation, Media, PlaybackSource } from '../generated/gra
 import type { Handle, GraphQLTypes } from 'scannarr'
 import type { MediaParams } from '../utils/type'
 
-import { populateHandle } from 'scannarr'
+import { fromScannarrUri, toUri, fromUri, fromUris, populateHandle, isScannarrUri } from 'scannarr'
 
 import * as anidb from './anidb'
 import * as mal from './myanimelist'
@@ -317,7 +317,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
           timeUntilAiring: new Date(episode.airdate).getTime() - Date.now()
         }) as Episode
       })
-      .filter(episode => episode && episode.number !== undefined && episode.number !== null)
+      .filter(episode => episode && episode.number !== undefined && episode.number !== null && !isNaN(episode.number))
 
   return ({
     ...handleProps,
@@ -346,57 +346,94 @@ const fetchAnidbMappings = (id: string, context: MediaParams[2]) => fetchAnizipM
 const fetchAnilistMappings = (id: string, context: MediaParams[2]) => fetchAnizipMappings('anilist', id, context)
 
 export const resolvers: GraphQLTypes.Resolvers = {
-  Query: {
-    mediaPage: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
-      if (_origin !== origin || !_id) {
-        return {
-          nodes: []
+  // Query: {
+  //   mediaPage: async (...args) => {
+  //     const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+  //     if (_origin !== origin || !_id) {
+  //       return {
+  //         nodes: []
+  //       }
+  //     }
+  //     const res = await fetchAnidbMappings(_id, context)
+  //     // console.log('Page.media res', res)
+  //     return {
+  //       nodes: res ? [res] : []
+  //     }
+  //   },
+  //   media: async (...args) => {
+  //     const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+
+  //     if (_origin === mal.origin) {
+  //       const [id, episodeNumber] = _id.split('-').map(Number)
+  //       const res = await fetchMALMappings(id, context)
+  //       // console.log('Anizip MAL Query.Media res', res)
+  //       return res ? res : undefined
+  //     }
+
+  //     if (_origin !== origin || !_id) return undefined
+  //     const res = await fetchAnidbMappings(_id, context)
+  //     // console.log('Media res', res)
+  //     return res
+  //   },
+  //   episodePage: async (...args) => {
+  //     const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
+  //     // if (_origin !== origin || !_id) return []
+
+  //     if (_origin === anidb.origin) {
+  //       const res = await fetchAnidbMappings(_id, context)
+  //       // console.log('Page.episode res', res)
+  //       return {
+  //         nodes: res ? res.episodes?.nodes : []
+  //       }
+  //     }
+
+  //     if (_origin !== origin || !_id) {
+  //       return {
+  //         nodes: []
+  //       }
+  //     }
+  //     const res = await fetchAnidbMappings(_id, context)
+  //     // console.log('Page.episode res', res)
+  //     return {
+  //       nodes: res ? res.episodes?.nodes : []
+  //     }
+  //   }
+  // },
+  Subscription: {
+    media: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === mal.origin || _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues) return
+        if (uriValues.origin === mal.origin) {
+          const media = await fetchMALMappings(uriValues.id, ctx)
+          return yield {
+            media
+          }
+        } else if (uriValues.origin === origin) {
+          const media = await fetchAnidbMappings(uriValues.id, ctx)
+          return yield {
+            media
+          }
         }
-      }
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Page.media res', res)
-      return {
-        nodes: res ? [res] : []
       }
     },
-    media: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
-
-      if (_origin === mal.origin) {
-        const [id, episodeNumber] = _id.split('-').map(Number)
-        const res = await fetchMALMappings(id, context)
-        // console.log('Anizip MAL Query.Media res', res)
-        return res ? res : undefined
-      }
-
-      if (_origin !== origin || !_id) return undefined
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Media res', res)
-      return res
-    },
-    episodePage: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }, context] = args
-      // if (_origin !== origin || !_id) return []
-
-      if (_origin === anidb.origin) {
-        const res = await fetchAnidbMappings(_id, context)
-        // console.log('Page.episode res', res)
-        return {
-          nodes: res ? res.episodes?.nodes : []
-        }
-      }
-
-      if (_origin !== origin || !_id) {
-        return {
-          nodes: []
-        }
-      }
-      const res = await fetchAnidbMappings(_id, context)
-      // console.log('Page.episode res', res)
-      return {
-        nodes: res ? res.episodes?.nodes : []
-      }
-    }
+    // mediaPage: {
+    //   subscribe: async function*(_, { input: { seasonYear, season } }, ctx) {
+    //     if (!season || !seasonYear) return
+    //     yield {
+    //       mediaPage: {
+    //         nodes: await getAnimeSeason({ seasonYear, season }, ctx)
+    //       }
+    //     }
+    //   }
+    // }
   }
 } satisfies GraphQLTypes.Resolvers

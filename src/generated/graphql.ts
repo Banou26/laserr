@@ -24,6 +24,63 @@ export type Scalars = {
   Uri: any;
 };
 
+export type Authenticate = {
+  __typename?: 'Authenticate';
+  oauth2?: Maybe<AuthenticateOauth2>;
+};
+
+export type AuthenticateInput = {
+  oauth2?: InputMaybe<AuthenticateInputOauth2>;
+  origin: Scalars['String'];
+  type: AuthenticationMethodType;
+};
+
+export type AuthenticateInputOauth2 = {
+  authorizationCode: Scalars['String'];
+  clientId: Scalars['String'];
+  codeVerifier: Scalars['String'];
+  grantType: Scalars['String'];
+  redirectUri: Scalars['String'];
+};
+
+export type AuthenticateOauth2 = {
+  __typename?: 'AuthenticateOauth2';
+  accessToken: Scalars['String'];
+  expiresIn: Scalars['Int'];
+  refreshToken: Scalars['String'];
+  tokenType: Scalars['String'];
+};
+
+export type Authentication = {
+  __typename?: 'Authentication';
+  authentication?: Maybe<Scalars['Boolean']>;
+  methods?: Maybe<Array<AuthenticationMethod>>;
+  origin: Origin;
+};
+
+export type AuthenticationMethod = {
+  __typename?: 'AuthenticationMethod';
+  body?: Maybe<Scalars['String']>;
+  headers?: Maybe<Array<AuthenticationMethodHeaderValue>>;
+  type: AuthenticationMethodType;
+  url?: Maybe<Scalars['String']>;
+};
+
+export type AuthenticationMethodHeaderValue = {
+  __typename?: 'AuthenticationMethodHeaderValue';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
+export type AuthenticationMethodHeaderValueInput = {
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
+export enum AuthenticationMethodType {
+  Oauth2 = 'OAUTH2'
+}
+
 export type Episode = Handle & {
   __typename?: 'Episode';
   /** The time the episode airs at */
@@ -73,7 +130,7 @@ export type EpisodeInput = {
   /** Filter by the media origin */
   origin?: InputMaybe<Scalars['String']>;
   /** Filter by the media uri */
-  uri?: InputMaybe<Scalars['String']>;
+  uri?: InputMaybe<Scalars['Uri']>;
 };
 
 export type EpisodePage = {
@@ -108,15 +165,15 @@ export type EpisodePageInput = {
   /** How many pages before the cursor to return */
   before?: InputMaybe<Scalars['Int']>;
   /** Filter by the media id */
-  ids?: InputMaybe<Array<Scalars['String']>>;
+  id?: InputMaybe<Scalars['String']>;
   /** Filter by the media origin */
-  origins?: InputMaybe<Array<Scalars['String']>>;
+  origin?: InputMaybe<Scalars['String']>;
   /** Filter by search terms */
   search?: InputMaybe<Scalars['String']>;
   /** The order the results will be returned in */
   sorts?: InputMaybe<Array<EpisodeSort>>;
   /** Filter by the media uri */
-  uris?: InputMaybe<Array<Scalars['String']>>;
+  uri?: InputMaybe<Scalars['Uri']>;
 };
 
 export enum EpisodeSort {
@@ -413,7 +470,7 @@ export type MediaInput = {
   /** Filter by the media origin */
   origin?: InputMaybe<Scalars['String']>;
   /** Filter by the media uri */
-  uri?: InputMaybe<Scalars['String']>;
+  uri?: InputMaybe<Scalars['Uri']>;
 };
 
 export type MediaPage = {
@@ -450,9 +507,9 @@ export type MediaPageInput = {
   /** Filter by the end date of the media */
   endDate?: InputMaybe<Scalars['FuzzyDateInt']>;
   /** Filter by the media id */
-  ids?: InputMaybe<Array<Scalars['String']>>;
+  id?: InputMaybe<Scalars['String']>;
   /** Filter by the media origin */
-  origins?: InputMaybe<Array<Scalars['String']>>;
+  origin?: InputMaybe<Scalars['String']>;
   /** Filter by search terms */
   search?: InputMaybe<Scalars['String']>;
   /** Filter by media season */
@@ -466,7 +523,7 @@ export type MediaPageInput = {
   /** Filter by the media's current release status */
   status?: InputMaybe<MediaStatus>;
   /** Filter by the media uri */
-  uris?: InputMaybe<Array<Scalars['String']>>;
+  uri?: InputMaybe<Scalars['Uri']>;
 };
 
 export enum MediaSeason {
@@ -658,7 +715,13 @@ export enum MediaType {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  dummy?: Maybe<Scalars['String']>;
+  _empty?: Maybe<Scalars['String']>;
+  authenticate: Authenticate;
+};
+
+
+export type MutationAuthenticateArgs = {
+  input: AuthenticateInput;
 };
 
 /**
@@ -766,7 +829,7 @@ export type PlaybackSourceInput = {
   /** Filter by the media origin */
   origin?: InputMaybe<Scalars['String']>;
   /** Filter by the media uri */
-  uri?: InputMaybe<Scalars['String']>;
+  uri?: InputMaybe<Scalars['Uri']>;
 };
 
 export type PlaybackSourcePage = {
@@ -801,13 +864,14 @@ export type PlaybackSourcePageInput = {
   /** How many pages before the cursor to return */
   before?: InputMaybe<Scalars['Int']>;
   /** Filter by the media id */
-  ids?: InputMaybe<Array<Scalars['String']>>;
+  id?: InputMaybe<Scalars['String']>;
+  number?: InputMaybe<Scalars['Int']>;
   /** Filter by the media origin */
-  origins?: InputMaybe<Array<Scalars['String']>>;
+  origin?: InputMaybe<Scalars['String']>;
   /** Filter by search terms */
   search?: InputMaybe<Scalars['String']>;
   /** Filter by the media uri */
-  uris?: InputMaybe<Array<Scalars['String']>>;
+  uri?: InputMaybe<Scalars['Uri']>;
 };
 
 export enum PlaybackSourceType {
@@ -819,7 +883,8 @@ export enum PlaybackSourceType {
 
 export type Query = {
   __typename?: 'Query';
-  dummy?: Maybe<Scalars['String']>;
+  _empty?: Maybe<Scalars['String']>;
+  authentication: Array<Authentication>;
   episode?: Maybe<Episode>;
   episodePage?: Maybe<EpisodePage>;
   media?: Maybe<Media>;
@@ -828,6 +893,8 @@ export type Query = {
   originPage: Array<Origin>;
   playbackSource?: Maybe<PlaybackSource>;
   playbackSourcePage?: Maybe<PlaybackSourcePage>;
+  user: User;
+  userMediaPage: UserMediaPage;
 };
 
 
@@ -870,6 +937,16 @@ export type QueryPlaybackSourcePageArgs = {
   input?: InputMaybe<PlaybackSourcePageInput>;
 };
 
+
+export type QueryUserArgs = {
+  input: UserInput;
+};
+
+
+export type QueryUserMediaPageArgs = {
+  input: UserMediaPageInput;
+};
+
 export type Resource = Handle & {
   __typename?: 'Resource';
   batchResources: Array<ResourceConnection>;
@@ -894,6 +971,47 @@ export type ResourceEdge = HandleEdge & {
   node: Resource;
 };
 
+export type Subscription = {
+  __typename?: 'Subscription';
+  _empty?: Maybe<Scalars['String']>;
+  episode?: Maybe<Episode>;
+  episodePage?: Maybe<EpisodePage>;
+  media?: Maybe<Media>;
+  mediaPage?: Maybe<MediaPage>;
+  playbackSource?: Maybe<PlaybackSource>;
+  playbackSourcePage?: Maybe<PlaybackSourcePage>;
+};
+
+
+export type SubscriptionEpisodeArgs = {
+  input?: InputMaybe<EpisodeInput>;
+};
+
+
+export type SubscriptionEpisodePageArgs = {
+  input?: InputMaybe<EpisodePageInput>;
+};
+
+
+export type SubscriptionMediaArgs = {
+  input: MediaInput;
+};
+
+
+export type SubscriptionMediaPageArgs = {
+  input: MediaPageInput;
+};
+
+
+export type SubscriptionPlaybackSourceArgs = {
+  input?: InputMaybe<PlaybackSourceInput>;
+};
+
+
+export type SubscriptionPlaybackSourcePageArgs = {
+  input?: InputMaybe<PlaybackSourcePageInput>;
+};
+
 export type Team = Handle & {
   __typename?: 'Team';
   handles: HandleConnection;
@@ -903,6 +1021,90 @@ export type Team = Handle & {
   uri: Scalars['Uri'];
   url?: Maybe<Scalars['String']>;
 };
+
+export type User = {
+  __typename?: 'User';
+  avatar?: Maybe<Scalars['String']>;
+  email?: Maybe<Scalars['String']>;
+  id: Scalars['ID'];
+  username: Scalars['String'];
+};
+
+export type UserInput = {
+  oauth2?: InputMaybe<UserInputOauth2>;
+  origin: Scalars['String'];
+  type: AuthenticationMethodType;
+};
+
+export type UserInputOauth2 = {
+  accessToken: Scalars['String'];
+  tokenType: Scalars['String'];
+};
+
+export type UserMedia = {
+  __typename?: 'UserMedia';
+  episodes: Array<UserMediaEpisode>;
+  media: Media;
+  status: UserMediaStatus;
+};
+
+export type UserMediaEpisode = {
+  __typename?: 'UserMediaEpisode';
+  episode: Episode;
+  origin: Origin;
+  progress?: Maybe<Scalars['Int']>;
+  uri: Scalars['Uri'];
+  watched: Scalars['Boolean'];
+};
+
+export type UserMediaPage = {
+  __typename?: 'UserMediaPage';
+  /** The current page */
+  currentPageCursor?: Maybe<Scalars['String']>;
+  /** The first page */
+  firstPageCursor?: Maybe<Scalars['String']>;
+  /** Total number of items on the current page */
+  inPage?: Maybe<Scalars['Int']>;
+  /** The last page cursor */
+  lastPageCursor?: Maybe<Scalars['String']>;
+  /** The current page */
+  nextPageCursor?: Maybe<Scalars['String']>;
+  /** The media page nodes */
+  nodes: Array<Media>;
+  /** The current page */
+  previousPageCursor?: Maybe<Scalars['String']>;
+  /** The total number of items. Note: This value is not guaranteed to be accurate, do not rely on this for logic */
+  total?: Maybe<Scalars['Int']>;
+  /** Total number of items after the current page. Note: This value is not guaranteed to be accurate, do not rely on this for logic */
+  totalAfter?: Maybe<Scalars['Int']>;
+  /** Total number of items before the current page. Note: This value is not guaranteed to be accurate, do not rely on this for logic */
+  totalBefore?: Maybe<Scalars['Int']>;
+};
+
+export type UserMediaPageInput = {
+  authentications: Array<UserMediaPageInputAuthentication>;
+  status?: InputMaybe<Array<UserMediaStatus>>;
+};
+
+export type UserMediaPageInputAuthentication = {
+  oauth2?: InputMaybe<UserInputOauth2>;
+  origin: Scalars['String'];
+  type: AuthenticationMethodType;
+};
+
+/** The current releasing status of the media */
+export enum UserMediaStatus {
+  /** Has completed */
+  Completed = 'COMPLETED',
+  /** Dropped */
+  Dropped = 'DROPPED',
+  /** Put on hold */
+  OnHold = 'ON_HOLD',
+  /** Planning to watch */
+  PlanToWatch = 'PLAN_TO_WATCH',
+  /** Currently watching */
+  Watching = 'WATCHING'
+}
 
 export type SearchCrunchyrollHandleQueryVariables = Exact<{
   input: MediaPageInput;

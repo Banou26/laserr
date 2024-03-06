@@ -1,6 +1,6 @@
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { populateHandle, toUri, GraphQLTypes } from 'scannarr'
+import { populateHandle, toUri, GraphQLTypes, isScannarrUri, fromScannarrUri, fromUri } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
@@ -549,51 +549,6 @@ const searchAnime = async (_, { input: { search } }: MediaParams[1], context: Me
 
 export const resolvers: Resolvers = {
   Query: {
-    media: async (...args) => {
-      // console.log('Jikan Query.Media', args)
-      const [_, { input: { id: _id, uri, origin: _origin } = {} }] = args
-      if (_origin !== origin || !_id) return undefined
-      const [id] = _id.split('-').map(Number)
-      const res = await fetchMedia({ id }, args[2])
-      // console.log('Jikan Media', args, res)
-      return res
-    },
-    mediaPage: async (...args) => {
-      const [, { input: { search, season } = {} }] = args
-      // console.log('media jikan', args)
-      return {
-        nodes: (
-          search ? await searchAnime(...args) :
-          season ? await getFullSeasonNow(...args)
-          : []
-        )
-      }
-    },
-    episode: async (...args) => {
-      const [_, { input: { id: _id, origin: _origin } = {} }] = args
-      // console.log('Jikan Episode', args, id, __origin)
-      if (_origin !== origin || !_id) return undefined
-      const [id, episodeNumber] = _id.split('-').map(Number)
-      if (!id) return undefined
-      const res = await fetchEpisodes({ id }, args[2])
-      // console.log('Jikan Episode', res, res?.edges?.find(({ node }) => node.number === episodeNumber)?.node)
-      return res?.edges?.find(({ node }) => node.number === episodeNumber)?.node
-    },
-    authentication: async (...args) => {
-      const [_, __, { origin }] = args
-      return [{
-        origin,
-        authentication: true,
-        methods: [
-          {
-            type: 'OAUTH2',
-            url: `https://myanimelist.net/v1/oauth2/authorize`,
-            headers: [],
-            body: ''
-          }
-        ]
-      }]
-    },
     user: async (...args) => {
       const [_, { input: { origin: _origin, type, oauth2 } = {} }, { fetch }] = args
       if (_origin !== origin || !oauth2) return undefined
@@ -606,37 +561,6 @@ export const resolvers: Resolvers = {
         username: response.name,
         email: null,
         avatar: response.picture
-      }
-    },
-    userMediaPage: async (...args) => {
-      const [_, { input: { status, authentications } = {} }, { fetch }] = args
-      const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
-      if (!oauthAuthentication) return undefined
-      const response = await (await fetch(
-        `https://api.myanimelist.net/v2/users/@me/animelist?${
-          new URLSearchParams({
-            // https://github.com/SuperMarcus/myanimelist-api-specification?tab=readme-ov-file#animeobject
-            fields: [
-              'list_status',
-              'title',
-              'alternative_titles',
-              'main_picture',
-              'synopsis',
-              'mean',
-              'popularity',
-              'status',
-              'start_date',
-              'end_date'
-            ].join(','),
-            limit: '1000',
-            status: status.map(s => s.toLowerCase()).join(','),
-          }).toString()
-        }`,
-        { headers: { 'Authorization': `Bearer ${oauthAuthentication.oauth2.accessToken}` } }
-      )).json()
-
-      return {
-        nodes: response.data.map(({ node }) => MALNormalizeToMedia(node))
       }
     }
   },
@@ -668,6 +592,76 @@ export const resolvers: Resolvers = {
           }
         }
       })
+    }
+  },
+  Subscription: {
+    media: {
+      subscribe: async function*(_, { input: { uri } }, ctx) {
+        if (!uri) return
+        const uriValues =
+          isScannarrUri(uri)
+            ? (
+              fromScannarrUri(uri)
+                ?.handleUrisValues
+                .find(({ origin: _origin }) => _origin === origin)
+            )
+            : fromUri(uri)
+        if (!uriValues || uriValues.origin !== origin) return
+        yield {
+          media: await fetchMedia({ id: Number(uriValues.id) }, ctx)
+        }
+      }
+    },
+    mediaPage: {
+      subscribe: async function*(_, { input: { search, seasonYear, season } }, ctx) {
+        if (search) {
+          return yield {
+            mediaPage: {
+              nodes: await fetchSearchAnime({ search }, ctx)
+            }
+          }
+        } else if (season && seasonYear) {
+          return yield {
+            mediaPage: {
+              nodes: await getFullSeasonNow(undefined, { seasonYear, season }, ctx, undefined)
+            }
+          }
+        }
+      }
+    },
+    userMediaPage: {
+      subscribe: async function*(_, { input: { status, authentications } }, { fetch }) {
+        const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
+        if (!oauthAuthentication) return undefined
+        const response = await (await fetch(
+          `https://api.myanimelist.net/v2/users/@me/animelist?${
+            new URLSearchParams({
+              // https://github.com/SuperMarcus/myanimelist-api-specification?tab=readme-ov-file#animeobject
+              fields: [
+                'list_status',
+                'title',
+                'alternative_titles',
+                'main_picture',
+                'synopsis',
+                'mean',
+                'popularity',
+                'status',
+                'start_date',
+                'end_date'
+              ].join(','),
+              limit: '1000',
+              status: status.map(s => s.toLowerCase()).join(','),
+            }).toString()
+          }`,
+          { headers: { 'Authorization': `Bearer ${oauthAuthentication.oauth2.accessToken}` } }
+        )).json()
+
+        return yield {
+          userMediaPage: {
+            nodes: response.data.map(({ node }) => MALNormalizeToMedia(node))
+          }
+        }
+      }
     }
   }
 } satisfies Resolvers
