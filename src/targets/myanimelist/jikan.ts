@@ -1,6 +1,6 @@
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { populateHandle, toUri, GraphQLTypes, isScannarrUri, fromScannarrUri, fromUri } from 'scannarr'
+import { populateHandle, toUri, GraphQLTypes, isScannarrUri, fromScannarrUri, fromUri, fromUris } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
@@ -562,7 +562,22 @@ export const resolvers: Resolvers = {
         email: null,
         avatar: response.picture
       }
-    }
+    },
+    authentications: async (...args) => {
+      const [_, __, { origin }] = args
+      return [{
+        origin,
+        authentication: true,
+        methods: [
+          {
+            type: 'OAUTH2',
+            url: `https://myanimelist.net/v1/oauth2/authorize`,
+            headers: [],
+            body: ''
+          }
+        ]
+      }]
+    },
   },
   Mutation: {
     authenticate: async (...args) => {
@@ -592,6 +607,53 @@ export const resolvers: Resolvers = {
           }
         }
       })
+    },
+    updateUserMedia: async (_, { input, input: { mediaUri, authentications, status, isRewatching, rewatchCount, score, progress } }, { fetch }) => {
+      const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
+      if (!oauthAuthentication || !oauthAuthentication.oauth2) return undefined
+
+      if (!mediaUri) return undefined
+      const malUri = fromScannarrUri(mediaUri)?.handleUrisValues.find(({ origin }) => origin === 'mal')
+      if (!malUri) return undefined
+
+      const params = new URLSearchParams({
+        ...status ? { status: status.toLowerCase() } : {},
+        ...isRewatching ? { is_rewatching: isRewatching } : {},
+        ...rewatchCount ? { num_times_rewatched: rewatchCount } : {},
+        ...score ? { score } : {},
+        ...progress ? { num_watched_episodes: progress } : {}
+      }).toString()
+      
+      const response = await (await fetch(`https://api.myanimelist.net/v2/anime/${malUri.id}/my_list_status`,
+        {
+          headers: {
+            'Authorization': `Bearer ${oauthAuthentication.oauth2.accessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          method: 'PATCH',
+          body: params
+        }
+      )).json()
+
+      return {
+        ...populateHandle({
+          origin,
+          id: malUri.id,
+          url: null
+        }),
+
+        status:
+          response.status === 'completed' ? GraphQLTypes.UserMediaStatus.Completed
+          : response.status === 'dropped' ? GraphQLTypes.UserMediaStatus.Dropped
+          : response.status === 'on_hold' ? GraphQLTypes.UserMediaStatus.OnHold
+          : response.status === 'plan_to_watch' ? GraphQLTypes.UserMediaStatus.PlanToWatch
+          : response.status === 'watching' ? GraphQLTypes.UserMediaStatus.Watching
+          : undefined,
+        score: response.score,
+        progress: response.num_episodes_watched,
+        isRewatching: response.is_rewatching,
+        updatedAt: new Date(response.updated_at).getTime()
+      }
     }
   },
   Subscription: {
@@ -632,7 +694,7 @@ export const resolvers: Resolvers = {
     userMediaPage: {
       subscribe: async function*(_, { input: { status, authentications } }, { fetch }) {
         const oauthAuthentication = authentications?.find(auth => auth.origin === origin && auth.type === 'OAUTH2')
-        if (!oauthAuthentication) return undefined
+        if (!oauthAuthentication || !oauthAuthentication.oauth2) return undefined
         const response = await (await fetch(
           `https://api.myanimelist.net/v2/users/@me/animelist?${
             new URLSearchParams({
@@ -658,10 +720,36 @@ export const resolvers: Resolvers = {
 
         return yield {
           userMediaPage: {
-            nodes: response.data.map(({ node }) => MALNormalizeToMedia(node))
+            nodes: response.data.map(({ node, list_status }) => {
+              const media = MALNormalizeToMedia(node)
+
+              return ({
+                origin: media.origin,
+                id: media.id,
+                uri: media.uri,
+                url: null,
+                handles: {
+                  edges: [],
+                  nodes: []
+                },
+
+                media,
+                status:
+                  list_status.status === 'completed' ? GraphQLTypes.UserMediaStatus.Completed
+                  : list_status.status === 'dropped' ? GraphQLTypes.UserMediaStatus.Dropped
+                  : list_status.status === 'on_hold' ? GraphQLTypes.UserMediaStatus.OnHold
+                  : list_status.status === 'plan_to_watch' ? GraphQLTypes.UserMediaStatus.PlanToWatch
+                  : list_status.status === 'watching' ? GraphQLTypes.UserMediaStatus.Watching
+                  : undefined,
+                score: list_status.score,
+                progress: list_status.num_episodes_watched,
+                isRewatching: list_status.is_rewatching,
+                updatedAt: new Date(list_status.updated_at).getTime()
+              })
+            })
           }
         }
       }
     }
   }
-} satisfies Resolvers
+} satisfies GraphQLTypes.Resolvers
