@@ -533,13 +533,15 @@ const getRecentEpisodes = (page = 1, context: MediaParams[2]): Promise<Episode[]
 
 const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], context: MediaParams[2], __) => {
   const { data, pagination } = await getSeasonNow(1, context)
-  const getRest = async (page = 1) => {
-    if (page > pagination.last_visible_page) return []
-    const { data } = await getSeasonNow(page, context)
-    return [...data, ...await getRest(page + 1)]
-  }
   return (
-    [...data, ...await getRest()]
+    [
+      ...data,
+      ...(await Promise.all(
+        new Array(pagination.last_visible_page - 1)
+          .fill(undefined)
+          .map((_, i) => getSeasonNow(i + 2, context))
+      ))
+    ]
       .map(normalizeToMedia)
   )
 }
