@@ -717,11 +717,17 @@ export type Mutation = {
   __typename?: 'Mutation';
   _empty?: Maybe<Scalars['String']>;
   authenticate: Authenticate;
+  updateUserMedia: UserMedia;
 };
 
 
 export type MutationAuthenticateArgs = {
   input: AuthenticateInput;
+};
+
+
+export type MutationUpdateUserMediaArgs = {
+  input: UpdateUserMediaInput;
 };
 
 /**
@@ -884,37 +890,10 @@ export enum PlaybackSourceType {
 export type Query = {
   __typename?: 'Query';
   _empty?: Maybe<Scalars['String']>;
-  authentication: Array<Authentication>;
-  episode?: Maybe<Episode>;
-  episodePage?: Maybe<EpisodePage>;
-  media?: Maybe<Media>;
-  mediaPage?: Maybe<MediaPage>;
+  authentications: Array<Authentication>;
   origin?: Maybe<Origin>;
   originPage: Array<Origin>;
-  playbackSource?: Maybe<PlaybackSource>;
-  playbackSourcePage?: Maybe<PlaybackSourcePage>;
   user: User;
-  userMediaPage: UserMediaPage;
-};
-
-
-export type QueryEpisodeArgs = {
-  input?: InputMaybe<EpisodeInput>;
-};
-
-
-export type QueryEpisodePageArgs = {
-  input?: InputMaybe<EpisodePageInput>;
-};
-
-
-export type QueryMediaArgs = {
-  input?: InputMaybe<MediaInput>;
-};
-
-
-export type QueryMediaPageArgs = {
-  input: MediaPageInput;
 };
 
 
@@ -928,23 +907,8 @@ export type QueryOriginPageArgs = {
 };
 
 
-export type QueryPlaybackSourceArgs = {
-  input?: InputMaybe<PlaybackSourceInput>;
-};
-
-
-export type QueryPlaybackSourcePageArgs = {
-  input?: InputMaybe<PlaybackSourcePageInput>;
-};
-
-
 export type QueryUserArgs = {
   input: UserInput;
-};
-
-
-export type QueryUserMediaPageArgs = {
-  input: UserMediaPageInput;
 };
 
 export type Resource = Handle & {
@@ -980,6 +944,7 @@ export type Subscription = {
   mediaPage?: Maybe<MediaPage>;
   playbackSource?: Maybe<PlaybackSource>;
   playbackSourcePage?: Maybe<PlaybackSourcePage>;
+  userMediaPage?: Maybe<UserMediaPage>;
 };
 
 
@@ -1012,6 +977,11 @@ export type SubscriptionPlaybackSourcePageArgs = {
   input?: InputMaybe<PlaybackSourcePageInput>;
 };
 
+
+export type SubscriptionUserMediaPageArgs = {
+  input: UserMediaPageInput;
+};
+
 export type Team = Handle & {
   __typename?: 'Team';
   handles: HandleConnection;
@@ -1020,6 +990,17 @@ export type Team = Handle & {
   origin: Scalars['String'];
   uri: Scalars['Uri'];
   url?: Maybe<Scalars['String']>;
+};
+
+export type UpdateUserMediaInput = {
+  authentications: Array<UserMediaPageInputAuthentication>;
+  isRewatching?: InputMaybe<Scalars['Boolean']>;
+  mediaUri: Scalars['Uri'];
+  origin: Scalars['String'];
+  progress?: InputMaybe<Scalars['Int']>;
+  rewatchCount?: InputMaybe<Scalars['Int']>;
+  score?: InputMaybe<Scalars['Float']>;
+  status?: InputMaybe<UserMediaStatus>;
 };
 
 export type User = {
@@ -1044,17 +1025,32 @@ export type UserInputOauth2 = {
 export type UserMedia = {
   __typename?: 'UserMedia';
   episodes: Array<UserMediaEpisode>;
+  handles: MediaConnection;
+  id: Scalars['String'];
+  isRewatching?: Maybe<Scalars['Boolean']>;
   media: Media;
+  origin: Scalars['String'];
+  progress?: Maybe<Scalars['Int']>;
+  rewatchCount?: Maybe<Scalars['Int']>;
+  score?: Maybe<Scalars['Float']>;
   status: UserMediaStatus;
+  updatedAt?: Maybe<Scalars['Float']>;
+  uri: Scalars['Uri'];
+  url?: Maybe<Scalars['String']>;
 };
 
 export type UserMediaEpisode = {
   __typename?: 'UserMediaEpisode';
   episode: Episode;
   origin: Origin;
-  progress?: Maybe<Scalars['Int']>;
+  progress?: Maybe<Scalars['Float']>;
   uri: Scalars['Uri'];
   watched: Scalars['Boolean'];
+};
+
+export type UserMediaInput = {
+  authentications: Array<UserMediaPageInputAuthentication>;
+  uri: Scalars['Uri'];
 };
 
 export type UserMediaPage = {
@@ -1070,7 +1066,7 @@ export type UserMediaPage = {
   /** The current page */
   nextPageCursor?: Maybe<Scalars['String']>;
   /** The media page nodes */
-  nodes: Array<Media>;
+  nodes: Array<UserMedia>;
   /** The current page */
   previousPageCursor?: Maybe<Scalars['String']>;
   /** The total number of items. Note: This value is not guaranteed to be accurate, do not rely on this for logic */
@@ -1106,12 +1102,12 @@ export enum UserMediaStatus {
   Watching = 'WATCHING'
 }
 
-export type SearchCrunchyrollHandleQueryVariables = Exact<{
+export type SearchCrunchyrollHandleSubscriptionVariables = Exact<{
   input: MediaPageInput;
 }>;
 
 
-export type SearchCrunchyrollHandleQuery = { __typename?: 'Query', mediaPage?: { __typename?: 'MediaPage', nodes: Array<{ __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any } }> } } }> } }> } | null };
+export type SearchCrunchyrollHandleSubscription = { __typename?: 'Subscription', mediaPage?: { __typename?: 'MediaPage', nodes: Array<{ __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any, title?: { __typename?: 'MediaTitle', english?: string | null, romanized?: string | null, native?: string | null } | null, handles: { __typename?: 'MediaConnection', edges: Array<{ __typename?: 'MediaEdge', node: { __typename?: 'Media', origin: string, id: string, url?: string | null, uri: any } }> } } }> } }> } | null };
 
 
-export const SearchCrunchyrollHandleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchCrunchyrollHandle"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MediaPageInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mediaPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}}]}}]}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchCrunchyrollHandleQuery, SearchCrunchyrollHandleQueryVariables>;
+export const SearchCrunchyrollHandleDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"subscription","name":{"kind":"Name","value":"SearchCrunchyrollHandle"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MediaPageInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mediaPage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}},{"kind":"Field","name":{"kind":"Name","value":"title"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"english"}},{"kind":"Field","name":{"kind":"Name","value":"romanized"}},{"kind":"Field","name":{"kind":"Name","value":"native"}}]}},{"kind":"Field","name":{"kind":"Name","value":"handles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"edges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"origin"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"uri"}}]}}]}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchCrunchyrollHandleSubscription, SearchCrunchyrollHandleSubscriptionVariables>;

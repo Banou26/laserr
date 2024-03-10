@@ -1,6 +1,6 @@
 import type { MediaParams, NoExtraProperties } from '../../utils/type'
 
-import { populateHandle, toUri, GraphQLTypes, isScannarrUri, fromScannarrUri, fromUri, fromUris } from 'scannarr'
+import { populateHandle, toUri, GraphQLTypes, isScannarrUri, fromScannarrUri, fromUri, fromUris, ServerContext } from 'scannarr'
 import { origin as crynchyrollOrigin } from '../crunchyroll/crunchyroll-beta'
 import { gql } from '../../generated'
 import { swAlign } from 'seal-wasm'
@@ -198,7 +198,7 @@ export interface Demographic {
 }
 
 const SEARCH_CRUNCHYROLL_ANIME = gql(`
-  query SearchCrunchyrollHandle($input: MediaPageInput!) {
+  subscription SearchCrunchyrollHandle($input: MediaPageInput!) {
     mediaPage(input: $input) {
       nodes {
         origin
@@ -240,9 +240,8 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
   }
 `)
 
-const findCrunchyrollAnime = async (context, title: string) => {
-  const { data } = await context.client.query({
-    query: SEARCH_CRUNCHYROLL_ANIME,
+const findCrunchyrollAnime = async (context: ServerContext, title: string) => {
+  const { data } = await context.client.executeSubscription(SEARCH_CRUNCHYROLL_ANIME, {
     variables: {
       input: {
         origin: crynchyrollOrigin,
@@ -263,11 +262,11 @@ const findCrunchyrollAnime = async (context, title: string) => {
 
 const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties<Media> => {
   const searchTitle = data.title_english ?? data.title
-  const crunchyrollHandle =
+  const crunchyrollHandle = undefined
     // querying crunchyroll for all normalize is fine since streaming is only present when querying details
-    context.client && data.streaming?.find(site => site.name === 'Crunchyroll') && searchTitle
-      ? await findCrunchyrollAnime(context, searchTitle)
-      : undefined
+    // context.client && data.streaming?.find(site => site.name === 'Crunchyroll') && searchTitle
+    //   ? await findCrunchyrollAnime(context, searchTitle)
+    //   : undefined
 
   const aniDBSource =
     data.external?.find(site => site.name === 'AniDB')
@@ -539,8 +538,8 @@ const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], conte
       ...(await Promise.all(
         new Array(pagination.last_visible_page - 1)
           .fill(undefined)
-          .map((_, i) => getSeasonNow(i + 2, context))
-      ))
+          .map((_, i) => getSeasonNow(i + 2, context).then(({ data }) => data))
+      )).flat()
     ]
       .map(normalizeToMedia)
   )
