@@ -28,9 +28,7 @@ export const fromRelatedHandle = (handle: Handle) => {
         handle.url?.includes('https://anidb.net/anime/') ? `https://animetosho.org/series/_.${handle.id}`
         : handle.url?.includes('https://anidb.net/episode/') ? `https://animetosho.org/episode/_.${handle.id}`
         : undefined,
-      handles: {
-        edges: []
-      }
+      handles: []
     })
   }
 }
@@ -115,9 +113,7 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
         id: parseNyaaUrlId(sourceUrl)!.toString(),
         origin: nyaa.origin,
         url: sourceUrl,
-        handles: {
-          edges: []
-        }
+        handles: []
       }),
       title: {
         romanized: undefined,
@@ -146,13 +142,10 @@ const rowToPlaybackSource = (elem: Element): PlaybackSource => {
     id: parseTorrentUrlId(url)!,
     origin,
     url,
-    handles: {
-      // @ts-ignore
-      edges:
-        sourceHandle
-          ? [{ node: sourceHandle }]
-          : []
-    },
+    handles:
+      sourceHandle
+        ? [sourceHandle]
+        : [],
     title: {
       romanized: undefined,
       english: undefined,
@@ -218,9 +211,7 @@ const seriesPageToMedia = (doc: HTMLElement): Media => {
     id,
     url,
     // todo: add related handles
-    handles: {
-      edges: []
-    },
+    handles: [],
     title: {
       native: null,
       romanized: title,
@@ -230,10 +221,11 @@ const seriesPageToMedia = (doc: HTMLElement): Media => {
     coverImage: [{
       medium: image
     }],
-    episodes: {
-      edges: []
-      // edges: getListRowsAsPlaybackSource(doc)
-    }
+    episodes: []
+    // episodes: {
+    //   edges: []
+    //   // edges: getListRowsAsPlaybackSource(doc)
+    // }
   })
 }
 
@@ -305,9 +297,7 @@ const torrentToPlaybackSource = (doc: HTMLElement): PlaybackSource => {
     id: parseTorrentUrlId(url),
     origin,
     url: url,
-    handles: {
-      edges: []
-    },
+    handles: [],
     filename,
     title: {
       native: null,
@@ -368,9 +358,7 @@ export const resolvers: GraphQLTypes.Resolvers = {
             origin: origin,
             id: uriValues.id,
             url: `https://animetosho.org/episode/_.${uriValues.id}`,
-            handles: {
-              edges: []
-            },
+            handles: [],
             playback: {}
           })
         }

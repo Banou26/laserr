@@ -3,12 +3,11 @@ import type { GraphQLTypes, ServerContext } from 'scannarr'
 import { from, combineLatest, startWith, map } from 'rxjs'
 import { fromScannarrUri, toUri, fromUri, fromUris, populateHandle, isScannarrUri } from 'scannarr'
 
-import { MediaSeason, MediaFormat, Media as AnilistMedia, MediaExternalLink, MediaStatus, PageInfo, Page } from './types'
+import { MediaSeason, MediaFormat, Media as AnilistMedia, MediaExternalLink, MediaStatus, PageInfo } from './types'
 
 import { LanguageTag } from '../../utils'
-import { MediaParams, NoExtraProperties } from '../../utils/type'
+import { NoExtraProperties } from '../../utils/type'
 import { urlToHandle } from '../..'
-import { HandleRelation } from '../../generated/graphql'
 
 export const icon = 'https://anilist.co/img/icons/favicon-32x32.png'
 export const originUrl = 'https://anilist.co'
@@ -484,25 +483,26 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
     media.averageScore
       ? media.averageScore / 100
       : undefined,
-  episodes: {
-    edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
-      node: {
+  episodes:
+    media
+      .airingSchedule
+      ?.edges
+      ?.filter(Boolean)
+      .map(edge => edge?.node && ({
         ...populateHandle({
           origin,
           id: `${edge.node.id.toString()}-${edge.node.episode}`,
           url: `https://anilist.co/anime/${media.id}`,
-          handles: {
-            edges: []
-          }
+          handles: []
         }),
         airingAt: edge.node.airingAt * 1000,
         number: edge.node.episode,
         media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
         mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
         timeUntilAiring: edge.node.timeUntilAiring * 1000,
-      }
-    })) ?? []
-  },
+      }))
+      .filter(Boolean)
+    ?? [],
   startDate: media.startDate,
   endDate: media.endDate,
   season: media.season,
@@ -513,9 +513,7 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
     origin,
     id: media.id.toString(),
     url: media.siteUrl ?? undefined,
-    handles: {
-      edges: []
-    }
+    handles: []
   }),
   genres:
     media.genres?.length
@@ -525,9 +523,7 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
           id: genre,
           url: `https://anilist.co/search/anime?genres=${genre}`,
           name: genre,
-          handles: {
-            edges: []
-          }
+          handles: []
         }))
       )
       : undefined,
@@ -570,19 +566,16 @@ const mediaToSeriesHandle = (media: AnilistMedia): Media => ({
             : undefined
       }]
       : undefined,
-  handles: {
-    edges:
-      media.idMal ? [{
-        node: populateHandle({
+  handles:
+    media.idMal
+      ? [
+        populateHandle({
           id: media.idMal.toString(),
           origin: 'mal',
-          handles: {
-            edges: []
-          }
-        }),
-        handleRelationType: HandleRelation.Identical
-      }] : []
-  },
+          handles: []
+        })
+      ]
+      : [],
   images: [
     ...media.coverImage ? [{
       type: 'poster' as const,
@@ -688,32 +681,25 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
     origin,
     id: media.id.toString(),
     url: media.siteUrl,
-    handles: {
-      edges: [
-        ...media.idMal
-          ? [{
-            node: populateHandle({
-              origin: 'mal',
-              id: media.idMal.toString(),
-              url: `https://myanimelist.net/anime/${media.idMal}`,
-              handles: { edges: [] }
-            }),
-            handleRelationType: HandleRelation.Identical
-          }]
-          : [],
-        ...(
-          media
-            .externalLinks
-            ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
-            .filter(Boolean)
-            .map(handle => ({
-              node: handle!,
-              handleRelationType: HandleRelation.Alternative
-            }))
-          ?? []
-        )
-      ]
-    }
+    handles: [
+      ...media.idMal
+        ? [
+          populateHandle({
+            origin: 'mal',
+            id: media.idMal.toString(),
+            url: `https://myanimelist.net/anime/${media.idMal}`,
+            handles: []
+          })
+        ]
+        : [],
+      ...(
+        media
+          .externalLinks
+          ?.map(externalLink => externalLink?.url && urlToHandle(externalLink.url))
+          .filter(Boolean)
+        ?? []
+      )
+    ]
   }),
   averageScore:
     media.averageScore
@@ -732,7 +718,7 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
           origin: 'yt',
           id: media.trailer.id?.toString(),
           url: `https://www.youtube.com/watch?v=${media.trailer.id}`,
-          handles: { edges: [] }
+          handles: []
         }),
         thumbnail: media.trailer!.thumbnail
       }]
@@ -749,25 +735,26 @@ const anilistMediaToScannarrMedia = (media: AnilistMedia): NoExtraProperties<Med
   seasonYear: media.seasonYear,
   popularity: media.popularity,
   episodeCount: media.episodes,
-  episodes: {
-    edges: media.airingSchedule?.edges?.filter(Boolean).map(edge => edge?.node && ({
-      node: {
+  episodes:
+    media
+      .airingSchedule
+      ?.edges
+      ?.filter(Boolean)
+      .map(edge => edge?.node && ({
         ...populateHandle({
           origin,
           id: `${edge.node.id.toString()}-${edge.node.episode}`,
           url: `https://anilist.co/anime/${media.id}`,
-          handles: {
-            edges: []
-          }
+          handles: []
         }),
         airingAt: edge.node.airingAt * 1000,
         number: edge.node.episode,
         media: edge.node.media && anilistMediaToScannarrMedia(edge.node.media),
         mediaUri: toUri({ origin, id: edge.node?.media?.id.toString() }),
         timeUntilAiring: edge.node.timeUntilAiring * 1000,
-      }
-    })) ?? []
-  }
+      }))
+      .filter(Boolean)
+    ?? []
 })
 
 export const getAnimeSeason = ({ season, seasonYear }: { season: MediaSeason, seasonYear: number }, context: ServerContext) =>
@@ -796,11 +783,13 @@ export const resolvers = {
     mediaPage: {
       subscribe: async function*(_, { input: { seasonYear, season } }, ctx) {
         if (!season || !seasonYear) return
-        yield {
+        const res = {
           mediaPage: {
             nodes: await getAnimeSeason({ seasonYear, season }, ctx)
           }
         }
+        console.log('anilist res', res)
+        yield res
       }
     }
   }

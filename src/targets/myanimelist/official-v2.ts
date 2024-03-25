@@ -95,9 +95,7 @@ export const normalizeToMedia = (data: AnimeObject): NoExtraProperties<Media> =>
     origin: 'anizip',
     id: data.id.toString(),
     url: `https://api.ani.zip/mappings?mal_id=${data.id}`,
-    handles: {
-      edges: []
-    }
+    handles: []
   })
 
   return ({
@@ -105,14 +103,10 @@ export const normalizeToMedia = (data: AnimeObject): NoExtraProperties<Media> =>
       origin,
       id: data.id.toString(),
       url: `https://myanimelist.net/anime/${data.id}`,
-      handles: {
-        edges: [
-          ...anizipHandle ? [{
-            node: anizipHandle,
-            handleRelationType: HandleRelation.Identical
-          }] : []
-        ]
-      }
+      handles:
+        anizipHandle
+          ? [anizipHandle]
+          : []
     }),
 
     id: data.id,

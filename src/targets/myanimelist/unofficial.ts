@@ -157,16 +157,12 @@ const getTitleCardInfo = (elem: HTMLElement): SeriesHandle => populateHandle({
         related: [],
         tags: [],
         releaseDate: [],
-        handles: {
-          edges: []
-        },
+        handles: [],
         recommended: []
       })),
   recommended: [],
   tags: [],
-  handles: {
-    edges: []
-  },
+  handles: [],
   withDetails: false
 })
 
@@ -289,9 +285,7 @@ const getSeriesTitleInfo = (elem: Document): TitleHandle => {
       elem.querySelector('.di-t.w100.mb8 ~ .pt8.pb8 .badresult')
         ? []
         : [{ language: LanguageTag.EN, synopsis }],
-    handles: {
-      edges: []
-    },
+    handles: [],
     tags: [],
     related: [],
     recommended: [],
@@ -513,9 +507,7 @@ const getSeriesInfo = async (elem: Document): Promise<SeriesHandle> => {
           )
         }),
     dates: [date],
-    handles: {
-      edges: []
-    },
+    handles: [],
     withDetails: true
   })
 }
@@ -647,9 +639,7 @@ const testSeriesTitles = async (limitedFetch) => {
       }
     ],
     synopses: [],
-    handles: {
-      edges: []
-    },
+    handles:[],
     tags: [],
     related: [],
     uri: 'mal:1-1',
@@ -689,9 +679,7 @@ const testSeriesTitle = async (limitedFetch) => {
 
 (Source: Wikipedia)`
     }],
-    handles: {
-      edges: []
-    },
+    handles: [],
     tags: [],
     related: [],
     uri: 'mal:1-1',
@@ -751,9 +739,7 @@ While developing bonds and working to catch a colorful cast of criminals, the Be
     titles: [],
     recommended: [],
     tags: [],
-    handles: {
-      edges: []
-    },
+    handles: [],
     uri: 'mal:1',
     withDetails: true
   })
@@ -849,9 +835,7 @@ const getSearchCardInfo = (elem: HTMLElement): NoExtraProperties<Media> => {
       origin,
       id: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.id.trim().replace('sinfo', ''),
       url: elem.querySelector<HTMLAnchorElement>('.hoverinfo_trigger.fw-b.fl-l')!.href,
-      handles: {
-        edges: []
-      }
+      handles: []
     }),
     averageScore: Number(elem.querySelector('td:nth-child(5)')?.textContent?.trim()),
     coverImage: [{ medium: fullSizeCoverImage }],
@@ -906,9 +890,7 @@ const getSeasonCardInfo = (elem: HTMLDivElement): NoExtraProperties<Media> => ({
     origin,
     id: elem.querySelector<HTMLAnchorElement>('.genres.js-genre')!.id.trim().replace('sinfo', ''),
     url: elem.querySelector<HTMLAnchorElement>('.h2_anime_title .link-title')!.href,
-    handles: {
-      edges: []
-    }
+    handles: []
   }),
   averageScore:
     elem.querySelector<HTMLDivElement>('[title="Score"]')?.textContent?.trim() === 'N/A'

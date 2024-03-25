@@ -529,9 +529,7 @@ const crunchyrollSerieToScannarrMedia = (serie: CrunchyrollSerie): NoExtraProper
     origin,
     id: serie.id,
     url: `https://www.crunchyroll.com/series/${serie.id}`,
-    handles: {
-      edges: []
-    }
+    handles: []
   }),
   averageScore: Number(serie.rating.average) / 5,
   coverImage: [{
@@ -553,10 +551,7 @@ const crunchyrollSeasonToScannarrMedia = (serie: CrunchyrollSerie): NoExtraPrope
     origin,
     id: `${serie.series_id}-${serie.id}`,
     url: `https://www.crunchyroll.com/series/${serie.id}`,
-    handles: {
-      edges: [],
-      nodes: []
-    }
+    handles: []
   }),
   description:
     serie.description.length
@@ -572,10 +567,7 @@ const crunchyrollEpisodeToScannarrEpisode = (mediaId: string, episode: Crunchyro
     origin,
     id: `${mediaId}-${episode.id}`,
     url: `https://www.crunchyroll.com/watch/${episode.id}`,
-    handles: {
-      edges: [],
-      nodes: []
-    }
+    handles: []
   }),
   number: Number(episode.episode),
   mediaUri: toUri({ origin, id: mediaId }),
@@ -781,12 +773,7 @@ export const resolvers: Resolvers = {
       const res = await getEpisodes(season.id, { fetch })
       // console.log('Crunchyroll Media.Episode called with ', args, id, _origin, season.data[0]?.id, res)
 
-      return {
-        edges: res.map((episode) => ({
-          node: episode
-        })),
-        nodes: res
-      }
+      return res
     }
     // episode: async (...args) => {
     //   const [{ id: _id, origin: _origin }, , { id = _id, origin: __origin = _origin }] = args

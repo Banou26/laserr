@@ -259,10 +259,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
       .map(([source, mapping]) => populateHandle({
         id: mapping,
         origin: AniZipToLaserrSource[source],
-        handles: {
-          edges: [],
-          nodes: []
-        }
+        handles: []
       }))
       .filter(handle => handle.origin && handle.id)
 
@@ -270,10 +267,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
     origin,
     id: res.mappings.anidb_id,
     url: `https://api.ani.zip/mappings?anidb_id=${res.mappings.anidb_id}`,
-    handles: {
-      edges: handles.map(handle => ({ node: handle })),
-      nodes: handles
-    }
+    handles
   })
 
   const episodes =
@@ -285,10 +279,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
           origin,
           id: episode.anidbEid,
           url: `https://anidb.net/episode/${episode.anidbEid}`,
-          handles: {
-            edges: [],
-            nodes: []
-          },
+          handles: [],
           mediaUri: handleProps.uri,
           number: Number(episode.episode)
         })
@@ -298,13 +289,9 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
             origin,
             id: `${res.mappings.anidb_id}-${episode.anidbEid}`,
             url: `https://anidb.net/episode/${episode.anidbEid}`,
-            handles: {
-              edges: [{
-                node: anidbEpisodeHandle,
-                handleRelationType: HandleRelation.Identical
-              }],
-              nodes: [anidbEpisodeHandle]
-            }
+            handles: [
+              anidbEpisodeHandle
+            ]
           }),
           mediaUri: handleProps.uri,
           number: Number(episode.episode),
@@ -326,10 +313,7 @@ const mappingToScannarrMedia = (res: MappingRoot): Media | undefined => {
       native: res.titles.ja,
     },
     episodeCount: res.episodeCount,
-    episodes: {
-      edges: episodes.map(episode => ({ node: episode })),
-      nodes: episodes
-    }
+    episodes
   })
 }
 

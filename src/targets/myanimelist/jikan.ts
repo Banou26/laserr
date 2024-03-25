@@ -211,28 +211,20 @@ const SEARCH_CRUNCHYROLL_ANIME = gql(`
           native
         }
         handles {
-          edges {
-            node {
-              origin
-              id
-              url
-              uri
-              title {
-                english
-                romanized
-                native
-              }
-              handles {
-                edges {
-                  node {
-                    origin
-                    id
-                    url
-                    uri
-                  }
-                }
-              }
-            }
+          origin
+          id
+          url
+          uri
+          title {
+            english
+            romanized
+            native
+          }
+          handles {
+            origin
+            id
+            url
+            uri
           }
         }
       }
@@ -251,7 +243,7 @@ const findCrunchyrollAnime = async (context: ServerContext, title: string) => {
   })
 
   if (!data.mediaPage?.nodes.length) return undefined
-  const bestResult = data.mediaPage?.nodes[0].handles.edges[0].node
+  const bestResult = data.mediaPage?.nodes[0].handles[0]
   const left = title.length > bestResult.title.english.length ? title : bestResult.title.english
   const right = title.length > bestResult.title.english.length ? bestResult.title.english : title
   const alignment = await swAlign(left.toLowerCase(), right.toLowerCase(), { alignment: 'local', equal: 2, align: -1, insert: -1, delete: -1 })
@@ -285,9 +277,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         origin: 'anidb',
         id: aniDBId,
         url: aniDBSource?.url,
-        handles: {
-          edges: []
-        }
+        handles: []
       })
       : undefined
 
@@ -297,9 +287,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         origin: 'animetosho',
         id: aniDBId,
         url: `https://animetosho.org/series/_.${aniDBId}`,
-        handles: {
-          edges: []
-        }
+        handles: []
       })
       : undefined
 
@@ -309,9 +297,7 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         origin: 'anizip',
         id: aniDBId,
         url: `https://api.ani.zip/mappings?anidb_id=${aniDBId}`,
-        handles: {
-          edges: []
-        }
+        handles: []
       })
       : undefined
   // console.log('crunchyrollHandle', crunchyrollHandle)
@@ -321,26 +307,12 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
       origin,
       id: data.mal_id.toString(),
       url: data.url,
-      handles: {
-        edges: [
-          ...crunchyrollHandle ? [{
-            node: crunchyrollHandle,
-            handleRelationType: HandleRelation.Identical
-          }] : [],
-          ...aniDBHandle ? [{
-            node: aniDBHandle,
-            handleRelationType: HandleRelation.Identical
-          }] : [],
-          ...animetoshoHandle ? [{
-            node: animetoshoHandle,
-            handleRelationType: HandleRelation.Identical
-          }] : [],
-          ...anizipHandle ? [{
-            node: anizipHandle,
-            handleRelationType: HandleRelation.Identical
-          }] : []
-        ]
-      }
+      handles: [
+        ...crunchyrollHandle ? [crunchyrollHandle] : [],
+        ...aniDBHandle ? [aniDBHandle] : [],
+        ...animetoshoHandle ? [animetoshoHandle] : [],
+        ...anizipHandle ? [anizipHandle] : []
+      ]
     }),
     averageScore: data.score,
     description: data.synopsis,
@@ -379,11 +351,12 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
             origin: 'yt',
             id: data.trailer.youtube_id,
             url: `https://www.youtube.com/watch?v=${data.trailer.youtube_id}`,
-            handles: { edges: [] }
+            handles: []
           }),
           thumbnail: data.trailer.images.image_url
         }]
       : undefined,
+    episodes: []
     // episodes: {
     //   edges: data.episodes?.edges?.filter(Boolean).map(edge => edge?.node && ({
     //     node: {
@@ -411,9 +384,7 @@ const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<E
       origin,
       id: `${id}-${episodeNumber}`,
       url: data.url,
-      handles: {
-        edges: []
-      }
+      handles: []
     }),
     airingAt: airingTime,
     number: episodeNumber,
@@ -421,10 +392,7 @@ const normalizeToEpisode = (mediaId: number, data: Episode): NoExtraProperties<E
       origin,
       id,
       url: data.url?.split('/').slice(0, 4).join('/') ?? `https://myanimelist.net/anime/${id}/`,
-      handles: {
-        edges: [],
-        nodes: []
-      }
+      handles: []
     }),
     mediaUri: toUri({ origin, id }),
     timeUntilAiring: airingTime - Date.now(),
@@ -444,11 +412,7 @@ const fetchEpisodes = ({ id }: { id: number }, context: MediaParams[2]) =>
     .then(response => response.json())
     .then(json =>
         json.data
-          ? ({
-            edges: json.data.map(node => ({
-              node: normalizeToEpisode(id, node)
-            }))
-          })
+          ? json.data.map(node => normalizeToEpisode(id, node))
           : undefined
       )
 
@@ -475,7 +439,7 @@ const fetchMedia = ({ id }: { id: number }, context: MediaParams[2]) =>
 
 const getSeasonNow = (page = 1, context: MediaParams[2]): Promise<Root> =>
   context
-    .fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}`)
+    .fetch(`https://api.jikan.moe/v4/seasons/now?page=${page}&sfw=true`)
     .then(res => res.json())
 
 const getRecentEpisodesJson = (page = 1, context: MediaParams[2]): Promise<RecentEpisodes> =>
@@ -494,18 +458,14 @@ const getRecentEpisodes = (page = 1, context: MediaParams[2]): Promise<Episode[]
               origin,
               id: `${item.entry.mal_id}-${episode.mal_id}`,
               url: episode.url,
-              handles: {
-                edges: []
-              }
+              handles: []
             }),
             number: episode.mal_id,
             media: populateHandle({
               origin,
               id: item.entry.mal_id.toString(),
               url: item.entry.url,
-              handles: {
-                edges: []
-              },
+              handles: [],
               title: {
                 romanized: item.entry.title
               },
@@ -536,7 +496,7 @@ const getFullSeasonNow = async (_, { season, seasonYear }: MediaParams[1], conte
     [
       ...data,
       ...(await Promise.all(
-        new Array(pagination.last_visible_page - 1)
+        new Array(Math.min(2, pagination.last_visible_page - 1))
           .fill(undefined)
           .map((_, i) => getSeasonNow(i + 2, context).then(({ data }) => data))
       )).flat()
@@ -729,11 +689,8 @@ export const resolvers: Resolvers = {
                 id: media.id,
                 uri: media.uri,
                 url: null,
-                handles: {
-                  edges: [],
-                  nodes: []
-                },
-
+                handles: [],
+                episodes: [],
                 media,
                 status:
                   list_status.status === 'completed' ? GraphQLTypes.UserMediaStatus.Completed
