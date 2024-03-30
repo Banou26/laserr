@@ -788,7 +788,6 @@ export const resolvers = {
             nodes: await getAnimeSeason({ seasonYear, season }, ctx)
           }
         }
-        console.log('anilist res', res)
         yield res
       }
     }

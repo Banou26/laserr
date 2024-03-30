@@ -300,7 +300,6 @@ const normalizeToMedia = async (data: AnimeResponse, context): NoExtraProperties
         handles: []
       })
       : undefined
-  // console.log('crunchyrollHandle', crunchyrollHandle)
 
   return ({
     ...populateHandle({
@@ -640,13 +639,13 @@ export const resolvers: Resolvers = {
         if (search) {
           return yield {
             mediaPage: {
-              nodes: await fetchSearchAnime({ search }, ctx)
+              nodes: await Promise.all(await fetchSearchAnime({ search }, ctx))
             }
           }
         } else if (season && seasonYear) {
           return yield {
             mediaPage: {
-              nodes: await getFullSeasonNow(undefined, { seasonYear, season }, ctx, undefined)
+              nodes: await Promise.all(await getFullSeasonNow(undefined, { seasonYear, season }, ctx, undefined))
             }
           }
         }
