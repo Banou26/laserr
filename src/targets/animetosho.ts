@@ -332,10 +332,10 @@ export const resolvers: GraphQLTypes.Resolvers = {
             ? (
               fromScannarrUri(uri)
                 ?.handleUrisValues
-                .find(({ origin: _origin }) => _origin === origin)
+                .find(({ origin: _origin }) => _origin === origin || _origin === anidb.origin)
             )
             : fromUri(uri)
-        if (!uriValues || uriValues.origin !== origin) return
+        if (!uriValues || (uriValues.origin !== origin && uriValues.origin !== anidb.origin)) return
         yield {
           media: await fetchSeriesPageMedia(uriValues.id, ctx)
         }
@@ -349,10 +349,10 @@ export const resolvers: GraphQLTypes.Resolvers = {
             ? (
               fromScannarrUri(uri)
                 ?.handleUrisValues
-                .find(({ origin: _origin }) => _origin === origin)
+                .find(({ origin: _origin }) => _origin === origin || _origin === anidb.origin)
             )
             : fromUri(uri)
-        if (!uriValues || uriValues.origin !== origin) return
+        if (!uriValues || (uriValues.origin !== origin && uriValues.origin !== anidb.origin)) return
         yield {
           episode: populateHandle({
             origin: origin,
@@ -372,10 +372,10 @@ export const resolvers: GraphQLTypes.Resolvers = {
             ? (
               fromScannarrUri(uri)
                 ?.handleUrisValues
-                .find(({ origin: _origin }) => _origin === origin)
+                .find(({ origin: _origin }) => _origin === origin || _origin === anidb.origin)
             )
             : fromUri(uri)
-        if (!uriValues || uriValues.origin !== origin) return
+        if (!uriValues || (uriValues.origin !== origin && uriValues.origin !== anidb.origin)) return
         yield {
           playbackSourcePage: {
             nodes: number !== undefined && number !== null
