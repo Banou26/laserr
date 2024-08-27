@@ -6,7 +6,8 @@ Laserr is a media indexer/scraper library including a list of plugins transformi
 Each supported website/source is called Target, it is either a single typescript file or a folder with at least an index typescript file. It is registered by adding it to the root index file that registers all Targets and expose them.
 
 
-TODO: 
+TODO:
+https://beta.releases.moe/
 support https://github.com/erengy/anime-relations
 make use of the https://trash-guides.info/Sonarr/Sonarr-Release-Profile-RegEx-Anime/#must-not-contain ?
 support Jackett definitions: https://github.com/Jackett/Jackett/tree/master/src/Jackett.Common/Definitions
